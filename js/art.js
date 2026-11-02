@@ -1,4 +1,4 @@
-﻿/* 《登神》手搓 SVG 美术库 —— 零外部素材 */
+/* 《登神》手搓 SVG 美术库 —— 零外部素材 */
 (function () {
   const H = {
     hash(s) { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; },
@@ -143,5 +143,23 @@
     </svg>`;
   }
 
-  window.ART = { logo, emblem, posIcon, champIcon, radar, avatar, trophy, hash: H.hash };
+    /* 界面小图标（手搓，不用外部素材，也不靠 emoji 撑场） */
+  function glyph(kind, size) {
+    size = size || 17;
+    const P = {
+      energy: '<path d="M13 2 L5 14 H11 L9 22 L19 9 H12 Z" fill="currentColor"/>',
+      mental: '<path d="M12 3 A9 9 0 1 0 21 12 H12 Z" fill="currentColor" opacity=".55"/><path d="M12 3 A9 9 0 0 1 21 12 H12 Z" fill="currentColor"/>',
+      fire: '<path d="M12 2 C16 7 20 9 20 14 A8 8 0 0 1 4 14 C4 10 8 8 9 4 C10 7 12 8 12 8 Z" fill="currentColor"/>',
+      flag: '<path d="M5 3 V21 M5 4 H18 L15 9 L18 14 H5" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>',
+      voice: '<path d="M12 3 A3 3 0 0 1 15 6 V12 A3 3 0 0 1 9 12 V6 A3 3 0 0 1 12 3 Z" fill="currentColor"/><path d="M6 11 A6 6 0 0 0 18 11 M12 17 V21" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>',
+      money: '<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 7 V17 M9 10 H15 M9 14 H15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
+      bar: '<path d="M4 5 H20 V15 H13 L9 19 V15 H4 Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M8 9 H16 M8 12 H13" stroke="currentColor" stroke-width="1.4"/>',
+      deck: '<rect x="3" y="6" width="10" height="14" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.7"/><rect x="9" y="4" width="10" height="14" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.7"/>',
+      shop: '<path d="M5 8 H19 L17 21 H7 Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M9 8 A3 3 0 0 1 15 8" fill="none" stroke="currentColor" stroke-width="1.8"/>',
+      trophy: '<path d="M7 4 H17 V10 A5 5 0 0 1 7 10 Z" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M7 6 H4 V8 A3 3 0 0 0 7 10 M17 6 H20 V8 A3 3 0 0 1 17 10 M12 15 V19 M8 21 H16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>'
+    };
+    return `<svg viewBox="0 0 24 24" width="${size}" height="${size}" class="gly" aria-hidden="true">${P[kind] || P.bar}</svg>`;
+  }
+
+window.ART = { logo, emblem, posIcon, champIcon, radar, avatar, trophy, glyph, hash: H.hash };
 })();
