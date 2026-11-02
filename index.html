@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>登神 · 从 LDL 打上来</title>
+<meta name="description" content="一个英雄联盟职业生涯文字模拟游戏：从 LDL 打到世界赛，三年，也可以一直打下去。">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<!-- 背景层：光晕 / 网格 / 手绘峡谷线条 / 颗粒 / 暗角 -->
+<div class="bg" aria-hidden="true">
+  <div class="bg-aurora a1"></div>
+  <div class="bg-aurora a2"></div>
+  <div class="bg-aurora a3"></div>
+  <div class="bg-grid"></div>
+  <svg class="bg-rift" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice">
+    <g fill="none" stroke="currentColor" stroke-width="1">
+      <path d="M60 740 L1140 60"/>
+      <path d="M60 60 L1140 740"/>
+      <path d="M600 40 L600 760" stroke-dasharray="6 14"/>
+      <path d="M60 400 L1140 400" stroke-dasharray="2 18"/>
+      <circle cx="600" cy="400" r="150"/>
+      <circle cx="600" cy="400" r="230" stroke-dasharray="4 16"/>
+      <circle cx="600" cy="400" r="320" stroke-dasharray="1 22"/>
+      <path d="M240 240 L330 330 M960 240 L870 330 M240 560 L330 470 M960 560 L870 470"/>
+    </g>
+  </svg>
+  <div class="bg-noise"></div>
+  <div class="bg-vignette"></div>
+</div>
+
+<div id="app"></div>
+<div id="dock" class="hidden"></div>
+<div id="toast"></div>
+
+<script src="js/art.js"></script>
+<script src="js/data/heroes.js"></script>
+<script src="js/data/teams.js"></script>
+<script src="js/data/players.js"></script>
+<script src="js/data/chronicle.js"></script>
+<script src="js/data/events.js"></script>
+<script src="js/data/memes.js"></script>
+<script src="js/data/endless.js"></script>
+<script src="js/data/bases2.js"></script>
+<script src="js/data/talents.js"></script>
+<script src="js/data/hot.js"></script>
+<script src="js/data/danmaku.js"></script>
+<script src="js/data/trash.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/engine.js"></script>
+<script src="js/ui.js"></script>
+</body>
+</html>
