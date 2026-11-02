@@ -147,7 +147,7 @@ window.MATCH = (function () {
     else if (mine.heroProf < 55) add("生疏", -.06);
     /* 英雄克制 */
     var ctr = ctrOf(mine.hero, theirs.hero);
-    add("英雄克制", ctr.d / 100);
+    add("英雄克制", ctr.d / 55);
     /* 版本契合：本局英雄是否在版本加强名单 */
     if (ctx && ctx.patchBuffs && ctx.patchBuffs[mine.hero]) {
       add("版本契合", ctx.patchBuffs[mine.hero] > 0 ? .03 : -.03);
