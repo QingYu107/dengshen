@@ -57,7 +57,7 @@ window.LIVE = (function () {
     span.className = "dm live";
     span.style.top = (4 + rnd() * 62).toFixed(1) + "%";
     span.style.color = COLORS[it.g] || "#dbe4ef";
-    span.style.fontSize = (opt && opt.big ? 19 + rnd() * 3 : 14 + rnd() * 4).toFixed(1) + "px";
+    span.style.fontSize = (opt && opt.big ? 18 + rnd() * 2 : 13 + rnd() * 2.6).toFixed(1) + "px";
     span.style.animationDuration = (5.2 + rnd() * 3.4).toFixed(2) + "s";
     span.innerHTML = '<span class="g">' + esc(it.g || "") + "</span>" + esc(fill(it.t || ""));
     span.addEventListener("animationend", () => { if (span.parentNode) span.parentNode.removeChild(span); });
@@ -75,7 +75,7 @@ window.LIVE = (function () {
     if (!on) return;
     opt = opt || {};
     const list = Array.isArray(tags) ? tags : [tags];
-    const n = opt.n || (6 + Math.floor(rnd() * 7));
+    const n = opt.n || (3 + Math.floor(rnd() * 3));
     for (let i = 0; i < n; i++) {
       const r = rnd();
       let it = null;
@@ -127,9 +127,9 @@ window.LIVE = (function () {
     if (key === lastKey) return;
     lastKey = key;
     const tag = tagOf(sc);
-    if (tag) burst(tag, { n: sc.tone === "lose" || tag === "send" ? 14 : 9 });
+    if (tag) burst(tag, { n: sc.tone === "lose" || tag === "send" ? 6 : 4 });
     if (sc.upset) moment(sc.win ? "这也能赢？" : "这也能输？");
-    if (sc.type === "inGame" && (sc.g || 0) >= 4) burst("gg", { n: 5 });
+    if (sc.type === "inGame" && (sc.g || 0) >= 4) burst("gg", { n: 3 });
   }
 
   function toggle(force) { on = force == null ? !on : !!force; if (!on) { const el = room(); if (el && el.innerHTML !== undefined) el.innerHTML = ""; } return on; }
