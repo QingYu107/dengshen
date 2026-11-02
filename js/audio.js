@@ -788,6 +788,32 @@
       prog: [{ root: 45, q: "min" }, { root: 41, q: "maj" }, { root: 48, q: "maj" }, { root: 43, q: "maj" }],
       arp: [0, null, null, 4, null, 2, null, null, 5, null, null, 4, null, null, 7, null],
       bass: [0], kick: [0], hat: [], snare: []
+    },
+
+    /* BP / 局内：心跳压在鼓点下面，别让人喘过气 */
+    tense: {
+      bpm: 96, level: 0.42,
+      padWave: "sawtooth", padCut: 900, padLevel: 0.09, detune: 6,
+      arpKind: "tone", arpWave: "triangle", arpCut: 1600, arpLevel: 0.03, arpRev: 0.3, arpDur: 2.2,
+      bassWave: "sine", bassCut: 180, bassLevel: 0.13, bassDur: 1.2,
+      rev: 0.34, kickLevel: 0.1, hatLevel: 0.018, snareLevel: 0.02,
+      scale: [0, 1, 3, 5, 7, 8, 10],
+      prog: [{ root: 45, q: "min" }, { root: 45, q: "min" }, { root: 43, q: "maj" }, { root: 41, q: "maj" }],
+      arp: [0, null, 0, null, 3, null, 0, null, 5, null, 3, null, 0, null, 7, null],
+      bass: [0, 6], kick: [0, 8], hat: [4, 12], snare: []
+    },
+
+    /* 抗压吧 / 论坛：滑稽、轻，像有人在你耳边阴阳 */
+    meme: {
+      bpm: 108, level: 0.4,
+      padWave: "square", padCut: 1100, padLevel: 0.07, detune: 14,
+      arpKind: "tone", arpWave: "square", arpCut: 1800, arpLevel: 0.036, arpRev: 0.14, arpDur: 1.1,
+      bassWave: "triangle", bassCut: 260, bassLevel: 0.12, bassDur: 0.5,
+      rev: 0.14, kickLevel: 0.08, hatLevel: 0.026, snareLevel: 0.02,
+      scale: [0, 2, 4, 5, 7, 9, 11],
+      prog: [{ root: 55, q: "maj" }, { root: 57, q: "min" }, { root: 52, q: "maj" }, { root: 50, q: "maj" }],
+      arp: [0, 2, 4, 2, 5, 4, 2, 0, 7, 5, 4, 2, 0, 2, 4, 5],
+      bass: [0, 4, 8, 12], kick: [0, 4, 8, 12], hat: [2, 6, 10, 14], snare: [4, 12]
     }
   };
 
