@@ -443,13 +443,14 @@
     return shell(`<div class="fade-in">
       <div class="kicker">CREATE · 04</div>
       <h1 style="margin:8px 0 6px">开局英雄池</h1>
-      <p class="dim">三组随机的英雄池，每组一个绝活（76–84 熟练度）+ 两个常用。选一组带走。</p>
+      <p class="dim">三组随机的英雄池，每组一个绝活（76–84 熟练度）+ 两个常用。标签是打法克制关系：进对局以后，被克制的一方每条判定都更难受。</p>
       <div class="base-grid" style="margin-top:18px">
         ${s.groups.map((g, i) => `<div class="pool-group" data-act="pick" data-i="${i}">
           <div class="tag" style="font-family:var(--mono);font-size:11px;color:var(--gold);letter-spacing:.14em">组合 ${i + 1}</div>
           ${g.map(x => `<div class="hero-row">
             ${A.champIcon(x.h.n, 26)}
             <span class="nm">${esc(x.h.n)} <span class="dim" style="font-size:11px">${esc(x.h.en || "")}</span></span>
+            <span class="hrow-tags">${(x.h.tag || []).slice(0, 2).map(t => `<span class="chip">${esc(t)}</span>`).join("")}</span>
             <span class="pf ${x.prof < 70 ? "low" : ""}">${x.prof}</span>
           </div>`).join("")}
         </div>`).join("")}
@@ -533,6 +534,14 @@
           <span class="cost" style="padding-top:12px">${esc(a.cost)}</span>
         </div>`).join("")}
       </div>
+      ${(s.frees || []).length ? `<div class="free-zone">
+        <div class="free-head"><span class="kicker">FREE · 不耗体力</span><span class="small-note">随便点，点完还是这个月，不占行动</span></div>
+        <div class="free-row">
+          ${s.frees.map((f, i) => `<button class="btn small free-btn" data-act="choose" data-v="free" data-i="${i}">
+            ${esc(f.label)}<span class="small-note">${esc(f.note || "")}</span>
+          </button>`).join("")}
+        </div>
+      </div>` : ""}
     </div>`);
   }
 
@@ -953,6 +962,36 @@
   }
 
   /* ---------- BP ---------- */
+  /* ---------- 跳过分（常规赛全是大优，给你一个快进键） ---------- */
+  function renderSkipOffer(s) {
+    return shell(`<div class="fade-in">
+      <div class="between">
+        <div><div class="kicker">${s.ml.year} 年 ${s.ml.month} 月 · ${esc(s.splitName || "")}</div>
+        <h2 style="margin:5px 0 0">这五场，还用你亲自打吗</h2></div>
+        <div class="chip gold">最硬一场 ${s.pct}% · 平均 ${s.avgPct || s.pct}%</div>
+      </div>
+      <div class="panel" style="margin-top:14px">
+        <div class="story">常规赛五场，最硬的一场你都有 ${s.pct}% 的把握，平均 ${s.avgPct || s.pct}%。教练说这种局他自己上去也能赢，问你要不要省点力气。
+挂机不是没有代价的：手感会凉，对面也会憋着一手爆冷。</div>
+        <div class="match-list" style="margin-top:12px">
+          ${(s.opps || []).map(o => `<div class="match-row"><span class="dim">${esc(o.name)}</span><span class="honor">${o.power}</span></div>`).join("")}
+        </div>
+      </div>
+      <div class="opts" style="display:grid;gap:9px;margin-top:14px">
+        <div class="opt"><span class="idx">1</span>
+          <button class="btn primary" data-act="choose" data-v="skip" data-i="0">
+            挂机五场
+            <span class="tagline">省时间，但 <b>20% 概率</b>被爆冷一局，这局的锅你还得背</span>
+          </button></div>
+        <div class="opt"><span class="idx">2</span>
+          <button class="btn" data-act="choose" data-v="play" data-i="0">
+            自己打
+            <span class="tagline">一场一场来，手感在线，气势也能攒</span>
+          </button></div>
+      </div>
+    </div>`);
+  }
+
   function renderBp(s) {
     const S = G.getState() || {};
     const head = `<div class="between">
@@ -964,13 +1003,18 @@
       return shell(`<div class="fade-in">${head}
         <div class="panel flat" style="margin-top:12px">
           <div class="between wrap">
-            <div><span class="chip blue">对面打法：${esc((s.opp || {}).tendency || "运营")}</span>
+<div><span class="chip ${s.side === "blue" ? "blue" : "red"}">${s.side === "blue" ? "蓝方 · 一选" : "红方 · 后手"}</span>
+            <span class="chip blue" style="margin-left:6px">对面打法：${esc((s.opp || {}).tendency || "运营")}</span>
             <span class="chip" style="margin-left:6px">我方 OVR ${s.myOvr} · 对面战力 ${s.oppPower}</span>
             ${s.decider ? `<span class="chip gold" style="margin-left:6px">决胜局 · ${s.banNeed || 3} ban</span>` : ""}</div>
             <div class="small-note">${s.reveal > 0 ? "数据团队给了一份报告：多看一层 BP 倾向" : "没有数据团队，对面练什么全靠猜"}</div>
           </div>
           ${s.coachTip ? `<div class="small-note" style="margin-top:8px;color:var(--gold-2)">${esc(s.coachTip)}</div>` : ""}
-          ${(s.bans || []).length ? `<div class="row wrap" style="gap:6px;margin-top:8px">${s.bans.map(b => `<span class="chip red">已 ban ${esc(b)}</span>`).join("")}</div>` : ""}
+${(s.oppBans || []).length ? `<div class="row wrap" style="gap:6px;margin-top:8px">
+            <span class="small-note">对面先手 ban 掉了你的：</span>
+            ${s.oppBans.map(b => `<span class="chip red">${esc(b)}</span>`).join("")}
+          </div>` : ""}
+          ${(s.bans || []).length ? `<div class="row wrap" style="gap:6px;margin-top:6px">${s.bans.map(b => `<span class="chip">已 ban ${esc(b)}</span>`).join("")}</div>` : ""}
           <div class="match-list" style="margin-top:10px">
             ${(s.opps || []).map(x => `<div class="match-row"><span class="opp" style="width:60px">${esc(POSCN[x.pos] || x.pos)}</span><span class="dim">${esc(x.name)}</span><span class="honor">${x.ovr}</span></div>`).join("")}
           </div>
@@ -986,12 +1030,21 @@
     }
     if (s.step === 1) {
       return shell(`<div class="fade-in">${head}
-        <div class="scene-tag" style="margin-top:14px">第二步 · 选英雄（熟练度决定这把你怎么打）</div>
-        <div class="panel flat" style="margin-top:8px"><span class="dim" style="font-size:13px">ban 位：${esc(s.ban || "空 ban")} · 对面打法 ${esc((s.opp || {}).tendency || "")}</span></div>
+<div class="scene-tag" style="margin-top:14px">第二步 · 选英雄（被 ban 的已经没了，池子浅就只能硬玩）</div>
+        <div class="panel flat" style="margin-top:8px">
+          <div class="row wrap" style="gap:6px">
+            <span class="chip ${s.side === "blue" ? "blue" : "red"}">${s.side === "blue" ? "蓝方 · 一选" : "红方 · 后手"}</span>
+            <span class="chip">你的 ban：${esc(s.ban || "空 ban")}</span>
+            ${(s.oppBans || []).map(b => `<span class="chip red">对面 ban ${esc(b)}</span>`).join("")}
+            ${s.oppHero ? `<span class="chip gold">对面已选 ${esc(s.oppHero)}</span>` : `<span class="chip">对面还没选，你一选他必针对</span>`}
+          </div>
+          <div class="small-note" style="margin-top:6px">池子里还能挑 <b style="color:var(--gold)">${(s.pool || {}).left || "?"}</b> / ${(s.pool || {}).total || "?"} 个</div>
+        </div>
         <div class="opts" style="display:grid;gap:9px;margin-top:12px">
           ${(s.opts || []).map((o, i) => `<div class="opt"><span class="idx">${i + 1}</span>
             <button class="btn" data-act="choose" data-i="${i}">${esc(o.t)}${o.main ? ' <span class="chip gold">本命</span>' : ""}
-              <span class="tagline"><span class="chip ${o.prof >= 80 ? "gold" : "blue"}">熟练 ${Math.round(o.prof)}</span>${o.ctr ? `<span class="chip ${o.ctr > 0 ? "green" : "red"}">克制 ${o.ctr > 0 ? "+" : ""}${o.ctr}%</span>` : ""}<span class="chip">${esc(o.d || "")}</span></span>
+<span class="tagline"><span class="chip ${o.prof >= 80 ? "gold" : "blue"}">熟练 ${Math.round(o.prof)}</span>${o.ctr ? `<span class="chip ${o.ctr > 0 ? "green" : "red"}">克制 ${o.ctr > 0 ? "+" : ""}${o.ctr}%</span>` : ""}${(o.tags || []).map(t => `<span class="chip">${esc(t)}</span>`).join("")}<span class="chip">${esc(o.d || "")}</span></span>
+              ${o.ctrWhy ? `<span class="tagline" style="color:var(--dim)">${esc(o.ctrWhy)}</span>` : ""}
             </button></div>`).join("")}
         </div>
         <div class="right" style="margin-top:14px;text-align:right"><button class="btn small" style="width:auto" data-act="choose" data-i="0" data-v="back">回去重 ban</button></div>
@@ -1227,7 +1280,53 @@
         ${br.sf ? `<div style="margin-top:8px"><div class="small-note">四强</div>${pairHTML(br.sf)}</div>` : ""}
         ${br.f ? `<div style="margin-top:8px"><div class="small-note">决赛</div>${pairHTML(br.f)}</div>` : ""}
       </div>` : ""}
-      <div class="right" style="margin-top:18px;text-align:right"><button class="btn primary small" data-act="choose" data-i="0">继续</button></div>
+      <div class="row between" style="margin-top:18px;gap:10px">
+        <div class="row">${s.canTree ? `<button class="btn small" style="width:auto" data-act="choose" data-i="0" data-v="tree">看赛程树</button>` : ""}</div>
+        <button class="btn primary small" style="width:auto" data-act="choose" data-i="0">继续</button>
+      </div>
+    </div>`);
+  }
+
+  /* ---------- 世界赛赛程树 ---------- */
+  function renderWorldsTree(s) {
+    const rounds = s.rounds || [];
+    const teamRow = (tm, win, score) => {
+      if (!tm) return `<div class="br-team tbd"><span class="nm">待定</span><span class="sc">-</span></div>`;
+      return `<div class="br-team ${win ? "win" : ""} ${tm.mine ? "mine" : ""}">
+        <span class="nm">${esc(tm.name)}</span>
+        <span class="sc">${score == null ? "" : score}</span>
+      </div>`;
+    };
+    const matchCard = (m) => {
+      const aWin = m.winA === true, bWin = m.winA === false;
+      return `<div class="br-match">
+        ${teamRow(m.a, aWin, m.wa)}
+        ${teamRow(m.b, bWin, m.wb)}
+        ${m.upset ? '<span class="br-upset">爆冷</span>' : ""}
+      </div>`;
+    };
+    return shell(`<div class="fade-in">
+      <div class="between wrap">
+        <div><div class="kicker">世界赛 ${esc(String(s.year || ""))} · 淘汰赛对阵</div>
+        <h2 style="margin:5px 0 4px">整棵树</h2></div>
+        <div class="chip ${s.predicted ? "blue" : "gold"}">${s.predicted ? "预测 · 瑞士轮还没打完" : "实时"}</div>
+      </div>
+      <p class="dim">你自己打的那几场按真实比分走；别人没打完的，按各队数值加爆冷概率推。实力差 3 点以上被翻，标「爆冷」。</p>
+      <div class="bracket" style="margin-top:14px">
+        ${rounds.map(r => `<div class="br-col">
+          <div class="br-round">${esc(r.name)}<span class="dim mono">${esc(r.en || "")}</span></div>
+          <div class="br-list">${(r.matches || []).map(matchCard).join("") || '<div class="br-match empty">待定</div>'}</div>
+        </div>`).join("")}
+        <div class="br-col br-champ">
+          <div class="br-round">冠军</div>
+          <div class="br-list"><div class="br-champ-card ${s.champion && s.champion.mine ? "mine" : ""}">
+            <span class="dim small-note">${s.predicted ? "预测冠军" : "冠军"}</span>
+            <b>${s.champion ? esc(s.champion.name) : "待定"}</b>
+            ${s.champion ? `<span class="small-note">评分 ${s.champion.power}</span>` : ""}
+          </div></div>
+        </div>
+      </div>
+      <div class="right" style="margin-top:18px;text-align:right"><button class="btn small" style="width:auto" data-act="choose" data-i="0" data-v="back">回到积分榜</button></div>
     </div>`);
   }
 
@@ -1263,7 +1362,7 @@
   function renderGachaCard(c) {
     const rc = RC(c.rarity), b = BUILDN(c.build);
     return `<div class="card-face" style="--rc:${rc.c}">
-      <div class="between"><span class="rar">${esc(rc.n)}${b ? " · " + esc(b) : ""}</span>${c.dup ? '<span class="dup">重复 +30 声望</span>' : ""}</div>
+      <div class="between"><span class="rar">${esc(rc.n)}${b ? " · " + esc(b) : ""}</span>${c.dup ? `<span class="dup">重复 · 折现 ${c.cash || 0} 元</span>` : ""}</div>
       <div class="cname">${esc(c.name)}</div>
       <div class="cdesc">${esc(c.desc || "")}</div>
       <div class="cflavor">${esc(effCN(c.eff || {}))}</div>
@@ -1280,6 +1379,7 @@
       </div>
       ${bk.length ? `<div class="panel flat" style="margin-top:10px"><span class="chip gold">流派</span> ${bk.map(k => `<span class="chip" style="margin-left:4px">${esc(BUILDN(k))} ×${builds[k]}</span>`).join("")}</div>` : ""}
       ${pulled.length ? `<div class="draw-wrap" style="margin-top:14px">${pulled.map(c => `<div class="card-flip"><div>${renderGachaCard(c)}</div></div>`).join("")}</div>` : ""}
+      ${(function(){ const cash = pulled.reduce((a,c)=>a+((c&&c.cash)||0),0); const dup = pulled.filter(c=>c&&c.dup).length; return cash ? `<div class="panel flat" style="margin-top:10px"><span class="chip gold">重复 ${dup} 张</span> <span class="small-note">折现进账 <b class="gold">${cash} 元</b>（蓝 1000 / 紫 10000 / 金 100000 / 赤 500000）</span></div>` : ""; })()}
       <div class="row" style="margin-top:18px;gap:10px">
         <button class="btn primary small" style="width:auto" data-act="choose" data-i="0" data-v="one">单抽 · 1 券</button>
         <button class="btn small" style="width:auto" data-act="choose" data-i="0" data-v="ten">十连 · 9 券</button>
@@ -1297,7 +1397,7 @@
     return shell(`<div class="fade-in">
       <div class="kicker">构筑 · 五个槽</div>
       <h2 style="margin:5px 0 4px">装进去才算数</h2>
-      <p class="dim">同流派越多，羁绊越强：两张 +5%，三张大会心，五张走极端但带副作用。想换方向就卸下来重装。</p>
+      <p class="dim">一个槽一张，同一张卡不能装两次。同流派越多羁绊越强：两张 +5%，三张大会心，五张走极端但带副作用。想换方向就先卸下来。</p>
       <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:12px">
         ${deck.map((c, i) => c ? `<div class="panel flat" style="--rc:${RC(c.rarity).c};border-color:${RC(c.rarity).c}" data-act="choose" data-i="${i}" data-v="un">
           <div class="rar">${esc(RC(c.rarity).n)} · ${esc(BUILDN(c.build))}</div>
@@ -1309,11 +1409,12 @@
       ${Object.keys(builds).filter(k => builds[k] > 0).length ? `<div class="panel flat" style="margin-top:10px">${Object.keys(builds).filter(k => builds[k] > 0).map(k => `<span class="chip" style="margin-right:5px">${esc(BUILDN(k))} ×${builds[k]}</span>`).join("")}</div>` : ""}
       <div class="scene-tag" style="margin-top:16px">卡包 · ${bag.length} 张</div>
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-top:8px">
-        ${bag.map(c => `<div class="panel flat" style="--rc:${RC(c.rarity).c};cursor:pointer" data-act="choose" data-i="0" data-v="${esc(c.id)}">
+        ${bag.map(c => { const inDeck = (deck || []).some(x => x && x.id === c.id); return `<div class="panel flat" style="--rc:${RC(c.rarity).c};cursor:pointer;${inDeck ? "opacity:.42" : ""}" data-act="choose" data-i="0" data-v="${esc(c.id)}">
           <div class="rar" style="color:${RC(c.rarity).c}">${esc(RC(c.rarity).n)} · ${esc(BUILDN(c.build))}</div>
           <div style="font-weight:800;font-size:13px;margin-top:2px">${esc(c.name)}</div>
           <div class="small-note" style="margin-top:3px">${esc(effCN(c.eff || {}))}</div>
-        </div>`).join("")}
+          ${inDeck ? '<div class="small-note" style="margin-top:4px;color:var(--gold)">已装槽</div>' : ""}
+        </div>`; }).join("")}
       </div>
       <div class="right" style="margin-top:18px;text-align:right"><button class="btn primary small" data-act="choose" data-i="0" data-v="back">回到行动</button></div>
     </div>`);
@@ -1459,6 +1560,8 @@
       case "prep": return renderPrep(s);
       case "bigevent": return renderBigevent(s);
       case "worldsMap": return renderWorldsMap(s);
+    case "worldsTree": return renderWorldsTree(s);
+    case "skipOffer": return renderSkipOffer(s);
       case "shop": return renderShop(s);
       case "gacha": return renderGacha(s);
       case "deck": return renderDeck(s);
@@ -1586,8 +1689,8 @@
     const el = document.createElement("div");
     el.className = "dm";
     el.style.top = (4 + Math.random() * 62).toFixed(2) + "%";
-    el.style.fontSize = (13 + Math.random() * 3.4).toFixed(1) + "px";
-    el.style.animationDuration = (7 + Math.random() * 6).toFixed(2) + "s";
+    el.style.fontSize = (12.2 + Math.random() * 2.6).toFixed(1) + "px";
+    el.style.animationDuration = (9 + Math.random() * 6).toFixed(2) + "s";
     el.style.animationDelay = (Math.random() * 0.7).toFixed(2) + "s";
     el.style.color = dmColor(item.g);
     el.innerHTML = `<span class="g">${esc(item.g)}</span>${esc(dmFill(item.t))}`;
@@ -1600,21 +1703,24 @@
     if (!DM.on || !window.DATA_DANMAKU || typeof window.setInterval !== "function") return;
     const list = dmPools(sc);
     if (!list.length) return;
-    /* 一进场先砸几条上来，别等半秒才热闹；换页时已经满了就别再补 */
+    /* 一进场最多三条，屏幕上有字就够了，别糊住界面 */
     let i = 0, sent = 0;
     const room = dmRoom();
-    const alive = (room && room.children) ? room.children.length : 0;
-    if (alive < 6) {
-      const burst = Math.min(6 - alive, list.length);
+    const aliveOf = () => (room && room.children) ? room.children.length : 0;
+    const alive = aliveOf();
+    const OPEN = 3;
+    if (alive < OPEN) {
+      const burst = Math.min(OPEN - alive, list.length);
       for (; i < burst; i++) { dmDrop(list[i]); sent++; }
     }
-    const gap = list.length > 11 ? 300 : list.length > 7 ? 420 : 620;
-    /* 一条弹幕飞完约 7–13 秒，300ms 一条的话屏幕上始终有 20 条左右；上限只是防内存泄漏 */
+    /* 同时在屏上限 7 条；一条飞 7–13 秒，约 1.1 秒一条刚好补得上 */
+    const GAP = 1100;
     DM.timer = window.setInterval(() => {
       if (sent > 900) { dmStop(false); return; }
+      if (aliveOf() >= 7) return;
       if (i >= list.length) { i = 0; shuffleDM(list); }
       dmDrop(list[i++]); sent++;
-    }, gap);
+    }, GAP);
   }
 
   function renderDock() {
