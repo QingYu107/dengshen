@@ -1,4 +1,4 @@
-﻿/* 《登神》核心引擎 v2 —— 单机离线，无依赖 */
+/* 《登神》核心引擎 v2 —— 单机离线，无依赖 */
 window.GAME = (function () {
   "use strict";
   const MATCH = window.MATCH;
@@ -733,11 +733,24 @@ window.GAME = (function () {
     });
   }
 
+  /* 自由操作：不耗体力、不进月行动预算，随时可做，做完回行动页 */
+  function freeActs() {
+    const out = [];
+    out.push({ key: "gacha", label: "抽卡", note: (S.ticket || 0) + " 券", make: () => gachaScene(() => actionScene()) });
+    out.push({ key: "deck", label: "卡槽", note: ((S.deck || []).filter(Boolean).length) + "/5", make: () => deckScene(() => actionScene()) });
+    out.push({ key: "rank", label: "积分榜", note: "第 " + myRank() + " 名", make: () => standingsScene(() => actionScene()) });
+    if (!S.shopDone) out.push({ key: "shop", label: "商店", note: Math.round(S.money) + " 万", make: () => shopScene(() => actionScene()) });
+    return out;
+  }
+
   function actionScene() {
     const acts = buildActions();
+    const frees = freeActs();
     return scene({
       type: "action", acts, ml: S._ml,
-      pick(i) {
+      frees: frees.map(f => ({ label: f.label, note: f.note, key: f.key })),
+      pick(i, v) {
+        if (v === "free") { const f = frees[clamp(i, 0, frees.length - 1)]; return f ? f.make() : actionScene(); }
         const r = acts[i].run();
         if (r && r.type) return r;
         return result(r[0], r[1], r[2], () => checkEvent());
@@ -939,12 +952,42 @@ window.GAME = (function () {
     };
   }
 
-  function matchMonth() {
+  function matchMonth(preGames, preOpps, noSkip) {
     const n = 5;
     M.reg = M.reg || { w: 0, l: 0 };
-    let opps = shuffle(oppList()).slice(0, n);
+    let opps = preOpps && preOpps.length ? preOpps : shuffle(oppList()).slice(0, n);
     if (!opps.length) opps = [{ name: "训练赛对手", id: null }];
-    const games = opps.map(o => simGame(o));
+    /* 五场里最难那场也有 80% 把握 → 给「跳过」，挂机有 20% 概率被爆冷 */
+    if (!preGames && !noSkip) {
+      const probs = opps.map(o => {
+        const d = myTeamPower() - teamPower(o.id || "");
+        return 1 / (1 + Math.exp(-d / 8));
+      });
+      const minP = probs.length ? Math.min.apply(null, probs) : 0;
+      const avgP = probs.length ? probs.reduce((a, b) => a + b, 0) / probs.length : 0;
+      if (minP >= 0.8 || avgP >= 0.85) {
+        return scene({
+          type: "skipOffer", pct: Math.round(minP * 100), avgPct: Math.round(avgP * 100), ml: S._ml,
+          splitName: splitLabel(S._ml.month === 1 ? 1 : S._ml.month === 4 ? 2 : 3),
+          opps: opps.map(o => ({ name: o.name, power: Math.round(teamPower(o.id || "")) })),
+          pick(i, v) {
+            if (v === "play") return matchMonth(null, opps, true);
+            let upsetDone = false;
+            const gs = opps.map(o => {
+              const g = simGame(o);
+              if (g.win && !upsetDone && chance(0.2)) {
+                g.win = false; g.upset = true;
+                g.upsetNote = "三路优势，第四把被对面一波偷家偷没了。弹幕已经笑完了。";
+                upsetDone = true;
+              }
+              return g;
+            });
+            return matchMonth(gs, opps);
+          }
+        });
+      }
+    }
+    const games = preGames && preGames.length ? preGames : opps.map(o => simGame(o));
     const w = games.filter(g => g.win).length, l = games.length - w;
     games.forEach(g => addMyResult(g.win));
     for (let i = 0; i < n; i++) simLeagueRound();
@@ -1422,6 +1465,15 @@ window.GAME = (function () {
   /* ================= 抽卡 ================= */
   const RARITY = { white: { c: "#9aa7b4", n: "白" }, blue: { c: "#3fa9f5", n: "蓝" }, purple: { c: "#a855f7", n: "紫" }, gold: { c: "#e8b923", n: "金" }, red: { c: "#d33a3a", n: "赤" } };
   const RARITY_W = { white: 25, blue: 35, purple: 25, gold: 12, red: 3 };
+  /* 重复卡折现（单位：元）。钱在游戏里按「万」记账，换算时 /10000 */
+  const DUP_CASH = { white: 300, blue: 1000, purple: 10000, gold: 100000, red: 500000 };
+  function dupCash(rarity) { return DUP_CASH[rarity] || 300; }
+  function cashIn(card) {
+    const yuan = dupCash(card && card.rarity);
+    S.money = Math.round((S.money + yuan / 10000) * 100) / 100;
+    S.dupCash = (S.dupCash || 0) + yuan;
+    return yuan;
+  }
 
   function drawOne() {
     const all = D.talents();
@@ -1434,8 +1486,10 @@ window.GAME = (function () {
     let pool = all.filter(t => t.rarity === rar);
     if (!pool.length) pool = all;
     let card = pick(pool);
-    if ((S.bag || []).indexOf(card.id) >= 0) { card = Object.assign({}, card, { dup: true }); }
-    else { S.bag.push(card.id); S.talents.push(card.id); }
+    if ((S.bag || []).indexOf(card.id) >= 0) {
+      card = Object.assign({}, card, { dup: true });
+      card.cash = cashIn(card);
+    } else { S.bag.push(card.id); S.talents.push(card.id); }
     return card;
   }
 
@@ -1510,11 +1564,17 @@ window.GAME = (function () {
         if (v === "back") return next ? next() : actionScene();
         if (v === "un") { const slot = clamp(i, 0, 4); S.deck[slot] = null; return deckScene(next); }
         const id = v;
+        const all2 = D.talents();
+        const card = all2.filter(t => t.id === id)[0];
+        if ((S.deck || []).indexOf(id) >= 0) {
+          return result("这张已经进卡槽了", `一个卡槽一张，重复上卡没有意义。想换方向就先点卡槽把它卸下来。`, "info", () => deckScene(next));
+        }
         const slot = (S.deck || []).indexOf(null);
         if (slot < 0) {
-          /* 满槽：替换第 1 个 */
-          S.deck[0] = id;
-        } else S.deck[slot] = id;
+          return result("五个槽满了", `先卸一张再装。满槽硬塞第一格这种事，联盟不管，但你的加成会骂人。`, "info", () => deckScene(next));
+        }
+        S.deck[slot] = id;
+        if (card) S.timeline.push({ t: S.tick, text: `把「${card.name}」装进了卡槽` });
         return deckScene(next);
       }
     });
@@ -1968,10 +2028,27 @@ window.GAME = (function () {
   /* ================= 存档 ================= */
   const KEY = "denshen_";
   function save(slot) { try { localStorage.setItem(KEY + slot, JSON.stringify({ S, at: Date.now() })); return true; } catch (e) { return false; } }
+  /* 老存档里可能有重复卡/已不存在的卡：读档时清一遍，一个槽一张 */
+  function sanitizeDeck() {
+    if (!S) return;
+    const ids = {};
+    (D.talents() || []).forEach(t => ids[t.id] = 1);
+    const seen = {};
+    S.deck = (S.deck || []).slice(0, 5);
+    while (S.deck.length < 5) S.deck.push(null);
+    S.deck = S.deck.map(id => {
+      if (!id || !ids[id] || seen[id]) return null;
+      seen[id] = 1; return id;
+    });
+    S.bag = (S.bag || []).filter((id, i, a) => ids[id] && a.indexOf(id) === i);
+    S.talents = (S.talents || []).filter((id, i, a) => ids[id] && a.indexOf(id) === i);
+    S.dupCash = S.dupCash || 0;
+  }
   function load(slot) {
     try {
       const raw = localStorage.getItem(KEY + slot); if (!raw) return null;
       const o = JSON.parse(raw); S = o.S; M = {}; seedRng(S.seed + S.tick);
+      sanitizeDeck();
       return startMonth();
     } catch (e) { return null; }
   }
@@ -2110,7 +2187,7 @@ window.GAME = (function () {
       if (useMe && S.teamId === tid && k === S.pos) { rows.push({ pos: k, st: stEff(), w: 1.35, me: true, name: S.name }); continue; }
       const pid = ((S.roster || {})[tid] || {})[k] || (t && t.roster && t.roster[k]);
       const p = pid ? playerOf(pid) : null;
-      if (p && p.st) rows.push({ pos: k, st: p.st, w: 1, pid: pid, name: p.id || p.name });
+      if (p && p.st) rows.push({ pos: k, st: p.st, w: 1, pid: pid, name: p.name || p.id });
       else rows.push({ pos: k, st: stFromOvr(k, teamPower(tid)), w: 1, name: "替补" });
     }
     return rows;
@@ -2360,10 +2437,22 @@ window.GAME = (function () {
     /* step 0：ban（决胜局才升级成 3 个 ban，还能按掉对面的绝活）*/
     const gNow = (bo.g || 0) + 1;
     const decider = (bo.bestOf === 5) ? gNow === 5 : (bo.wins === 1 && bo.losses === 1);
+    /* 红蓝方：奇数局先选（蓝），偶数局后手（红）。后手能看着对面选克制。 */
+    const blueSide = ((bo.g || 0) % 2) === 0;
     if (bo.step === 0) {
       const banNeed = decider ? 3 : 1;
       bo.bans = bo.bans || [];
-      if (bo.bans.length >= banNeed) { bo.step = 1; return bpScene(); }
+      if (!bo.oppBans) {
+        /* 对面不是傻子：先按你池子里熟练度最高的那几个 */
+        const top = MATCH.heroesFor(S.pos, S.pool, patchMap(), 4).map(x => x.n);
+        bo.oppBans = top.slice(0, banNeed);
+      }
+      const bannedAll0 = (bo.oppBans || []).concat(bo.bans.map(b => b.n));
+      if (bo.bans.length >= banNeed) {
+        bo.step = 1;
+        if (!blueSide && !bo.oppHero) bo.oppHero = MATCH.aiPick(S.pos, rnd, patchMap(), bannedAll0);
+        return bpScene();
+      }
       const comfort = [];
       for (let i = 0; i < 3; i++) {
         const h = MATCH.aiPick(S.pos, rnd, patchMap(), comfort);
@@ -2372,7 +2461,9 @@ window.GAME = (function () {
       const own = MATCH.heroesFor(S.pos, S.pool, patchMap(), 3).map(x => x.n);
       const pool = [];
       comfort.forEach((h, i) => pool.push({ n: h, comfort: true, star: i === 0 }));
-      own.forEach(h => { if (pool.every(x => x.n !== h)) pool.push({ n: h, comfort: false }); });
+      own.forEach(h => { if (bannedAll0.indexOf(h) < 0 && pool.every(x => x.n !== h)) pool.push({ n: h, comfort: false }); });
+      const poolF = pool.filter(x => bannedAll0.indexOf(x.n) < 0);
+      pool.length = 0; poolF.forEach(x => pool.push(x));
       const known = S.coachTrust >= 60;
       const banOpts = pool.map(x => ({
         t: "ban " + x.n, ban: x.n, comfort: !!x.comfort,
@@ -2381,6 +2472,7 @@ window.GAME = (function () {
       banOpts.push({ t: "不 ban，留个位置", ban: "", d: "空 ban。对面会觉得你在装。" });
       return scene({
         type: "bp", step: 0, decider: decider, banNeed: banNeed, bans: bo.bans.map(b => b.n),
+        side: blueSide ? "blue" : "red", oppBans: (bo.oppBans || []).slice(), oppHeroKnown: !blueSide,
         opp: { id: opp.id, name: opp.name, tendency: tendency },
         myOvr: myOvr(), oppPower: Math.round(teamPower(opp.id)),
         coachTip: S.coachTrust >= 60 ? "教练：对面整体想打" + tendency + "，别跟着他们走。" : "",
@@ -2391,21 +2483,35 @@ window.GAME = (function () {
           if (v === "skip") { bo.step = 1; return bpScene(); }
           const o = banOpts[clamp(i, 0, banOpts.length - 1)];
           if (o.ban) bo.bans.push({ n: o.ban, comfort: !!o.comfort });
-          if (bo.bans.length >= banNeed) bo.step = 1;
+          const bannedNow = (bo.oppBans || []).concat(bo.bans.map(b => b.n));
+          if (bo.bans.length >= banNeed) {
+            bo.step = 1;
+            if (!blueSide && !bo.oppHero) bo.oppHero = MATCH.aiPick(S.pos, rnd, patchMap(), bannedNow);
+          }
           return bpScene();
         }
       });
     }
     /* step 1：pick 本命英雄 */
     if (bo.step === 1) {
-      const hs = heroChoices(6);
-      const opts = hs.map(x => ({
-        t: x.n, hero: x.n, prof: x.prof, main: x.n === S.mainHero,
-        d: "熟练度 " + Math.round(x.prof) + (x.buff ? "（版本" + (x.buff > 0 ? "+" : "") + x.buff + "）" : "") + (x.n === S.mainHero ? " · 本命" : ""),
-        ctr: (bo.oppHero ? MATCH.ctrOf(x.n, bo.oppHero).d : 0)
-      }));
+      const bannedAll = (bo.oppBans || []).concat((bo.bans || []).map(b => b.n));
+      const hsPool = heroChoices(40).filter(x => bannedAll.indexOf(x.n) < 0);
+      const hs = hsPool.slice(0, 6);
+      const hInfo = n => (window.DATA_HEROES || []).filter(h => h.n === n)[0] || { tag: [] };
+      const localCtr = bo.oppHero ? MATCH.ctrOf(hs[0] ? hs[0].n : "", bo.oppHero) : null;
+      const opts = hs.map(x => {
+        const ctr = bo.oppHero ? MATCH.ctrOf(x.n, bo.oppHero) : { d: 0, why: "" };
+        return {
+          t: x.n, hero: x.n, prof: x.prof, main: x.n === S.mainHero,
+          tags: (hInfo(x.n).tag || []).slice(0, 2),
+          d: "熟练度 " + Math.round(x.prof) + (x.buff ? "（版本" + (x.buff > 0 ? "+" : "") + x.buff + "）" : "") + (x.n === S.mainHero ? " · 本命" : ""),
+          ctr: Math.round(ctr.d * 1.4), ctrWhy: ctr.why || ""
+        };
+      });
       return scene({
         type: "bp", step: 1, opts: opts, hero: bo.myHero, ban: (bo.bans || []).map(b => b.n).join("、"),
+        side: blueSide ? "blue" : "red", oppBans: (bo.oppBans || []).slice(), oppHero: bo.oppHero || "",
+        pool: { total: heroChoices(40).length, left: hsPool.length },
         opp: { name: opp.name, tendency: tendency }, score: bo.wins + "-" + bo.losses, g: (bo.g || 0) + 1,
         pick(i, v) {
           if (v === "back") { bo.step = 0; return bpScene(); }
@@ -2423,13 +2529,15 @@ window.GAME = (function () {
     });
     return scene({
       type: "bp", step: 2, opts: topts, hero: bo.myHero, ban: (bo.bans || []).map(b => b.n).join("、"),
+      side: blueSide ? "blue" : "red", oppBans: (bo.oppBans || []).slice(),
       opp: { name: opp.name, tendency: tendency }, oppHero: bo.oppHero,
       score: bo.wins + "-" + bo.losses, g: (bo.g || 0) + 1,
       pick(i, v) {
         if (v === "back") { bo.step = 1; return bpScene(); }
         const o = topts[clamp(i, 0, topts.length - 1)];
         bo.tactic = o.k;
-        bo.oppHero = MATCH.aiPick(S.pos, rnd, patchMap(), [bo.myHero]);
+        if (blueSide || !bo.oppHero) bo.oppHero = MATCH.aiPick(S.pos, rnd, patchMap(), [bo.myHero].concat(bo.oppBans || []));
+        if (bo.bans && bo.bans.length) bo.oppBans = null;
         bo.step = 0;
         bo.mom = 0; bo.log = []; bo.usedPause = false; bo.usedBurn = false; bo.usedShout = false;
         bo.nodesLeft = (bo.bestOf === 5 && (bo.g || 0) + 1 === 5) ? 3 : 2;
@@ -2665,8 +2773,13 @@ window.GAME = (function () {
     const br = w && w.bracket ? w.bracket : null;
     return scene({
       type: "worldsMap", round: w ? w.round : 0, rows: rows, bracket: br,
+      canTree: !!(w && w.field && w.field.length >= 8),
       mine: { id: S.teamId, w: (w && (w.field.filter(f => f.id === S.teamId)[0] || {}).w) || 0, l: (w && (w.field.filter(f => f.id === S.teamId)[0] || {}).l) || 0 },
-      pick() { return next ? next() : monthEnd(); }
+      pick(i, v) {
+        if (v === "tree") return worldsTreeScene(() => (w.round >= 5 || w.field.every(f => f.w >= 3 || f.l >= 3)) ? endSwiss() : worldsSwissRound());
+        if (v === "treeonly") return worldsTreeScene(() => worldsMapScene(next));
+        return next ? next() : monthEnd();
+      }
     });
   }
   function worldsSwissRound() {
@@ -2771,6 +2884,96 @@ window.GAME = (function () {
     return result("世界赛 · " + roundName[br.round - 1], `BO5，对面是 ${foe.name}。赢了进下一轮，输了回家。`, "info", () => bpScene());
   }
 
+  /* ================= 世界赛赛程树 =================
+   * 淘汰赛是 8 队三条线，玩家只打自己那一条；这里把整棵树摊开，
+   * 自己打完的按真实比分，别人没打完的按队伍数值 + 爆冷概率模拟。
+   */
+  function treeRng(seed) {
+    let a = (seed || 1) >>> 0;
+    return function () {
+      a = (a + 0x6D2B79F5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  function treeTeam(f) {
+    if (!f) return null;
+    const t = teamOf(f.id) || {};
+    return { id: f.id, name: f.name || t.name || "?", power: Math.round(f.power || teamPower(f.id)), mine: f.id === S.teamId };
+  }
+  function treeSim(a, b, rnd) {
+    const pa = 1 / (1 + Math.exp(-((a.power - b.power) / 9)));
+    let wa = 0, wb = 0;
+    while (wa < 3 && wb < 3) { if (rnd() < pa) wa++; else wb++; }
+    const winA = wa > wb;
+    const winner = winA ? a : b, loser = winA ? b : a;
+    return { wa: wa, wb: wb, winA: winA, score: wa + "-" + wb, upset: winner.power + 3 < loser.power };
+  }
+  function worldsTreeScene(next) {
+    const w = M.worlds;
+    if (!w) return next ? next() : monthEnd();
+    const byId = {};
+    w.field.forEach(f => byId[f.id] = f);
+    const rnd = treeRng((S.seed || 1) + (S._ml ? S._ml.year : 0) * 977 + (w.round || 0) * 31);
+    const br = w.bracket;
+    const rounds = [{ name: "八强", en: "QUARTERFINAL", matches: [] }, { name: "四强", en: "SEMIFINAL", matches: [] }, { name: "决赛", en: "FINAL", matches: [] }];
+
+    /* 八强：有对阵表就用真实对阵，没有就按瑞士轮战绩预测前八 */
+    let qf = null;
+    if (br && br.qf) qf = br.qf;
+    else {
+      const ranked = w.field.slice().sort((a, b) => (b.w - a.w) || (a.l - b.l) || (b.power - a.power));
+      const q = ranked.slice(0, 8).map(f => ({ id: f.id, name: f.name, w: f.w, l: f.l, power: f.power }));
+      if (q.length === 8) qf = MATCH.seedBracket(q);
+    }
+    const sfOf = {}, fOf = {};
+    ((br && br.sf) || []).forEach(p => { [p.a, p.b].forEach(x => { if (x) sfOf[x.id] = 1; }); });
+    ((br && br.f) || []).forEach(p => { [p.a, p.b].forEach(x => { if (x) fOf[x.id] = 1; }); });
+
+    function playRound(list, actualWinners) {
+      return (list || []).map(p => {
+        const a = treeTeam(p.a), b = treeTeam(p.b);
+        if (!a || !b) return { a: a, b: b, score: "-", winA: null, upset: false, done: false };
+        const sim = treeSim(a, b, rnd);
+        let winA = sim.winA;
+        if (actualWinners) {
+          if (actualWinners[a.id]) winA = true;
+          else if (actualWinners[b.id]) winA = false;
+        }
+        return { a: a, b: b, score: sim.score, wa: sim.wa, wb: sim.wb, winA: winA, upset: sim.upset, done: !!actualWinners };
+      });
+    }
+
+    const qfM = playRound(qf, br && br.sf ? sfOf : null);
+    const qfWinners = qfM.map(m => (m.winA === null ? null : (m.winA ? m.a : m.b)));
+    rounds[0].matches = qfM;
+
+    let sfPairs = br && br.sf ? br.sf : null;
+    if (!sfPairs) {
+      sfPairs = [];
+      for (let i = 0; i < qfWinners.length; i += 2) if (qfWinners[i] && qfWinners[i + 1]) sfPairs.push({ a: qfWinners[i], b: qfWinners[i + 1] });
+    }
+    const sfM = playRound(sfPairs, br && br.f ? fOf : null);
+    rounds[1].matches = sfM;
+    const sfWinners = sfM.map(m => (m.winA === null ? null : (m.winA ? m.a : m.b)));
+
+    let fPair = br && br.f ? br.f[0] : null;
+    if (!fPair && sfWinners[0] && sfWinners[1]) fPair = { a: sfWinners[0], b: sfWinners[1] };
+    const fM = playRound(fPair ? [fPair] : [], null);
+    rounds[2].matches = fM;
+    const champ = fM[0] ? (fM[0].winA === null ? null : (fM[0].winA ? fM[0].a : fM[0].b)) : null;
+
+    const predicted = !(br && br.qf);
+    return scene({
+      type: "worldsTree", rounds: rounds, predicted: predicted, champion: champ,
+      year: S._ml ? S._ml.year : 0, myId: S.teamId,
+      pick(i, v) {
+        if (v === "back") return next ? next() : worldsMapScene();
+        return worldsTreeScene(next);
+      }
+    });
+  }
   /* ================= 名场面 =================
    * 玩家不会记住 OVR，会记住「本命剑姬第 5 局单杀，8k 落后翻盘」。
    * 这里只负责记账与造卡，档案室和结局会去读 S.highlights。
