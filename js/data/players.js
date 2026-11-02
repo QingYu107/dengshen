@@ -856,5 +856,768 @@ window.DATA_PLAYERS = {
     trait: ["2019 世界冠军中单", "2024 全程二路解说，嘴比操作快"],
     salary: 6,
     bio: "直播间里最像职业选手的男人。"
+  },
+
+  // ===================== v3 扩充：LPL 补位 =====================
+
+  // ---- EDG（补 TOP / MID / SUP）----
+  p_ale: {
+    name: "Ale", cn: "胡显昭", pos: "TOP", team: "t_edg", age: 25, no: 3,
+    st: {LANE: 86, MECH: 86, GAME: 74, POOL: 78, MENTAL: 62, PHYS: 80, TEAM: 72, FAME: 72},
+    tags: ["剑姬", "贾克斯", "进攻"],
+    trait: ["2024 EDG 的首发上单", "凶起来能把对面单杀到挂机，送起来能把自己队送走"],
+    salary: 4,
+    bio: "上限能单杀任何人，下限能单送任何人。"
+  },
+  p_fisher: {
+    name: "Fisher", cn: "", pos: "MID", team: "t_edg", age: 21, no: 4,
+    st: {LANE: 78, MECH: 78, GAME: 76, POOL: 74, MENTAL: 66, PHYS: 78, TEAM: 72, FAME: 48},
+    tags: ["韩援", "中单", "新人"],
+    trait: ["2024 EDG 引进的韩援中单", "中文课的进步速度比补刀快"],
+    salary: 2,
+    bio: "重建期 EDG 的中单，先学会别崩。"
+  },
+  p_vampire: {
+    name: "Vampire", cn: "", pos: "SUP", team: "t_edg", age: 21, no: 5,
+    st: {LANE: 74, MECH: 76, GAME: 78, POOL: 74, MENTAL: 68, PHYS: 76, TEAM: 78, FAME: 44},
+    tags: ["辅助", "EDG 青训", "开团"],
+    trait: ["EDG 自己养出来的辅助", "冠军基地里最年轻的打工人，奖杯跟他没关系"],
+    salary: 1,
+    bio: "在摆满奖杯的基地里，学着怎么不被打崩。"
+  },
+
+  // ---- RNG（补 TOP / BOT / SUP）----
+  p_qingxun_rng_top: {
+    name: "Qingxun-RNG-TOP", cn: "青训-RNG上单", pos: "TOP", team: "t_rng", age: 20, no: 3,
+    gen: true,
+    st: {LANE: 75, MECH: 73, GAME: 69, POOL: 68, MENTAL: 64, PHYS: 78, TEAM: 70, FAME: 30},
+    tags: ["青训", "上单", "抗压"],
+    trait: ["RNG 青训提上来的上单", "在 RNG 打上单，第一课是学会挨骂"],
+    salary: 1,
+    bio: "RNG 上单位置的耗材，随时准备被换。"
+  },
+  p_lwx: {
+    name: "Lwx", cn: "林炜翔", pos: "BOT", team: "t_rng", age: 26, no: 4,
+    st: {LANE: 84, MECH: 84, GAME: 80, POOL: 80, MENTAL: 74, PHYS: 74, TEAM: 76, FAME: 82},
+    tags: ["2019 世界冠军", "卡莎", "老将"],
+    trait: ["2019 FPX 世界冠军 ADC", "2024 转投 RNG，从冠军班底打回保级区"],
+    salary: 6,
+    bio: "冠军 ADC 的晚年，在废墟里数伤疤。"
+  },
+  p_ming: {
+    name: "Ming", cn: "史森明", pos: "SUP", team: "t_rng", age: 26, no: 5,
+    st: {LANE: 78, MECH: 80, GAME: 86, POOL: 84, MENTAL: 80, PHYS: 72, TEAM: 84, FAME: 78},
+    tags: ["三届 MSI 冠军", "牛头", "指挥"],
+    trait: ["2018、2021、2022 三届 MSI 冠军辅助", "2024 复出回 RNG，收拾一个烂摊子"],
+    salary: 5,
+    bio: "拿了三个 MSI，回来给保级队当保姆。"
+  },
+
+  // ---- IG（补 JUG / MID / SUP）----
+  p_leyan: {
+    name: "Leyan", cn: "", pos: "JUG", team: "t_ig", age: 23, no: 3,
+    st: {LANE: 78, MECH: 82, GAME: 76, POOL: 76, MENTAL: 66, PHYS: 80, TEAM: 72, FAME: 62},
+    tags: ["盲僧", "野核", "IG"],
+    trait: ["IG 打野，出道时被吹成天才", "2024 跟着 IG 一起沉到底"],
+    salary: 2,
+    bio: "IG 最后一个还敢入侵对面野区的人。"
+  },
+  p_dove: {
+    name: "Dove", cn: "", pos: "MID", team: "t_ig", age: 23, no: 4,
+    st: {LANE: 78, MECH: 78, GAME: 74, POOL: 74, MENTAL: 68, PHYS: 78, TEAM: 72, FAME: 48},
+    tags: ["韩援", "中单", "稳"],
+    trait: ["IG 的韩援中单", "打得不坏不好，正好配得上这支 IG"],
+    salary: 2,
+    bio: "韩援中单的中间态，不上不下不吵不闹。"
+  },
+  p_wink: {
+    name: "Wink", cn: "", pos: "SUP", team: "t_ig", age: 22, no: 5,
+    st: {LANE: 76, MECH: 76, GAME: 78, POOL: 76, MENTAL: 70, PHYS: 76, TEAM: 74, FAME: 44},
+    tags: ["辅助", "开团", "IG"],
+    trait: ["IG 下路的辅助", "在一支年年重建的队里，能活着就不错"],
+    salary: 1,
+    bio: "IG 换人名单里少数没被换掉的那个。"
+  },
+
+  // ---- FPX（补 SUP）----
+  p_qingxun_fpx_sup: {
+    name: "Qingxun-FPX-SUP", cn: "青训-FPX辅助", pos: "SUP", team: "t_fpx", age: 20, no: 5,
+    gen: true,
+    st: {LANE: 73, MECH: 75, GAME: 75, POOL: 73, MENTAL: 66, PHYS: 77, TEAM: 75, FAME: 28},
+    tags: ["青训", "辅助", "开团"],
+    trait: ["FPX 青训辅助", "2019 的冠军旗还挂在墙上，队里已经没人会赢了"],
+    salary: 1,
+    bio: "在冠军奖杯旁边打 2024 的比赛。"
+  },
+
+  // ---- WE（补 BOT / SUP）----
+  p_qingxun_we_bot: {
+    name: "Qingxun-WE-BOT", cn: "青训-WE射手", pos: "BOT", team: "t_we", age: 19, no: 4,
+    gen: true,
+    st: {LANE: 75, MECH: 75, GAME: 67, POOL: 67, MENTAL: 62, PHYS: 77, TEAM: 70, FAME: 28},
+    tags: ["青训", "ADC", "年轻"],
+    trait: ["WE 青训提上来的 ADC", "第一年就被教会什么叫 LPL 的下路"],
+    salary: 1,
+    bio: "WE 下路的又一个新面孔。"
+  },
+  p_qingxun_we_sup: {
+    name: "Qingxun-WE-SUP", cn: "青训-WE辅助", pos: "SUP", team: "t_we", age: 20, no: 5,
+    gen: true,
+    st: {LANE: 72, MECH: 73, GAME: 75, POOL: 73, MENTAL: 66, PHYS: 75, TEAM: 75, FAME: 26},
+    tags: ["青训", "辅助", "稳"],
+    trait: ["WE 青训辅助", "跟着队伍在积分榜底部学做人"],
+    salary: 1,
+    bio: "WE 下路的另一半耗材。"
+  },
+
+  // ---- OMG（补 MID / BOT）----
+  p_qingxun_omg_mid: {
+    name: "Qingxun-OMG-MID", cn: "青训-OMG中单", pos: "MID", team: "t_omg", age: 21, no: 4,
+    gen: true,
+    st: {LANE: 75, MECH: 75, GAME: 73, POOL: 71, MENTAL: 66, PHYS: 77, TEAM: 72, FAME: 32},
+    tags: ["青训", "中单", "刺客"],
+    trait: ["OMG 青训中单", "在 shanji 的光环下打中单，赢了没人夸，输了全是你"],
+    salary: 1,
+    bio: "OMG 中路的临时工。"
+  },
+  p_qingxun_omg_bot: {
+    name: "Qingxun-OMG-BOT", cn: "青训-OMG射手", pos: "BOT", team: "t_omg", age: 20, no: 5,
+    gen: true,
+    st: {LANE: 75, MECH: 75, GAME: 69, POOL: 69, MENTAL: 64, PHYS: 77, TEAM: 70, FAME: 30},
+    tags: ["青训", "ADC", "敢打"],
+    trait: ["OMG 青训 ADC", "四保一里那个被保的，通常也第一个死"],
+    salary: 1,
+    bio: "OMG 下路的消耗品。"
+  },
+
+  // ---- RA（补 TOP / MID / BOT / SUP）----
+  p_qingxun_ra_top: {
+    name: "Qingxun-RA-TOP", cn: "青训-RA上单", pos: "TOP", team: "t_ra", age: 20, no: 2,
+    gen: true,
+    st: {LANE: 73, MECH: 73, GAME: 67, POOL: 67, MENTAL: 62, PHYS: 77, TEAM: 68, FAME: 26},
+    tags: ["青训", "上单", "抗压"],
+    trait: ["RA 青训上单", "在 RA 打上单，最大的敌人是自家打野"],
+    salary: 1,
+    bio: "RA 上路的无名之辈。"
+  },
+  p_qingxun_ra_mid: {
+    name: "Qingxun-RA-MID", cn: "青训-RA中单", pos: "MID", team: "t_ra", age: 20, no: 3,
+    gen: true,
+    st: {LANE: 73, MECH: 73, GAME: 71, POOL: 69, MENTAL: 64, PHYS: 75, TEAM: 68, FAME: 26},
+    tags: ["青训", "中单", "稳"],
+    trait: ["RA 青训中单", "一整个赛季的目标是别被单杀十次"],
+    salary: 1,
+    bio: "RA 中路的人形沙包。"
+  },
+  p_qingxun_ra_bot: {
+    name: "Qingxun-RA-BOT", cn: "青训-RA射手", pos: "BOT", team: "t_ra", age: 19, no: 4,
+    gen: true,
+    st: {LANE: 73, MECH: 75, GAME: 67, POOL: 67, MENTAL: 60, PHYS: 77, TEAM: 68, FAME: 26},
+    tags: ["青训", "ADC", "新人"],
+    trait: ["RA 青训 ADC", "在下游队打 ADC，数据全靠对面赏脸"],
+    salary: 1,
+    bio: "RA 下路的新人，明年还在不在不好说。"
+  },
+  p_qingxun_ra_sup: {
+    name: "Qingxun-RA-SUP", cn: "青训-RA辅助", pos: "SUP", team: "t_ra", age: 20, no: 5,
+    gen: true,
+    st: {LANE: 70, MECH: 72, GAME: 73, POOL: 71, MENTAL: 64, PHYS: 75, TEAM: 70, FAME: 24},
+    tags: ["青训", "辅助", "视野"],
+    trait: ["RA 青训辅助", "全队最清醒的人，也是最没话语权的人"],
+    salary: 1,
+    bio: "RA 唯一会做视野的。"
+  },
+
+  // ---- TT（补 TOP / JUG / BOT / SUP）----
+  p_hoya: {
+    name: "Hoya", cn: "", pos: "TOP", team: "t_tt", age: 24, no: 2,
+    st: {LANE: 78, MECH: 76, GAME: 72, POOL: 74, MENTAL: 66, PHYS: 78, TEAM: 70, FAME: 46},
+    tags: ["韩援", "上单", "抗压"],
+    trait: ["TT 的韩援上单", "在 LCK 混不下去，来 LPL 下游队接着混"],
+    salary: 2,
+    bio: "韩援流水线上的又一站。"
+  },
+  p_beichuan: {
+    name: "Beichuan", cn: "北川", pos: "JUG", team: "t_tt", age: 22, no: 3,
+    st: {LANE: 76, MECH: 78, GAME: 76, POOL: 74, MENTAL: 66, PHYS: 78, TEAM: 72, FAME: 44},
+    tags: ["打野", "节奏", "TT"],
+    trait: ["TT 的首发打野", "全队最忙的人，忙着给三路擦屁股"],
+    salary: 2,
+    bio: "TT 的发动机，功率不大。"
+  },
+  p_1xn: {
+    name: "1xn", cn: "", pos: "BOT", team: "t_tt", age: 22, no: 4,
+    st: {LANE: 78, MECH: 78, GAME: 72, POOL: 74, MENTAL: 66, PHYS: 76, TEAM: 70, FAME: 42},
+    tags: ["ADC", "后期", "TT"],
+    trait: ["TT 的 ADC", "在下游队稳定输出，也稳定输"],
+    salary: 2,
+    bio: "数据不错，因为没人研究他。"
+  },
+  p_qingxun_tt_sup: {
+    name: "Qingxun-TT-SUP", cn: "青训-TT辅助", pos: "SUP", team: "t_tt", age: 20, no: 5,
+    gen: true,
+    st: {LANE: 71, MECH: 73, GAME: 73, POOL: 71, MENTAL: 64, PHYS: 74, TEAM: 70, FAME: 24},
+    tags: ["青训", "辅助", "背锅"],
+    trait: ["TT 青训辅助", "跟 1xn 搭档，负责输比赛时被开会"],
+    salary: 1,
+    bio: "TT 下路的背锅位。"
+  },
+
+  // ---- UP（补满五路）----
+  p_doggo: {
+    name: "Doggo", cn: "", pos: "BOT", team: "t_up", age: 23, no: 4,
+    st: {LANE: 78, MECH: 78, GAME: 72, POOL: 74, MENTAL: 68, PHYS: 76, TEAM: 70, FAME: 50},
+    tags: ["ADC", "后期", "外援"],
+    trait: ["2024 在 UP 打 ADC", "队伍年年垫底，他的数据年年不差"],
+    salary: 2,
+    bio: "在垫底队里刷出漂亮数据的专业人士。"
+  },
+  p_yuekai: {
+    name: "Yuekai", cn: "", pos: "MID", team: "t_up", age: 22, no: 3,
+    st: {LANE: 74, MECH: 74, GAME: 72, POOL: 72, MENTAL: 66, PHYS: 74, TEAM: 70, FAME: 36},
+    tags: ["中单", "稳", "UP"],
+    trait: ["UP 的中单", "打了几年，最大的成就还是“还在打”"],
+    salary: 1,
+    bio: "UP 中路的常驻人口。"
+  },
+  p_qingxun_up_top: {
+    name: "Qingxun-UP-TOP", cn: "青训-UP上单", pos: "TOP", team: "t_up", age: 20, no: 1,
+    gen: true,
+    st: {LANE: 71, MECH: 71, GAME: 67, POOL: 67, MENTAL: 62, PHYS: 77, TEAM: 66, FAME: 22},
+    tags: ["青训", "上单", "新人"],
+    trait: ["UP 青训上单", "在 UP 打上单，一年换三个队友"],
+    salary: 1,
+    bio: "UP 的上单，随时准备失业。"
+  },
+  p_qingxun_up_jug: {
+    name: "Qingxun-UP-JUG", cn: "青训-UP打野", pos: "JUG", team: "t_up", age: 20, no: 2,
+    gen: true,
+    st: {LANE: 69, MECH: 73, GAME: 71, POOL: 69, MENTAL: 62, PHYS: 75, TEAM: 68, FAME: 22},
+    tags: ["青训", "打野", "莽"],
+    trait: ["UP 青训打野", "三级抓下，四级被抓，五级开始挂机"],
+    salary: 1,
+    bio: "UP 野区的过客。"
+  },
+  p_qingxun_up_sup: {
+    name: "Qingxun-UP-SUP", cn: "青训-UP辅助", pos: "SUP", team: "t_up", age: 20, no: 5,
+    gen: true,
+    st: {LANE: 69, MECH: 71, GAME: 71, POOL: 69, MENTAL: 62, PHYS: 73, TEAM: 68, FAME: 22},
+    tags: ["青训", "辅助", "努力"],
+    trait: ["UP 青训辅助", "全队最努力的人，努力也赢不了"],
+    salary: 1,
+    bio: "UP 的辅助，做着全联盟最没意义的视野。"
+  },
+
+  // ---- AL（补满五路）----
+  p_zdz: {
+    name: "Zdz", cn: "", pos: "TOP", team: "t_al", age: 24, no: 1,
+    st: {LANE: 80, MECH: 78, GAME: 74, POOL: 76, MENTAL: 68, PHYS: 78, TEAM: 72, FAME: 52},
+    tags: ["剑姬", "上单", "单带"],
+    trait: ["AL 的上单", "打得好能单带穿一路，打不好被人单带穿一路"],
+    salary: 3,
+    bio: "AL 唯一能上集锦的人。"
+  },
+  p_croco: {
+    name: "Croco", cn: "", pos: "JUG", team: "t_al", age: 23, no: 2,
+    st: {LANE: 76, MECH: 78, GAME: 78, POOL: 74, MENTAL: 66, PHYS: 78, TEAM: 72, FAME: 44},
+    tags: ["打野", "韩援", "节奏"],
+    trait: ["AL 的韩援打野", "一年换一个队，永远在找工作"],
+    salary: 2,
+    bio: "打野界的候鸟。"
+  },
+  p_qingxun_al_mid: {
+    name: "Qingxun-AL-MID", cn: "青训-AL中单", pos: "MID", team: "t_al", age: 20, no: 3,
+    gen: true,
+    st: {LANE: 73, MECH: 75, GAME: 71, POOL: 69, MENTAL: 64, PHYS: 75, TEAM: 68, FAME: 26},
+    tags: ["青训", "中单", "透明"],
+    trait: ["AL 青训中单", "在 AL 打中单，最大的本事是没人记得他"],
+    salary: 1,
+    bio: "AL 中路的人形背景板。"
+  },
+  p_qingxun_al_bot: {
+    name: "Qingxun-AL-BOT", cn: "青训-AL射手", pos: "BOT", team: "t_al", age: 20, no: 4,
+    gen: true,
+    st: {LANE: 73, MECH: 73, GAME: 69, POOL: 69, MENTAL: 62, PHYS: 75, TEAM: 68, FAME: 24},
+    tags: ["青训", "ADC", "新手"],
+    trait: ["AL 青训 ADC", "输出靠队友开团，队友不开就等死"],
+    salary: 1,
+    bio: "AL 的下路输出，通常只存在于数据面板。"
+  },
+  p_qingxun_al_sup: {
+    name: "Qingxun-AL-SUP", cn: "青训-AL辅助", pos: "SUP", team: "t_al", age: 20, no: 5,
+    gen: true,
+    st: {LANE: 71, MECH: 71, GAME: 71, POOL: 69, MENTAL: 62, PHYS: 73, TEAM: 68, FAME: 24},
+    tags: ["青训", "辅助", "摆烂"],
+    trait: ["AL 青训辅助", "跟着队伍一个赛季赢不了几场"],
+    salary: 1,
+    bio: "AL 的辅助，一个赛季下来连自己都不信自己。"
+  },
+
+  // ---- NIP（补 TOP / JUG / BOT / SUP）----
+  p_qingxun_nip_top: {
+    name: "Qingxun-NIP-TOP", cn: "青训-NIP上单", pos: "TOP", team: "t_nip", age: 21, no: 1,
+    gen: true,
+    st: {LANE: 75, MECH: 75, GAME: 71, POOL: 69, MENTAL: 66, PHYS: 77, TEAM: 70, FAME: 30},
+    tags: ["青训", "上单", "抗压"],
+    trait: ["NIP 青训上单", "在 rookie 身边打上单，打不好第二天就没了"],
+    salary: 1,
+    bio: "NIP 上路的位置，坐上去就开始倒计时。"
+  },
+  p_qingxun_nip_jug: {
+    name: "Qingxun-NIP-JUG", cn: "青训-NIP打野", pos: "JUG", team: "t_nip", age: 21, no: 2,
+    gen: true,
+    st: {LANE: 71, MECH: 75, GAME: 73, POOL: 71, MENTAL: 66, PHYS: 75, TEAM: 70, FAME: 28},
+    tags: ["青训", "打野", "帮中"],
+    trait: ["NIP 青训打野", "主要工作是把野怪让给中路"],
+    salary: 1,
+    bio: "NIP 的野区保姆。"
+  },
+  p_photic: {
+    name: "Photic", cn: "", pos: "BOT", team: "t_nip", age: 24, no: 4,
+    st: {LANE: 80, MECH: 80, GAME: 74, POOL: 76, MENTAL: 68, PHYS: 76, TEAM: 72, FAME: 56},
+    tags: ["ADC", "输出", "NIP"],
+    trait: ["NIP 的 ADC", "一直被当成二流 ADC，每年都有人替他不服"],
+    salary: 3,
+    bio: "被低估了五年，也没见谁真抬举过他。"
+  },
+  p_qingxun_nip_sup: {
+    name: "Qingxun-NIP-SUP", cn: "青训-NIP辅助", pos: "SUP", team: "t_nip", age: 20, no: 5,
+    gen: true,
+    st: {LANE: 71, MECH: 73, GAME: 73, POOL: 71, MENTAL: 64, PHYS: 73, TEAM: 70, FAME: 24},
+    tags: ["青训", "辅助", "开团"],
+    trait: ["NIP 青训辅助", "跟 photic 搭档，负责被骂"],
+    salary: 1,
+    bio: "NIP 下路的另一半。"
+  },
+
+  // ---- LGD（补 MID / BOT / SUP）----
+  p_haichao: {
+    name: "Haichao", cn: "", pos: "MID", team: "t_lgd", age: 22, no: 3,
+    st: {LANE: 78, MECH: 76, GAME: 74, POOL: 74, MENTAL: 66, PHYS: 76, TEAM: 70, FAME: 40},
+    tags: ["中单", "法师", "LGD"],
+    trait: ["LGD 的中单", "在快乐战队里唯一还在认真打的人"],
+    salary: 2,
+    bio: "LGD 最正常的一个，所以最不正常。"
+  },
+  p_qingxun_lgd_bot: {
+    name: "Qingxun-LGD-BOT", cn: "青训-LGD射手", pos: "BOT", team: "t_lgd", age: 20, no: 4,
+    gen: true,
+    st: {LANE: 71, MECH: 73, GAME: 69, POOL: 69, MENTAL: 62, PHYS: 75, TEAM: 68, FAME: 24},
+    tags: ["青训", "ADC", "新人"],
+    trait: ["LGD 青训 ADC", "在 LGD 打 ADC，快乐是第一位的"],
+    salary: 1,
+    bio: "LGD 下路的新人，赢不赢另说。"
+  },
+  p_qingxun_lgd_sup: {
+    name: "Qingxun-LGD-SUP", cn: "青训-LGD辅助", pos: "SUP", team: "t_lgd", age: 20, no: 5,
+    gen: true,
+    st: {LANE: 69, MECH: 71, GAME: 71, POOL: 69, MENTAL: 62, PHYS: 73, TEAM: 68, FAME: 22},
+    tags: ["青训", "辅助", "摆烂"],
+    trait: ["LGD 青训辅助", "快乐游戏的最后一块拼图"],
+    salary: 1,
+    bio: "LGD 的辅助，来都来了。"
+  },
+
+  // ===================== v3 扩充：LCK 补位 =====================
+
+  // ---- DK（补 SUP）----
+  p_kellin: {
+    name: "Kellin", cn: "", pos: "SUP", team: "t_dk", age: 24, no: 5,
+    st: {LANE: 78, MECH: 82, GAME: 82, POOL: 80, MENTAL: 74, PHYS: 74, TEAM: 82, FAME: 66},
+    tags: ["辅助", "软辅", "DK"],
+    trait: ["2024 DK 的辅助", "软辅玩得漂亮，硬辅一开团就心虚"],
+    salary: 3,
+    bio: "团战开得好就是秀，开不好就是送。"
+  },
+
+  // ---- DRX（补 JUG / MID / BOT / SUP）----
+  p_teddy: {
+    name: "Teddy", cn: "", pos: "BOT", team: "t_drx", age: 26, no: 4,
+    st: {LANE: 82, MECH: 84, GAME: 78, POOL: 80, MENTAL: 74, PHYS: 74, TEAM: 76, FAME: 70},
+    tags: ["ADC", "老将", "EZ"],
+    trait: ["2018-2019 SKT 的 ADC", "2024 在 DRX 打完最后一段职业生涯"],
+    salary: 3,
+    bio: "SKT 旧将的最后一站，DRX 的过渡品。"
+  },
+  p_qingxun_drx_jug: {
+    name: "Qingxun-DRX-JUG", cn: "青训-DRX打野", pos: "JUG", team: "t_drx", age: 20, no: 2,
+    gen: true,
+    st: {LANE: 71, MECH: 73, GAME: 73, POOL: 71, MENTAL: 64, PHYS: 75, TEAM: 70, FAME: 26},
+    tags: ["青训", "打野", "莽"],
+    trait: ["DRX 青训打野", "在重建队里练级，输赢都算经验"],
+    salary: 1,
+    bio: "DRX 野区的年轻人。"
+  },
+  p_qingxun_drx_mid: {
+    name: "Qingxun-DRX-MID", cn: "青训-DRX中单", pos: "MID", team: "t_drx", age: 20, no: 3,
+    gen: true,
+    st: {LANE: 73, MECH: 73, GAME: 71, POOL: 71, MENTAL: 64, PHYS: 73, TEAM: 70, FAME: 26},
+    tags: ["青训", "中单", "稳"],
+    trait: ["DRX 青训中单", "队里没人教他，只能自己看录像"],
+    salary: 1,
+    bio: "DRX 中路的学徒。"
+  },
+  p_qingxun_drx_sup: {
+    name: "Qingxun-DRX-SUP", cn: "青训-DRX辅助", pos: "SUP", team: "t_drx", age: 20, no: 5,
+    gen: true,
+    st: {LANE: 69, MECH: 71, GAME: 71, POOL: 69, MENTAL: 64, PHYS: 73, TEAM: 70, FAME: 24},
+    tags: ["青训", "辅助", "视野"],
+    trait: ["DRX 青训辅助", "跟 teddy 搭档，学怎么给老将喂刀"],
+    salary: 1,
+    bio: "DRX 的辅助，给老将打下手。"
+  },
+
+  // ---- NS（补满五路）----
+  p_qingxun_ns_top: {
+    name: "Qingxun-NS-TOP", cn: "青训-NS上单", pos: "TOP", team: "t_ns", age: 21, no: 1,
+    gen: true,
+    st: {LANE: 73, MECH: 73, GAME: 69, POOL: 69, MENTAL: 64, PHYS: 75, TEAM: 68, FAME: 26},
+    tags: ["青训", "上单", "抗压"],
+    trait: ["NS 青训上单", "在 LCK 垫底队打上单，扛压扛到麻木"],
+    salary: 1,
+    bio: "NS 上路的新人，输习惯了。"
+  },
+  p_qingxun_ns_jug: {
+    name: "Qingxun-NS-JUG", cn: "青训-NS打野", pos: "JUG", team: "t_ns", age: 20, no: 2,
+    gen: true,
+    st: {LANE: 69, MECH: 73, GAME: 71, POOL: 69, MENTAL: 62, PHYS: 75, TEAM: 68, FAME: 24},
+    tags: ["青训", "打野", "莽"],
+    trait: ["NS 青训打野", "入侵反野全靠一腔热血"],
+    salary: 1,
+    bio: "NS 野区的热血青年。"
+  },
+  p_qingxun_ns_mid: {
+    name: "Qingxun-NS-MID", cn: "青训-NS中单", pos: "MID", team: "t_ns", age: 20, no: 3,
+    gen: true,
+    st: {LANE: 73, MECH: 71, GAME: 69, POOL: 69, MENTAL: 62, PHYS: 73, TEAM: 68, FAME: 24},
+    tags: ["青训", "中单", "刺客"],
+    trait: ["NS 青训中单", "只会玩刺客，被 ban 了就没事干"],
+    salary: 1,
+    bio: "NS 中路的刺客少年。"
+  },
+  p_qingxun_ns_bot: {
+    name: "Qingxun-NS-BOT", cn: "青训-NS射手", pos: "BOT", team: "t_ns", age: 20, no: 4,
+    gen: true,
+    st: {LANE: 71, MECH: 73, GAME: 67, POOL: 67, MENTAL: 60, PHYS: 75, TEAM: 66, FAME: 22},
+    tags: ["青训", "ADC", "后期"],
+    trait: ["NS 青训 ADC", "一整个赛季没打过几场有意义的后期"],
+    salary: 1,
+    bio: "NS 下路的输出，通常只存在十分钟。"
+  },
+  p_qingxun_ns_sup: {
+    name: "Qingxun-NS-SUP", cn: "青训-NS辅助", pos: "SUP", team: "t_ns", age: 20, no: 5,
+    gen: true,
+    st: {LANE: 67, MECH: 71, GAME: 71, POOL: 69, MENTAL: 62, PHYS: 71, TEAM: 68, FAME: 22},
+    tags: ["青训", "辅助", "开团"],
+    trait: ["NS 青训辅助", "开团开到自己队团灭那种"],
+    salary: 1,
+    bio: "NS 的辅助，开团和送团一念之间。"
+  },
+
+  // ---- BRO（补 JUG / MID / BOT / SUP）----
+  p_gideon: {
+    name: "Gideon", cn: "", pos: "JUG", team: "t_bro", age: 23, no: 2,
+    st: {LANE: 74, MECH: 78, GAME: 78, POOL: 76, MENTAL: 68, PHYS: 76, TEAM: 74, FAME: 46},
+    tags: ["打野", "节奏", "BRO"],
+    trait: ["BRO 的打野", "在 LCK 中下游队里当发动机"],
+    salary: 2,
+    bio: "BRO 少数能上集锦的人。"
+  },
+  p_karis: {
+    name: "Karis", cn: "", pos: "MID", team: "t_bro", age: 22, no: 3,
+    st: {LANE: 76, MECH: 76, GAME: 72, POOL: 74, MENTAL: 66, PHYS: 74, TEAM: 72, FAME: 44},
+    tags: ["中单", "法师", "BRO"],
+    trait: ["2024 BRO 的中单", "打得稳，稳到没人记得"],
+    salary: 2,
+    bio: "BRO 中路的标准件。"
+  },
+  p_envyy: {
+    name: "Envyy", cn: "", pos: "BOT", team: "t_bro", age: 23, no: 4,
+    st: {LANE: 76, MECH: 76, GAME: 72, POOL: 74, MENTAL: 66, PHYS: 74, TEAM: 72, FAME: 42},
+    tags: ["ADC", "后期", "BRO"],
+    trait: ["BRO 的 ADC", "数据平平，队伍更平"],
+    salary: 2,
+    bio: "BRO 下路的稳定输出，稳定输。"
+  },
+  p_effort: {
+    name: "Effort", cn: "", pos: "SUP", team: "t_bro", age: 25, no: 5,
+    st: {LANE: 76, MECH: 78, GAME: 78, POOL: 78, MENTAL: 70, PHYS: 72, TEAM: 76, FAME: 54},
+    tags: ["辅助", "开团", "老将"],
+    trait: ["曾随 T1 打过多年的辅助", "离开豪门后一直在中下游队漂"],
+    salary: 2,
+    bio: "豪门出走的辅助，在中下游队找活路。"
+  },
+
+  // ---- KDF（补满五路）----
+  p_dudu: {
+    name: "DuDu", cn: "", pos: "TOP", team: "t_kdf", age: 24, no: 1,
+    st: {LANE: 78, MECH: 78, GAME: 72, POOL: 74, MENTAL: 66, PHYS: 76, TEAM: 70, FAME: 44},
+    tags: ["上单", "单带", "KDF"],
+    trait: ["KDF 的上单", "单带是他的信仰，被抓是他的日常"],
+    salary: 2,
+    bio: "KDF 的上单，带线带到队友全死了。"
+  },
+  p_youngjae: {
+    name: "YoungJae", cn: "", pos: "JUG", team: "t_kdf", age: 24, no: 2,
+    st: {LANE: 72, MECH: 76, GAME: 74, POOL: 72, MENTAL: 64, PHYS: 76, TEAM: 72, FAME: 40},
+    tags: ["打野", "辅助型", "KDF"],
+    trait: ["KDF 的打野", "干着最脏的活，拿着最少的赞誉"],
+    salary: 2,
+    bio: "KDF 的野区苦力。"
+  },
+  p_bulldog: {
+    name: "BuLLDoG", cn: "", pos: "MID", team: "t_kdf", age: 23, no: 3,
+    st: {LANE: 76, MECH: 76, GAME: 72, POOL: 74, MENTAL: 66, PHYS: 74, TEAM: 70, FAME: 40},
+    tags: ["中单", "法师", "KDF"],
+    trait: ["KDF 的中单", "队伍哑火时，他也哑火"],
+    salary: 2,
+    bio: "KDF 中路，一眼望到头。"
+  },
+  p_taeyoon: {
+    name: "Taeyoon", cn: "", pos: "BOT", team: "t_kdf", age: 23, no: 4,
+    st: {LANE: 76, MECH: 76, GAME: 72, POOL: 72, MENTAL: 64, PHYS: 74, TEAM: 70, FAME: 40},
+    tags: ["ADC", "后期", "KDF"],
+    trait: ["KDF 的 ADC", "在下游队打 ADC，职业生涯原地踏步"],
+    salary: 2,
+    bio: "KDF 的下路输出，和队伍一起原地踏步。"
+  },
+  p_andil: {
+    name: "Andil", cn: "", pos: "SUP", team: "t_kdf", age: 22, no: 5,
+    st: {LANE: 74, MECH: 76, GAME: 76, POOL: 76, MENTAL: 66, PHYS: 72, TEAM: 74, FAME: 38},
+    tags: ["辅助", "软辅", "KDF"],
+    trait: ["KDF 的辅助", "软辅能玩出花，硬辅一开团就完"],
+    salary: 1,
+    bio: "KDF 的辅助，软辅是他的护身符。"
+  },
+
+  // ---- BFO（补 TOP / JUG / BOT / SUP）----
+  p_clear: {
+    name: "Clear", cn: "", pos: "TOP", team: "t_bfo", age: 22, no: 1,
+    st: {LANE: 76, MECH: 76, GAME: 70, POOL: 72, MENTAL: 64, PHYS: 76, TEAM: 68, FAME: 38},
+    tags: ["上单", "抗压", "BFO"],
+    trait: ["BFO 的上单", "在全新队伍里打上单，连队名都没人念得顺"],
+    salary: 2,
+    bio: "BFO 的上单，队名比人出名。"
+  },
+  p_raptor: {
+    name: "Raptor", cn: "", pos: "JUG", team: "t_bfo", age: 23, no: 2,
+    st: {LANE: 72, MECH: 76, GAME: 74, POOL: 72, MENTAL: 64, PHYS: 76, TEAM: 70, FAME: 36},
+    tags: ["打野", "节奏", "BFO"],
+    trait: ["BFO 的打野", "队伍的新人王，也是唯一会做视野的"],
+    salary: 2,
+    bio: "BFO 野区的顶梁柱，因为是唯一的柱子。"
+  },
+  p_qingxun_bfo_bot: {
+    name: "Qingxun-BFO-BOT", cn: "青训-BFO射手", pos: "BOT", team: "t_bfo", age: 20, no: 4,
+    gen: true,
+    st: {LANE: 71, MECH: 73, GAME: 67, POOL: 67, MENTAL: 60, PHYS: 75, TEAM: 66, FAME: 20},
+    tags: ["青训", "ADC", "新人"],
+    trait: ["BFO 青训 ADC", "在 LCK 最没存在感的下路"],
+    salary: 1,
+    bio: "BFO 下路的新人，明年可能就没这支队了。"
+  },
+  p_qingxun_bfo_sup: {
+    name: "Qingxun-BFO-SUP", cn: "青训-BFO辅助", pos: "SUP", team: "t_bfo", age: 20, no: 5,
+    gen: true,
+    st: {LANE: 69, MECH: 71, GAME: 71, POOL: 69, MENTAL: 60, PHYS: 71, TEAM: 66, FAME: 20},
+    tags: ["青训", "辅助", "视野"],
+    trait: ["BFO 青训辅助", "在一支可能明年就解散的队里打辅助"],
+    salary: 1,
+    bio: "BFO 的辅助，做着全联盟最没用的视野。"
+  },
+
+  // ===================== v3 扩充：LEC 补位 =====================
+
+  // ---- FNC（补 SUP）----
+  p_qingxun_fnc_sup: {
+    name: "Qingxun-FNC-SUP", cn: "青训-FNC辅助", pos: "SUP", team: "t_fnc", age: 20, no: 5,
+    gen: true,
+    st: {LANE: 73, MECH: 75, GAME: 75, POOL: 73, MENTAL: 70, PHYS: 75, TEAM: 77, FAME: 30},
+    tags: ["青训", "辅助", "开团"],
+    trait: ["FNC 青训辅助", "给 noah 打下手，先学会别把 EU 冠军的脸丢光"],
+    salary: 1,
+    bio: "FNC 下路的补丁，缝上去就指望别掉。"
+  },
+
+  // ---- MAD（补 MID / SUP）----
+  p_fresskowy: {
+    name: "Fresskowy", cn: "", pos: "MID", team: "t_mad", age: 23, no: 3,
+    st: {LANE: 78, MECH: 78, GAME: 74, POOL: 76, MENTAL: 70, PHYS: 74, TEAM: 72, FAME: 42},
+    tags: ["中单", "EU", "法师"],
+    trait: ["MAD 的中单", "EU 中单流水线上又一个合格品"],
+    salary: 2,
+    bio: "EU 中单量产线的标准产出。"
+  },
+  p_alvaro: {
+    name: "Alvaro", cn: "", pos: "SUP", team: "t_mad", age: 23, no: 5,
+    st: {LANE: 74, MECH: 76, GAME: 76, POOL: 74, MENTAL: 70, PHYS: 72, TEAM: 74, FAME: 38},
+    tags: ["辅助", "开团", "MAD"],
+    trait: ["MAD 的辅助", "开团敢开，开完就只能看队友"],
+    salary: 2,
+    bio: "MAD 的辅助，开团从不犹豫，团灭从不缺席。"
+  },
+
+  // ---- BDS（补 BOT）----
+  p_qingxun_bds_bot: {
+    name: "Qingxun-BDS-BOT", cn: "青训-BDS射手", pos: "BOT", team: "t_bds", age: 21, no: 4,
+    gen: true,
+    st: {LANE: 75, MECH: 75, GAME: 71, POOL: 71, MENTAL: 68, PHYS: 75, TEAM: 72, FAME: 28},
+    tags: ["青训", "ADC", "新人"],
+    trait: ["BDS 青训 ADC", "队里有两个法国老油条，他负责挨打"],
+    salary: 1,
+    bio: "BDS 下路的年轻炮灰。"
+  },
+
+  // ---- RGE（补 TOP / JUG / SUP）----
+  p_qingxun_rge_top: {
+    name: "Qingxun-RGE-TOP", cn: "青训-RGE上单", pos: "TOP", team: "t_rge", age: 21, no: 1,
+    gen: true,
+    st: {LANE: 73, MECH: 73, GAME: 69, POOL: 69, MENTAL: 68, PHYS: 75, TEAM: 70, FAME: 26},
+    tags: ["青训", "上单", "抗压"],
+    trait: ["RGE 青训上单", "在 EU 打上单，先学会被 adams 单杀"],
+    salary: 1,
+    bio: "RGE 上路的新人。"
+  },
+  p_qingxun_rge_jug: {
+    name: "Qingxun-RGE-JUG", cn: "青训-RGE打野", pos: "JUG", team: "t_rge", age: 21, no: 2,
+    gen: true,
+    st: {LANE: 71, MECH: 73, GAME: 71, POOL: 69, MENTAL: 66, PHYS: 75, TEAM: 70, FAME: 24},
+    tags: ["青训", "打野", "莽"],
+    trait: ["RGE 青训打野", "EU 打野的共性：敢抓，也敢送"],
+    salary: 1,
+    bio: "RGE 野区的新人，莽就完事。"
+  },
+  p_qingxun_rge_sup: {
+    name: "Qingxun-RGE-SUP", cn: "青训-RGE辅助", pos: "SUP", team: "t_rge", age: 20, no: 5,
+    gen: true,
+    st: {LANE: 69, MECH: 71, GAME: 71, POOL: 69, MENTAL: 66, PHYS: 71, TEAM: 70, FAME: 24},
+    tags: ["青训", "辅助", "视野"],
+    trait: ["RGE 青训辅助", "EU 辅助，视野做得比队友清醒"],
+    salary: 1,
+    bio: "RGE 的辅助，全队唯一清醒的人。"
+  },
+
+  // ===================== v3 扩充：主播 / 退役“话题卡” =====================
+  // 全部是自由人（team:""），FAME 拉满、状态掉光：签他们不是为赢，是为热度。
+
+  p_uzi: {
+    name: "Uzi", cn: "简自豪", pos: "BOT", team: "", age: 27, no: 1,
+    st: {LANE: 78, MECH: 78, GAME: 74, POOL: 72, MENTAL: 58, PHYS: 52, TEAM: 70, FAME: 96},
+    tags: ["退役", "主播", "ADC"],
+    trait: ["LPL 永远的神，永远的亚军", "手还在，心态早就碎在 2018 了；直播间比比赛席舒服太多"],
+    salary: 2,
+    bio: "世界第一 ADC，世界第零个世界冠军。"
+  },
+  p_clearlove: {
+    name: "Clearlove", cn: "明凯", pos: "JUG", team: "", age: 30, no: 1,
+    st: {LANE: 72, MECH: 64, GAME: 88, POOL: 76, MENTAL: 82, PHYS: 44, TEAM: 90, FAME: 95},
+    tags: ["退役", "教练型", "ID 就是信仰"],
+    trait: ["厂长，LPL 最会算比赛的人之一", "脑子还是顶级，手已经跟不上了；直播比带队还累"],
+    salary: 2,
+    bio: "脑子是 LPL 顶配，手是直播配置。"
+  },
+  p_pdd: {
+    name: "PDD", cn: "刘谋", pos: "TOP", team: "", age: 30, no: 1,
+    st: {LANE: 62, MECH: 61, GAME: 76, POOL: 66, MENTAL: 76, PHYS: 36, TEAM: 84, FAME: 90},
+    tags: ["退役", "主播", "上单"],
+    trait: ["老 iG 上单，现在是直播间的骚话发动机", "身体管理全靠嘴，训练赛打一局要歇三天"],
+    salary: 2,
+    bio: "全联盟最会讲段子的上单，操作留给 2013。"
+  },
+  p_otto: {
+    name: "Otto", cn: "侯国玉", pos: "MID", team: "", age: 28, no: 1,
+    st: {LANE: 72, MECH: 74, GAME: 64, POOL: 64, MENTAL: 40, PHYS: 60, TEAM: 42, FAME: 88},
+    tags: ["主播", "中单", "抽象"],
+    trait: ["直播嘴臭之王，打个韩服能被四个人同时屏蔽", "鲁班七号级别的团战，直播间里的战术大师"],
+    salary: 1,
+    bio: "嘴比手快，手比队友先崩。"
+  },
+  p_zzitai: {
+    name: "Zzitai", cn: "刘志豪", pos: "TOP", team: "", age: 26, no: 1,
+    st: {LANE: 74, MECH: 72, GAME: 74, POOL: 72, MENTAL: 66, PHYS: 56, TEAM: 70, FAME: 86},
+    tags: ["退役", "主播", "上单"],
+    trait: ["姿态，老 iG 的上单，也是直播间最吵的人", "解说比打比赛强，比赛强度一上来手就抖"],
+    salary: 1,
+    bio: "上单转行说书，说得比打得好。"
+  },
+  p_letme: {
+    name: "Letme", cn: "严君泽", pos: "TOP", team: "", age: 28, no: 2,
+    st: {LANE: 74, MECH: 66, GAME: 76, POOL: 70, MENTAL: 68, PHYS: 54, TEAM: 74, FAME: 84},
+    tags: ["退役", "主播", "坦克"],
+    trait: ["2018 RNG 的坦克上单，慎是他的身份证", "抗压思路还在，操作只剩嘴上功夫"],
+    salary: 1,
+    bio: "抗压大师，现在只能抗弹幕的压力。"
+  },
+  p_mlxg: {
+    name: "MLXG", cn: "刘世宇", pos: "JUG", team: "", age: 28, no: 1,
+    st: {LANE: 74, MECH: 72, GAME: 72, POOL: 70, MENTAL: 58, PHYS: 54, TEAM: 62, FAME: 86},
+    tags: ["退役", "主播", "野区莽夫"],
+    trait: ["2018 RNG 的打野，野区入侵派的祖师爷", "打法还是那套：先干,再想；当年有队友兜底，现在没人买了"],
+    salary: 1,
+    bio: "永远在入侵，永远在欠队友一个人情。"
+  },
+  p_ning: {
+    name: "Ning", cn: "高振宁", pos: "JUG", team: "", age: 26, no: 1,
+    st: {LANE: 74, MECH: 74, GAME: 72, POOL: 72, MENTAL: 56, PHYS: 58, TEAM: 68, FAME: 88},
+    tags: ["2018 世界冠军", "FMVP", "口嗨"],
+    trait: ["2018 世界赛 FMVP，LPL 唯一一个拿过这个的中国人", "天赋和嘴一样大，自律和头发一样少"],
+    salary: 2,
+    bio: "冠军是 2018 年的，嘴是今天的。"
+  },
+  p_baolan: {
+    name: "Baolan", cn: "王柳羿", pos: "SUP", team: "", age: 26, no: 1,
+    st: {LANE: 72, MECH: 68, GAME: 76, POOL: 72, MENTAL: 62, PHYS: 54, TEAM: 78, FAME: 84},
+    tags: ["2018 世界冠军", "主播", "辅助"],
+    trait: ["2018 iG 的冠军辅助，被全网骂过也被全网念过", "指挥思路还在，手速已经跟不上自己的嘴"],
+    salary: 1,
+    bio: "冠军辅助，现在直播间里的和事佬。"
+  },
+  p_misaya: {
+    name: "Misaya", cn: "禹景曦", pos: "MID", team: "", age: 30, no: 1,
+    st: {LANE: 72, MECH: 64, GAME: 80, POOL: 68, MENTAL: 72, PHYS: 44, TEAM: 82, FAME: 86},
+    tags: ["退役", "卡牌", "老前辈"],
+    trait: ["2012 IPL5 世界冠军 WE 的中单，若风一指", "时代的眼泪，卡牌玩得比现在的中单还懂节奏"],
+    salary: 1,
+    bio: "卡牌大师，逆版本时代的活化石。"
+  },
+  p_cool: {
+    name: "Cool", cn: "余家俊", pos: "MID", team: "", age: 29, no: 1,
+    st: {LANE: 74, MECH: 66, GAME: 74, POOL: 70, MENTAL: 68, PHYS: 50, TEAM: 72, FAME: 82},
+    tags: ["退役", "主播", "中单"],
+    trait: ["无状态，OMG 时代的中单", "打了十年中单，直播间的观众比他的奖杯多"],
+    salary: 1,
+    bio: "无状态，可能真的没状态了。"
+  },
+  p_godv: {
+    name: "GodV", cn: "韦朕", pos: "MID", team: "", age: 27, no: 1,
+    st: {LANE: 76, MECH: 72, GAME: 72, POOL: 66, MENTAL: 54, PHYS: 54, TEAM: 62, FAME: 86},
+    tags: ["退役", "反向 Q", "梗王"],
+    trait: ["韦神，反向 Q 的著作权人", "天赋是真的，脑子也是真的不打比赛"],
+    salary: 1,
+    bio: "天才中单，反向成名。"
+  },
+  p_sicca: {
+    name: "Sicca", cn: "李浩宇", pos: "SUP", team: "", age: 30, no: 1,
+    st: {LANE: 64, MECH: 60, GAME: 76, POOL: 64, MENTAL: 72, PHYS: 36, TEAM: 76, FAME: 84},
+    tags: ["主播", "德云色", "辅助"],
+    trait: ["德云色的西卡，分析比赛比打比赛强十个档", "体型和操作成反比，嘴和段子成正比"],
+    salary: 1,
+    bio: "解说台上的辅助之神，召唤师峡谷的游客。"
+  },
+  p_xiaoxiao: {
+    name: "Xiaoxiao", cn: "孙亚龙", pos: "SUP", team: "", age: 30, no: 1,
+    st: {LANE: 66, MECH: 60, GAME: 74, POOL: 64, MENTAL: 70, PHYS: 38, TEAM: 74, FAME: 84},
+    tags: ["退役", "主播", "德云色"],
+    trait: ["德云色的笑笑，前 iG 辅助，空大是他的商标", "直播梗比职业生涯精彩，空大能空出节目效果"],
+    salary: 1,
+    bio: "一技能空大，二技能继续空，直播间笑疯了。"
+  },
+  p_kid: {
+    name: "Kid", cn: "葛炎", pos: "BOT", team: "", age: 29, no: 1,
+    st: {LANE: 74, MECH: 64, GAME: 70, POOL: 66, MENTAL: 62, PHYS: 48, TEAM: 70, FAME: 82},
+    tags: ["退役", "主播", "ADC"],
+    trait: ["iG 的老 ADC，鲟将军", "从 ADC 打成辅助，从职业打成主播，全都没打成顶级"],
+    salary: 1,
+    bio: "鲟，永远的亚军命。"
   }
 };
