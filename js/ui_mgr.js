@@ -75,7 +75,10 @@ window.UIMGR = (function () {
       + chip("首发工资 " + wan(h.salary) + " / 帽 " + wan(h.cap), over ? "red" : "green")
       + chip("评分 " + n(h.ovr))
       + chip("抽卡券 " + n(h.tickets), "purple")
+      + (h.diff ? chip("难度 " + esc(h.diff.name), h.diff.key === "hard" ? "red" : h.diff.key === "easy" ? "green" : "blue") : "")
       + chip("常规赛 " + esc(h.reg || "0 胜 0 负"))
+      + (h.roster ? chip("名单 " + esc(h.roster)) : "")
+      + (h.inj > 0 ? chip("伤停 " + n(h.inj), "red") : "")
       + (h.coach ? chip("教练 " + h.coach, "blue") : "")
       + "</div></div>"
       + '<div class="small-note" style="text-align:right">' + (over ? "超帽了，老板在看你" : "账面还行") + "</div>"
@@ -104,6 +107,7 @@ window.UIMGR = (function () {
       + (b.hero ? '<div class="cflavor">本命 · ' + esc(b.hero) + (b.heroProf ? "（熟练 " + n(b.heroProf) + "）" : "") + "</div>" : "")
       + (b.trait && b.trait.length ? '<div class="cflavor">' + esc(b.trait.join("；")) + "</div>" : "")
       + (b.trained ? '<div class="dup">已特训 +' + n(b.trained) + "</div>" : "")
+      + (b.injured ? '<div class="dup" style="color:var(--red)">伤停 ' + n(b.injured) + " 场</div>" : "")
       + (extra || "")
       + "</div>";
   }
@@ -114,7 +118,7 @@ window.UIMGR = (function () {
   }
   function miniCard(b) {
     if (!b) return chip("空", "red");
-    return chip(POSCN[b.pos] + " " + (b.name || "无名") + " · " + n(b.ovr), b.rarity === "金" ? "gold" : b.rarity === "紫" ? "purple" : "blue");
+    return chip(POSCN[b.pos] + " " + (b.name || "无名") + " · " + n(b.ovr) + (b.injured ? " · 伤停" + n(b.injured) + " 场" : ""), b.rarity === "金" ? "gold" : b.rarity === "紫" ? "purple" : "blue");
   }
 
   /* ---------- 各场景 ---------- */
@@ -151,7 +155,8 @@ window.UIMGR = (function () {
   function rDraft(sc) {
     var acts = opts(sc.acts);
     return wrap(
-      head2(sc.kicker, sc.title, "重抽次数 " + n(sc.redraftLeft))
+      topBar(sc)
+      + head2(sc.kicker, sc.title, "重抽次数 " + n(sc.redraftLeft))
       + panel((sc.lines || []).map(line).join("") + msgs(sc))
       + cardGrid(sc.cards)
       + acts);
@@ -163,14 +168,15 @@ window.UIMGR = (function () {
       var b = s.card;
       return '<div class="panel flat" style="--rc:' + (b ? esc(b.rc) : "#47526b") + '">'
         + '<div class="between"><b>' + esc(s.poscn) + "</b>" + (b ? chip("评分 " + n(b.ovr), "gold") : chip("空", "red")) + "</div>"
-        + '<div class="small-note" style="margin-top:6px">' + (b ? esc(b.name || "无名") + " · " + esc(b.team) + " · 工资 " + wan(b.salary) : "这里没人。") + "</div>"
+        + '<div class="small-note" style="margin-top:6px">' + (b ? esc(b.name || "无名") + " · " + esc(b.team) + " · 工资 " + wan(b.salary) + (b.injured ? ' · <span style="color:var(--red)">伤停 ' + n(b.injured) + " 场</span>" : "") : "这里没人。") + "</div>"
         + "</div>";
     }).join("");
     var salaryBar = '<div class="between" style="margin-top:12px"><span class="dim">首发工资 ' + wan(salary) + " / 帽 " + wan(cap)
       + '</span><b style="color:' + (over ? "var(--red)" : "var(--green)") + '">' + (over ? "超 " + wan(salary - cap) : "余 " + wan(cap - salary)) + "</b></div>"
       + '<div style="margin-top:6px">' + bar(cap ? salary / cap * 100 : 0, over ? "#ff4d5e" : "#37d67a") + "</div>";
     return wrap(
-      head2(sc.kicker, sc.title, sc.ready ? "五个人齐了" : "还缺人")
+      topBar(sc)
+      + head2(sc.kicker, sc.title, sc.ready ? "五个人齐了" : "还缺人")
       + panel('<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px">' + slots + "</div>" + salaryBar)
       + (sc.lines || []).map(line).join("")
       + cardGrid(sc.cards)
