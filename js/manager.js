@@ -39,11 +39,46 @@ window.MGR = (function () {
   var CUSTOM_MONEY = { budget: 3000, cap: 1600 };
   var TIERPOWER = { S: 84, A: 78, B: 71, C: 65 };
   var MONEY = 20;            // 卡面工资 × 20 = 万/年
-  var MAX_CARDS = 12;
+  var ROSTER_BASE = 12;      // 初始卡槽
+  var ROSTER_MAX = 16;       // 扩槽上限
   var MAX_SEASON = 3;
   var ENVS = ["打团", "前期滚雪球", "单带", "运营", "对线"];
   var RDNAME = ["八强赛", "四强赛", "决赛"];
   var ENEMY_TEND = ["运营", "打团", "单带", "后期", "前期"];
+
+  /* 难度分级：影响 AI 战力、预算/工资帽、训练成本、伤病、转会竞争、BP 强度 */
+  var DIFFS = {
+    easy: {
+      key: "easy", name: "轻松", tag: "试玩",
+      desc: "对手弱一档，预算和工资帽多两成，训练便宜，伤病也少。适合先看一遍三年流程。",
+      aiPower: -6, budgetMul: 1.2, capMul: 1.12, trainMul: 0.85,
+      injuryRate: 0.03, marketMul: 0.9, marketSlots: 4, aiBanCount: 2, bpBoost: -4
+    },
+    normal: {
+      key: "normal", name: "标准", tag: "正常",
+      desc: "标准强度：预算、工资帽、伤病、转会都按正常来。想赢要动点脑子。",
+      aiPower: 0, budgetMul: 1, capMul: 1, trainMul: 1,
+      injuryRate: 0.08, marketMul: 1, marketSlots: 3, aiBanCount: 3, bpBoost: 0
+    },
+    hard: {
+      key: "hard", name: "硬核", tag: "地狱",
+      desc: "对手更强，预算和工资帽打折，训练贵，伤病多，转会还会被别队截胡。输了别骂人。",
+      aiPower: 6, budgetMul: 0.85, capMul: 0.92, trainMul: 1.18,
+      injuryRate: 0.15, marketMul: 1.15, marketSlots: 3, aiBanCount: 4, bpBoost: 5
+    }
+  };
+  var DIFF_ORDER = ["easy", "normal", "hard"];
+  function diffKey(k) { return DIFFS[k] ? k : "normal"; }
+  function D() { return (S && DIFFS[S.diff]) || DIFFS.normal; }
+  function diffBrief() {
+    var d = D();
+    return { key: d.key, name: d.name, tag: d.tag, desc: d.desc };
+  }
+  function rosterMax() { return (S && S.rosterMax) || ROSTER_BASE; }
+  function expandCost() {
+    var n = rosterMax() - ROSTER_BASE;
+    return Math.round(700 + n * 350);
+  }
 
   /* ================= 小工具 ================= */
   var rnd = Math.random;
@@ -146,6 +181,10 @@ window.MGR = (function () {
       market: [], marketRound: 0, trainFocus: null,
       seasonStat: null,
       score: 0, ended: false,
+      diff: diffKey(o.diff),
+      rosterMax: ROSTER_BASE,
+      draftDone: false, lineupBack: null,
+      tacCd: {}, lastBP: null, scoutUse: 0,
       opts: { name: o.name || "" }
     };
   }
@@ -216,6 +255,7 @@ window.MGR = (function () {
   }
   function salOf(card) { return Math.round((Number(card.salary) || 1) * MONEY); }
   function coachEffNow() { return (S.coach && S.coach.eff) || {}; }
+  function injLeft(c) { return Math.round(Number(c && c.inj) || 0); }
   function effSt(card) {
     var st = {}, base = card.st || {}, ce = coachEffNow();
     for (var i = 0; i < STAT.length; i++) {
@@ -225,6 +265,7 @@ window.MGR = (function () {
       if (k === "TEAM") v += (ce.team || 0) * 0.6;
       if (k === "MENTAL") v += (ce.mental || 0) * 0.6;
       if (k === "GAME") v += (ce.growth || 0) * 0.25;
+      if (Number(card.inj) > 0) v -= 10;
       st[k] = clamp(v, 1, 99);
     }
     return st;
@@ -271,6 +312,7 @@ window.MGR = (function () {
       st: arr, tags: c.tags || [], trait: c.trait || [],
       hero: mainHeroOf(c), heroProf: (c.pool && mainHeroOf(c)) ? (c.pool[mainHeroOf(c)] || 0) : 0,
       fits: S.lineup[c.pos] === c.uid,
+      injured: injLeft(c),
       trained: (function () { var n = 0; for (var k2 in (c.train || {})) n += c.train[k2]; return n; })()
     };
   }
@@ -295,13 +337,13 @@ window.MGR = (function () {
     var custom = (id === "custom");
     var t = custom ? null : teamById(id);
     if (!custom && !t) return false;
-    var mny = moneyOfTeam(t);
+    var mny = moneyOfTeam(t), dm = D();
     S.custom = custom;
     S.teamId = custom ? "t_me" : t.id;
     S.teamName = custom ? (S.opts.name || "自建战队") : (t.name || t.id);
     S.tier = custom ? "C" : (t.tier || "B");
-    S.budget = mny.budget;
-    S.cap = mny.cap;
+    S.budget = Math.round(mny.budget * dm.budgetMul);
+    S.cap = Math.round(mny.cap * dm.capMul);
     S.tickets = 10;
     try {
       var lg = JSON.parse(localStorage.getItem("denshen_career") || "null");
@@ -313,7 +355,7 @@ window.MGR = (function () {
     S.teamColor = custom ? "#e8b923" : (t.color || "#e8b923");
     S.teamBlurb = custom ? "注册资金 3000 万，股东是你妈。" : (t.blurb || "");
     S.boss = custom ? "你自己" : (t.boss || "资方");
-    logLine("接手 " + S.teamName + "，预算 " + wan(S.budget) + "，工资帽 " + wan(S.cap) + "。");
+    logLine("接手 " + S.teamName + "（难度 " + dm.name + "），预算 " + wan(S.budget) + "，工资帽 " + wan(S.cap) + "。");
     return true;
   }
 
@@ -382,9 +424,8 @@ window.MGR = (function () {
     note("开局八张卡，五个位置先凑齐，剩下的自己看着办。");
   }
   function autoLineup() {
-    var taken = {};
-    each(POS, function (p) { taken[p] = null; });
-    // 先按位置取评分最高
+    // 先清空再排，避免残留已经卖掉/换下的 uid
+    each(POS, function (p) { S.lineup[p] = null; });
     each(POS, function (p) {
       var best = null;
       each(S.cards, function (c) {
@@ -393,6 +434,47 @@ window.MGR = (function () {
       });
       if (best) S.lineup[p] = best.uid;
     });
+  }
+  function countAt(pos, exceptUid) {
+    var n = 0;
+    each(S.cards, function (c) { if (c.pos === pos && c.uid !== exceptUid) n++; });
+    return n;
+  }
+  function canFillAfter(uid) {
+    for (var i = 0; i < POS.length; i++) {
+      var p = POS[i];
+      if (S.lineup[p] && S.lineup[p] !== uid) continue;
+      if (countAt(p, uid) < 1) return false;
+    }
+    return true;
+  }
+  function sellCheck(c) {
+    if (!c) return { ok: false, why: "这张卡已经不在了" };
+    if (S.cards.length <= 5) return { ok: false, why: "只剩 5 个人，卖了连联赛名单都凑不齐" };
+    if (!canFillAfter(c.uid)) return { ok: false, why: "队里没有同位置替补，卖了这个首发就空一个位置" };
+    return { ok: true, why: "" };
+  }
+  function doSell(c) {
+    var chk = sellCheck(c);
+    if (!chk.ok) { note(chk.why); return false; }
+    var wasReady = lineupReady(), price = sellPrice(c);
+    var oldCards = S.cards.slice();
+    var oldLine = { TOP: S.lineup.TOP, JUG: S.lineup.JUG, MID: S.lineup.MID, BOT: S.lineup.BOT, SUP: S.lineup.SUP };
+    S.cards = S.cards.filter(function (x) { return x.uid !== c.uid; });
+    autoLineup();
+    if (wasReady && !lineupReady()) {
+      S.cards = oldCards; S.lineup = oldLine;
+      note("卖不出去：同位置没人能补，阵容就要空一个位置。");
+      return false;
+    }
+    S.budget += price;
+    note("卖掉 " + (c.name || "无名") + "，到手 " + wan(price) + "。");
+    return true;
+  }
+  function openLineup(back) {
+    S.lineupBack = back || null;
+    S.sub = "lineup";
+    return sceneNow();
   }
 
   /* ================= 版本 / 环境 ================= */
@@ -448,9 +530,11 @@ window.MGR = (function () {
     return { id: c.id, name: c.name, style: c.style || "放养", rar: (RAR[c.rarity] || RAR["蓝"]).n, rc: (RAR[c.rarity] || RAR["蓝"]).c, desc: c.desc || "", eff: rows.join(" · ") };
   }
   function rollMarket() {
-    var own = ownIds(), pool = [];
+    var own = ownIds(), pool = [], dm = D();
     var target = { S: ["金", "紫", "紫"], A: ["紫", "紫", "金"], B: ["紫", "蓝", "蓝"], C: ["蓝", "蓝", "紫"] }[S.tier] || ["蓝", "蓝", "蓝"];
-    each(target, function (rar) {
+    var rars = target.slice();
+    while (rars.length < (dm.marketSlots || 3)) rars.push(pickOne(["紫", "蓝", "蓝"]));
+    each(rars, function (rar) {
       var cand = CARDDB().filter(function (c) { return c.rarity === rar && !own[c.id]; });
       if (!cand.length) cand = CARDDB().filter(function (c) { return !own[c.id]; });
       if (!cand.length) return;
@@ -458,26 +542,30 @@ window.MGR = (function () {
       own[c.id] = 1;
       pool.push(c.id);
     });
+    if (dm.key === "hard" && pool.length && rnd() < 0.3) {
+      pool.pop();
+      note("转会市场：一张挂牌被别队抢先签走了。");
+    }
     S.market = pool;
     S.marketRound++;
   }
   function buyPrice(id) {
     var c = cardById(id); if (!c) return 0;
     var pre = ({ "金": 600, "紫": 320, "蓝": 120 })[c.rarity] || 100;
-    return Math.round(salOf(c) * 1.1 + pre);
+    return Math.round((salOf(c) * 1.1 + pre) * D().marketMul);
   }
   function sellPrice(c) { return Math.round(salOf(c) * 0.75); }
+  function scoutCost() { return 300 + (Number(S.scoutUse) || 0) * 300; }
   function grantTactics(n) {
-    var pool = TACDB().slice(), own = {};
-    each(S.tactics, function (id) { own[id] = 1; });
-    each(pool, function (t) { if (own[t.id]) return; });
     var got = 0;
     for (var i = 0; i < 40 && got < n; i++) {
       var cand = TACDB().filter(function (t) { return S.tactics.indexOf(t.id) < 0; });
       if (!cand.length) break;
       var t = pickOne(cand);
       S.tactics.push(t.id); got++;
+      note("战术卡入库：" + (t.name || t.id));
     }
+    return got;
   }
   function tacBrief(id) {
     var t = tacById(id); if (!t) return null;
@@ -524,7 +612,10 @@ window.MGR = (function () {
       reg: S.regW + " 胜 " + S.regL + " 负",
       stage: stageCN(),
       coach: S.coach ? S.coach.name : "",
-      hcap: S.cap
+      hcap: S.cap,
+      diff: diffBrief(),
+      roster: S.cards.length + "/" + rosterMax(),
+      inj: (function () { var n = 0; each(S.cards, function (c) { if (injLeft(c) > 0) n++; }); return n; })()
     };
   }
   function stageCN() {
@@ -564,7 +655,16 @@ window.MGR = (function () {
         "选队、抽人、排阵、备赛、BP、打完写复盘。三年时间，把这堆人送到世界赛，或者送到解散公告里。",
         "规则很干脆：预算有限，工资帽有限，选手的耐心最有限。超帽就交税，超不动就卖人。"
       ],
-      acts: [act("go", "接手一支队"), act("custom", "自建战队 · 3000 万预算", "从零开始，从零挨打")]
+      acts: [
+        act("diff:easy", "难度 · 轻松", "对手弱一档，预算多两成，伤病少"),
+        act("diff:normal", "难度 · 标准", "标准强度，正常预算和伤病"),
+        act("diff:hard", "难度 · 硬核", "对手更强，预算打折，伤病多"),
+        act("go", "接手一支队"),
+        act("custom", "自建战队 · 3000 万预算", "从零开始，从零挨打")
+      ],
+      diff: diffBrief(),
+      diffOrder: DIFF_ORDER.map(function (k) { return { key: k, name: DIFFS[k].name, tag: DIFFS[k].tag, desc: DIFFS[k].desc, on: (S ? S.diff === k : k === "normal") }; }),
+      rosterMax: rosterMax()
     });
   }
 
@@ -573,11 +673,11 @@ window.MGR = (function () {
     var L = TEAMS().filter(function (t) { return t.region === "LPL"; });
     var acts = [], rows = [];
     each(L, function (t) {
-      var mny = moneyOfTeam(t);
+      var mny = moneyOfTeam(t), dm = D();
       rows.push({
         id: t.id, name: t.name || t.id, full: t.full || "", city: t.city || "",
         tier: t.tier || "B", color: t.color || "#9aa7b4",
-        budget: mny.budget, cap: mny.cap,
+        budget: Math.round(mny.budget * dm.budgetMul), cap: Math.round(mny.cap * dm.capMul),
         boss: t.boss || "", coach: t.coach || "", blurb: t.blurb || "",
         power: TIERPOWER[t.tier] || 70
       });
@@ -587,7 +687,7 @@ window.MGR = (function () {
     return scene("team", {
       kicker: "第一步 · 选队",
       title: "十七支队，挑一个跳进去",
-      lines: ["强队有钱有帽，但球迷要冠军；烂队没人看，可你有时间。都不好当。"],
+      lines: ["当前难度：" + D().name + "（" + D().desc + "）", "强队有钱有帽，但球迷要冠军；烂队没人看，可你有时间。都不好当。"],
       teams: rows,
       acts: acts
     });
@@ -608,9 +708,9 @@ window.MGR = (function () {
     });
   }
 
-  /* ================= 场景：首发 ================= */
+  /* ================= 场景：首发（开局与赛季中都能进） ================= */
   function scLineup(trainMode) {
-    var acts = [], slots = [];
+    var acts = [], slots = [], inSeason = seasonStarted();
     each(POS, function (p) {
       var c = cardAt(p);
       slots.push({ pos: p, poscn: POSCN[p], card: c ? cardBrief(c) : null });
@@ -618,19 +718,23 @@ window.MGR = (function () {
     each(POS, function (p) {
       each(S.cards, function (c) {
         if (c.pos !== p) return;
-        var fits = S.lineup[p] === c.uid;
+        var fits = S.lineup[p] === c.uid, inj = injLeft(c);
         acts.push(act("set:" + p + ":" + c.uid,
-          POSCN[p] + " 换 " + (c.name || "无名") + (fits ? "（已在场）" : ""),
+          POSCN[p] + " 换 " + (c.name || "无名") + (fits ? "（已在场）" : "") + (inj ? "（伤停 " + inj + " 场）" : ""),
           "评分 " + ovrOf(c) + " · 工资 " + wan(salOf(c)), fits ? "gold" : ""));
       });
     });
     acts.push(act("auto", "自动排最强", "按评分从高到低排"));
     acts.push(act("clear", "全部卸下"));
-    acts.push(act("ready", "就这套，开赛", "总工资 " + wan(totalSalary()) + " / 帽 " + wan(S.cap), "gold", !lineupReady()));
+    acts.push(act("ready", inSeason ? "就这套，回去" : "就这套，开赛", "总工资 " + wan(totalSalary()) + " / 帽 " + wan(S.cap), "gold", !lineupReady()));
+    if (S.lineupBack) acts.push(act("back", "先不排了", "回刚才那页"));
     return scene("lineup", {
-      kicker: "第三步 · 首发五人",
+      kicker: inSeason ? ("第 " + S.season + " 赛季 · 换阵容") : "第三步 · 首发五人",
       title: "五个位置，一个人都不能少",
-      lines: ["位置不对的卡上不了场。工资超帽可以硬上，但赛季开始要交奢侈税。"],
+      lines: [
+        inSeason ? "赛季中也能换人，每场赛前都能改。伤病和工资自己平衡。" : "位置不对的卡上不了场。工资超帽可以硬上，但赛季开始要交奢侈税。",
+        "有空缺就别想开赛，系统会把你踢回这一页重新排。"
+      ],
       slots: slots,
       cards: briefs(S.cards),
       salary: totalSalary(),
@@ -656,23 +760,30 @@ window.MGR = (function () {
   /* ================= 场景：经营总览 ================= */
   function scManage() {
     var sal = totalSalary(), over = sal > S.cap;
+    var lineupAct = act("lineup", "阵容", lineupReady() ? "首发五人已齐 · 赛前可换" : "首发有空缺，先排人", lineupReady() ? "" : "gold");
+    var expandAct = act("expand", "扩卡槽 +2 · " + wan(expandCost()), "卡槽 " + rosterMax() + "/" + ROSTER_MAX, "",
+      rosterMax() >= ROSTER_MAX || S.budget < expandCost());
     var acts;
     if (seasonStarted()) {
       acts = [
         act("go:league", "回赛场", stageCN()),
-        act("go:gacha", "抽卡", "券 " + S.tickets + " 张 · 重复卡自动折券"),
-        act("go:train", "训练", "花预算，一个人一个维度 +2"),
-        act("go:market", "转会市场", S.market.length ? "挂牌 " + S.market.length + " 人" : "本轮没挂牌"),
-        act("go:coach", "教练席", S.coach ? "现任 " + S.coach.name : "还没人坐")
-      ];
-    } else {
-      acts = [
+        lineupAct,
         act("go:gacha", "抽卡", "券 " + S.tickets + " 张 · 重复卡自动折券"),
         act("go:train", "训练", "花预算，一个人一个维度 +2"),
         act("go:market", "转会市场", S.market.length ? "挂牌 " + S.market.length + " 人" : "本轮没挂牌"),
         act("go:coach", "教练席", S.coach ? "现任 " + S.coach.name : "还没人坐"),
+        expandAct
+      ];
+    } else {
+      acts = [
+        lineupAct,
+        act("go:gacha", "抽卡", "券 " + S.tickets + " 张 · 重复卡自动折券"),
+        act("go:train", "训练", "花预算，一个人一个维度 +2"),
+        act("go:market", "转会市场", S.market.length ? "挂牌 " + S.market.length + " 人" : "本轮没挂牌"),
+        act("go:coach", "教练席", S.coach ? "现任 " + S.coach.name : "还没人坐"),
+        expandAct,
         act("go:cap", "工资帽", over ? "超帽 " + wan(sal - S.cap) : "在帽内"),
-        act("go:start", "开赛", "常规赛 16 场，打完进季后赛", "gold")
+        act("go:start", "开赛", "常规赛 16 场，打完进季后赛", "gold", !lineupReady())
       ];
     }
     return scene("manage", {
@@ -702,11 +813,11 @@ window.MGR = (function () {
     return scene("gacha", {
       kicker: "抽卡 · 选手卡池",
       title: "券 " + S.tickets + " 张",
-      lines: ["抽到重复的卡自动分解成券：蓝退 1 张，紫退 2 张，金退 3 张。别嫌亏，重复的卡本来就上不了场。"],
+      lines: ["重复卡折券：十连里蓝/紫/金各折 1/2/3 张，但整次十连折的券一定少于 9 张；单抽抽到重复不退券。别想着靠抽卡刷券。"],
       pity: S.pity, goldPity: S.goldPity,
       pulled: (S.pull || []).slice(),
       cards: briefs(S.cards),
-      roster: S.cards.length + "/" + MAX_CARDS,
+      roster: S.cards.length + "/" + rosterMax(),
       acts: acts
     });
   }
@@ -741,20 +852,21 @@ window.MGR = (function () {
   }
   function trainCost(card, dim) {
     var v = effSt(card)[dim] || 60;
-    return Math.round(60 + v * 2.2 + (card.train && card.train[dim] ? 40 : 0));
+    return Math.round((60 + v * 2.2 + (card.train && card.train[dim] ? 40 : 0)) * D().trainMul);
   }
 
   /* ================= 场景：转会 ================= */
   function scMarket() {
-    var acts = [], list = [];
+    var acts = [], list = [], rmax = rosterMax();
     each(S.market, function (id) {
       var raw = cardById(id);
       if (!raw) return;
       var p = buyPrice(id);
-      list.push({ card: cardBrief(mkProbe(raw)), price: p, can: S.budget >= p && S.cards.length < MAX_CARDS });
-      acts.push(act("buy:" + id, "买 " + (raw.name || "无名") + " · " + POSCN[raw.pos], wan(p), "", S.budget < p || S.cards.length >= MAX_CARDS));
+      list.push({ card: cardBrief(mkProbe(raw)), price: p, can: S.budget >= p && S.cards.length < rmax });
+      acts.push(act("buy:" + id, "买 " + (raw.name || "无名") + " · " + POSCN[raw.pos], wan(p), "", S.budget < p || S.cards.length >= rmax));
     });
-    acts.push(act("sellmode", "挂牌卖人", "队里 " + S.cards.length + "/" + MAX_CARDS + " 人"));
+    acts.push(act("scout", "派球探换一批 · " + wan(scoutCost()), "现在挂牌 " + S.market.length + " 人", "", S.budget < scoutCost()));
+    acts.push(act("sellmode", "挂牌卖人", "队里 " + S.cards.length + "/" + rmax + " 人"));
     acts.push(act("back", "回办公室"));
     return scene("market", {
       kicker: "转会市场",
@@ -775,13 +887,15 @@ window.MGR = (function () {
   function scSell() {
     var acts = [];
     each(S.cards, function (c) {
-      acts.push(act("sell:" + c.uid, "卖 " + (c.name || "无名") + " · " + POSCN[c.pos], "回 " + wan(sellPrice(c)), "", S.cards.length <= 5));
+      var chk = sellCheck(c);
+      acts.push(act("sell:" + c.uid, "卖 " + (c.name || "无名") + " · " + POSCN[c.pos],
+        chk.ok ? ("回 " + wan(sellPrice(c))) : chk.why, "", !chk.ok));
     });
     acts.push(act("back", "不卖了"));
     return scene("sell", {
       kicker: "转会市场 · 出人",
       title: "谁走？",
-      lines: ["卖人就是承认自己看走眼。这行每天都在承认。"],
+      lines: ["卖人就是承认自己看走眼。这行每天都在承认。", "卖完自动补位；补不上就不让卖，别想着把首发拆了。"],
       cards: briefs(S.cards),
       acts: acts
     });
@@ -817,18 +931,22 @@ window.MGR = (function () {
   }
   function scCap() {
     var c = capInfo();
+    var canSell = false;
+    each(S.cards, function (x) { if (!canSell && sellCheck(x).ok) canSell = true; });
     var acts = [];
     if (c.over > 0) acts.push(act("tax", "认税开赛", "税 " + wan(c.tax)));
-    acts.push(act("autosell", "卖掉贵的换钱", "优先卖替补", "", S.cards.length <= 5));
+    acts.push(act("autosell", "卖掉贵的换钱", "只卖替补，卖完首发不能缺人", "", !canSell));
+    acts.push(act("lineup", "先排阵容", lineupReady() ? "首发已齐" : "首发有空缺，不能开赛", "", lineupReady()));
     acts.push(act("go:market", "自己开转会"));
-    acts.push(act("ok", c.over > 0 ? ("发工资 + 交税，" + wan(c.pay)) : ("发工资 " + wan(c.pay) + "，开赛"), c.short ? "账上不够，先欠着，老板记账" : "", "gold"));
+    acts.push(act("ok", c.over > 0 ? ("发工资 + 交税，" + wan(c.pay)) : ("发工资 " + wan(c.pay) + "，开赛"), c.short ? "账上不够，先欠着，老板记账" : "", "gold", !lineupReady()));
     return scene("cap", {
       kicker: "财务 · 赛季结算",
       title: c.short ? "钱不够，先欠着" : "账面清楚",
       lines: [
         "发工资是本分，交奢侈税是天赋。帽内省下来的钱，是你夏天买人的底气。",
         c.over > 0 ? ("首发工资 " + wan(c.sal) + "，超帽 " + wan(c.over) + "，税 " + wan(c.tax) + "，一共要出 " + wan(c.pay) + "。") : "首发工资在帽内，不用交税。",
-        c.short ? ("账上只有 " + wan(c.budget) + "，差 " + wan(c.pay - c.budget) + "。硬发就是欠薪，全队心态要掉。") : ""
+        c.short ? ("账上只有 " + wan(c.budget) + "，差 " + wan(c.pay - c.budget) + "。硬发就是欠薪，全队心态要掉。") : "",
+        lineupReady() ? "" : "首发不齐，先排人，排完才能发工资开赛。"
       ].filter(function (x) { return !!x; }),
       info: c,
       acts: acts
@@ -839,8 +957,9 @@ window.MGR = (function () {
   var TACSTAT = { "单带": "LANE", "前期": "GAME", "团战": "TEAM", "运营": "GAME", "野核": "MECH", "爆发": "MECH", "稳定": "GAME" };
 
   function buildPowers() {
+    var ai = Number(D().aiPower) || 0;
     S.power = {};
-    each(TEAMS(), function (t) { if (t.id) S.power[t.id] = tierPower(t.tier); });
+    each(TEAMS(), function (t) { if (t.id) S.power[t.id] = tierPower(t.tier) + ai; });
     S.power[S.teamId] = teamOvr();
   }
   function lplIds() {
@@ -928,6 +1047,12 @@ window.MGR = (function () {
     }
   }
   function startLeague() {
+    if (!lineupReady()) {
+      note("首发不齐，不能开赛。");
+      S.lineupBack = "cap";
+      S.sub = "lineup";
+      return false;
+    }
     buildPowers();
     S.lg = { ids: lplIds(), sched: null, rnd: 0, rec: {} };
     /* 17 队要 18 个坑，多出来的「轮空」直接删掉整对：轮空那一轮助教自动带完，玩家只打 16 场 */
@@ -954,6 +1079,9 @@ window.MGR = (function () {
     return null;
   }
   function startPlayoff() {
+    /* 世界赛已经开打就直接回世界赛，别重开季后赛把牌桌掀了 */
+    if (S.wd && !S.wd.done) { S.sub = "worlds"; return; }
+    if (S.po && !S.po.done) { S.sub = "playoff"; return; }
     var st = standings().map(function (x) { return x.id; });
     S.po = { seeds: st.slice(0, 8), round: 0, pairs: null, prev: null, top4: null, champion: null, done: false, meOut: false, log: [] };
     S.pend = null;
@@ -992,6 +1120,8 @@ window.MGR = (function () {
       if (po.round === 2) po.champion = po.prev[0];
       po.pairs = null; po.round++;
     }
+    /* 兜底：推进异常就收尾，别留死局 */
+    if (S.po) S.po.done = true;
   }
 
   /* ================= 世界赛 ================= */
@@ -1007,6 +1137,7 @@ window.MGR = (function () {
     return out;
   }
   function startWorlds() {
+    if (S.wd && !S.wd.done) { S.sub = "worlds"; return; }
     var f = fieldWorlds();
     var ranked = f.slice().sort(function (x, y) { return (S.power[y] || 0) - (S.power[x] || 0); });
     while (ranked.length < 8) ranked.push("BYE");
@@ -1112,6 +1243,8 @@ window.MGR = (function () {
       w.bRound = 1;
       if (w.pairs[0].a === S.teamId || w.pairs[0].b === S.teamId) w.reachedFinal = true;
     }
+    /* 正常不会走到这里：兜底结束世界赛，绝不留下「没比赛也没结束」的死状态 */
+    w.done = true;
   }
 
   /* ================= 侧构建 ================= */
@@ -1139,7 +1272,7 @@ window.MGR = (function () {
     var players = [];
     each(POS, function (pos) { players.push({ pos: pos, st: st }); });
     var sigHero = aiPicks ? (aiPicks.MID || aiPicks.BOT || "") : "";
-    var prof = clamp(p + ((S.patch[sigHero] || 0) * 6), 40, 97);
+    var prof = clamp(p + ((S.patch[sigHero] || 0) * 6) + (Number(D().bpBoost) || 0), 40, 97);
     var s = M.makeSide({
       players: players, hero: sigHero, heroProf: prof, mainHero: prof >= 90,
       tactic: aiTacticOf(oppId), env: S.env,
@@ -1165,6 +1298,7 @@ window.MGR = (function () {
     return { name: t.name, rows: rows, used: true, dim: TACSTAT[t.dim] || "GAME" };
   }
   function buildMySide(bp, theirs, aiPicks) {
+    if (!lineupReady()) return null;
     var M = window.MATCH, players = [], profs = {}, heroes = {};
     each(POS, function (pos) {
       var c = cardAt(pos);
@@ -1219,6 +1353,8 @@ window.MGR = (function () {
   }
   function startBP(pend) {
     var M = window.MATCH;
+    /* 战术卡按场冷却：上一场用过的卡，到这场开 BP 时才走冷却 */
+    tacCdStep();
     S.bp = {
       step: "ban", myBans: [], aiBans: [], picks: {}, aiPicks: {}, tac: null,
       oppId: pend.oppId, bestOf: pend.bestOf || 3, label: pend.label || "",
@@ -1231,7 +1367,7 @@ window.MGR = (function () {
       if (!c || !c.pool) return;
       for (var k in c.pool) pool[k] = Math.max(pool[k] || 0, c.pool[k]);
     });
-    for (var i = 0; i < 3; i++) {
+    for (var i = 0; i < (Number(D().aiBanCount) || 3); i++) {
       var b = M.aiBan(pool, rnd, S.bp.aiBans);
       if (b) { S.bp.aiBans.push(b); delete pool[b]; }
     }
@@ -1246,11 +1382,7 @@ window.MGR = (function () {
       return ban.indexOf(h.n) < 0 && used.indexOf(h.n) < 0 && !(S.bp.aiPicks[pos] === h.n);
     });
   }
-  function finishBP() {
-    var pend = S.pend || { oppId: S.bp.oppId, bestOf: S.bp.bestOf, label: S.bp.label };
-    var bp = S.bp;
-    var theirs = aiSide(pend.oppId, bp.aiPicks);
-    var mine = buildMySide(bp, theirs, bp.aiPicks);
+  function applyResult(pend, bp, theirs, mine) {
     var M = window.MATCH;
     var dim = (mine.tacInfo && mine.tacInfo.dim) || "GAME";
     var res = M.simBo(mine, theirs, { bestOf: pend.bestOf || 3, dim: dim, patchBuffs: S.patch });
@@ -1275,14 +1407,108 @@ window.MGR = (function () {
       detail: detail, dimcn: STCN[dim] || "意识",
       formLeft: Math.round(S.form.energy), moraleLeft: Math.round(S.form.morale)
     };
-    /* 消耗战术卡 */
-    if (bp.tac) {
-      var idx = S.tactics.indexOf(bp.tac);
-      if (idx >= 0) S.tactics.splice(idx, 1);
-    }
+    /* 战术卡不再一次性烧掉，改成每场冷却 */
+    if (bp.tac) S.tacCd[bp.tac] = 1;
+    S.lastBP = {
+      picks: shallow(bp.picks || {}), myBans: (bp.myBans || []).slice(), aiBans: (bp.aiBans || []).slice(),
+      tac: bp.tac || null, oppId: pend.oppId, bestOf: pend.bestOf || 3, label: pend.label || ""
+    };
     S.bp = null;
     S.sub = "match";
     S.pendingWin = res.win;
+    return res;
+  }
+  function toLineupGuard(msg) {
+    if (msg) note(msg);
+    S.bp = null;
+    S.lineupBack = stageSub();
+    S.sub = "lineup";
+    return sceneNow();
+  }
+  function finishBP() {
+    var pend = S.pend || { oppId: S.bp.oppId, bestOf: S.bp.bestOf, label: S.bp.label };
+    var bp = S.bp;
+    var theirs = aiSide(pend.oppId, bp.aiPicks);
+    var mine = buildMySide(bp, theirs, bp.aiPicks);
+    if (!mine) return toLineupGuard("首发不齐，先排阵容再打。");
+    applyResult(pend, bp, theirs, mine);
+    return sceneNow();
+  }
+  /* 助教代打：自动 BP + 直接模拟一场，不手点 */
+  function autoBPFor(pend) {
+    var M = window.MATCH, aiBans = [], pool = {};
+    each(POS, function (pos) {
+      var c = cardAt(pos);
+      if (!c || !c.pool) return;
+      for (var k in c.pool) pool[k] = Math.max(pool[k] || 0, c.pool[k]);
+    });
+    for (var i = 0; i < (Number(D().aiBanCount) || 3); i++) {
+      var b = M.aiBan(pool, rnd, aiBans);
+      if (b) { aiBans.push(b); delete pool[b]; }
+    }
+    var bp = { myBans: [], aiBans: aiBans, picks: {}, aiPicks: aiPicksFor(pend.oppId), tac: null };
+    var used = [];
+    each(POS, function (pos) { if (bp.aiPicks[pos]) used.push(bp.aiPicks[pos]); });
+    each(POS, function (pos) {
+      var c = cardAt(pos);
+      var list = M.heroesFor(pos, c ? c.pool : {}, S.patch, 8).filter(function (h) {
+        return aiBans.indexOf(h.n) < 0 && used.indexOf(h.n) < 0 && bp.aiPicks[pos] !== h.n;
+      });
+      if (!list.length) list = M.heroesFor(pos, c ? c.pool : {}, S.patch, 40).filter(function (h) { return used.indexOf(h.n) < 0; });
+      if (list.length) { bp.picks[pos] = list[0].n; used.push(list[0].n); }
+    });
+    return bp;
+  }
+  function quickMatch() {
+    if (!S.pend) { note("现在没有排着的比赛。"); return sceneNow(); }
+    if (!lineupReady()) return toLineupGuard("首发不齐，先排阵容再打。");
+    var pend = S.pend, bp = autoBPFor(pend);
+    var theirs = aiSide(pend.oppId, bp.aiPicks);
+    var mine = buildMySide(bp, theirs, bp.aiPicks);
+    if (!mine) return toLineupGuard("首发不齐，先排阵容再打。");
+    note("助教代打：" + (pend.label || "这一场") + "，BP 和比赛自动跑完。");
+    applyResult(pend, bp, theirs, mine);
+    return sceneNow();
+  }
+  function tacCdStep() {
+    for (var k in S.tacCd) {
+      S.tacCd[k] = Number(S.tacCd[k]) - 1;
+      if (S.tacCd[k] <= 0) delete S.tacCd[k];
+    }
+  }
+  function injuryStep() {
+    each(S.cards, function (c) { if (Number(c.inj) > 0) c.inj = Number(c.inj) - 1; });
+    if (!S.cards.length || rnd() >= D().injuryRate) return;
+    var st = starters().filter(Boolean);
+    if (!st.length) return;
+    var c = pickOne(st), n = ri(1, D().key === "hard" ? 4 : 3);
+    c.inj = Math.max(Number(c.inj) || 0, n);
+    note((c.name || "无名") + " 伤了，缺阵 " + n + " 场。");
+  }
+  function applyLastBP() {
+    var L = S.lastBP, bp = S.bp;
+    if (!L) return false;
+    bp.myBans = (L.myBans || []).slice(0, 3);
+    bp.tac = (L.tac && S.tactics.indexOf(L.tac) >= 0 && !(Number(S.tacCd[L.tac]) > 0)) ? L.tac : null;
+    var ban = bp.myBans.concat(bp.aiBans), used = [];
+    each(POS, function (pos) { if (bp.aiPicks[pos]) used.push(bp.aiPicks[pos]); });
+    each(POS, function (pos) {
+      var h = (L.picks || {})[pos];
+      if (!h || ban.indexOf(h) >= 0 || bp.aiPicks[pos] === h || used.indexOf(h) >= 0) return;
+      var list = window.MATCH.heroesFor(pos, cardAt(pos) ? cardAt(pos).pool : {}, S.patch, 60), ok = false;
+      for (var i = 0; i < list.length; i++) if (list[i].n === h) { ok = true; break; }
+      if (ok) { bp.picks[pos] = h; used.push(h); }
+    });
+    each(POS, function (pos) {
+      if (bp.picks[pos]) return;
+      var av = bpAvailable(pos);
+      bp.picks[pos] = av.length ? av[0].n : "";
+      if (bp.picks[pos]) used.push(bp.picks[pos]);
+    });
+    bp.pickPos = POS.length;
+    note("沿用上一场 BP：禁选和战术直接照抄，缺的让助教补。");
+    finishBP();
+    return true;
   }
   function scBP() {
     var bp = S.bp;
@@ -1296,9 +1522,12 @@ window.MGR = (function () {
       });
       each(S.tactics, function (id) {
         var t = tacById(id); if (!t) return;
-        var on = bp.tac === id;
-        acts.push(act("tac:" + id, "战术 · " + t.name, tacEffCN(t), on ? "gold" : ""));
+        var on = bp.tac === id, cd = Number(S.tacCd[id]) || 0;
+        acts.push(act("tac:" + id, "战术 · " + t.name + (cd ? "（冷却 " + cd + " 场）" : ""),
+          cd ? "刚用过，这场先歇着" : tacEffCN(t), on ? "gold" : "", cd > 0));
       });
+      if (S.lastBP) acts.push(act("reuse", "沿上一场 BP", "照抄上一场对 " + idName(S.lastBP.oppId) + " 的禁选和战术", "gold"));
+      acts.push(act("sim", "模拟本场", "助教自动 BP，直接出结果"));
       acts.push(act("bpstep", "禁完了，开始选人", "已禁 " + bp.myBans.length + "/3", "gold", bp.myBans.length < 3));
     } else {
       var pos = POS[bp.pickPos] || "MID";
@@ -1312,13 +1541,14 @@ window.MGR = (function () {
       });
       if (!pool.length) acts.push(act("autopick", "这条线没英雄了，随便抓一个"));
       acts.push(act("autopick", "剩下的交给助教", "自动补完五个位置"));
+      acts.push(act("sim", "模拟本场", "剩下的 BP 交给助教，直接出结果"));
       acts.push(act("bpstep", "禁完了，开始选人", "", "", true));
     }
     return scene("bp", {
       kicker: "赛前 BP · " + (bp.label || ""),
       title: "对 " + idName(bp.oppId) + " · " + (bp.bestOf === 1 ? "一局定生死" : "BO" + bp.bestOf),
       lines: bp.step === "ban"
-        ? ["禁三个人。禁对了对面直接少一套打法，禁错了就是你亲手送他一场。"]
+        ? ["禁三个人。禁对了对面直接少一套打法，禁错了就是你亲手送他一场。", "懒得点就「沿上一场」照抄，或者「模拟本场」直接让助教跑。"]
         : ["五个位置，一人一个英雄。熟练度低的就是在场上裸奔。"],
       step: bp.step, pickPos: bp.step === "pick" ? (POS[bp.pickPos] || "MID") : "",
       pickPosCN: bp.step === "pick" ? (POSCN[POS[bp.pickPos]] || "") : "",
@@ -1337,8 +1567,10 @@ window.MGR = (function () {
     note((win ? "赢了。" : "输了。") + " 进账 " + wan(m) + (t ? ("，抽卡券 +" + t) : "") + "。");
   }
   function finishMatch(win) {
+    injuryStep();
     var pend = S.pend;
-    var kind = pend ? pend.kind : "lg";
+    if (!pend) { S.sub = stageSub(); return; }
+    var kind = pend.kind;
     var lm = S.lastMatch || {};
     if (kind === "lg") {
       var r = pend.rnd;
@@ -1396,16 +1628,22 @@ window.MGR = (function () {
 
   /* ================= 场景：常规赛 ================= */
   function scLeague() {
+    /* 自愈：常规赛阶段没接上pending就补一场，避免页面停摆 */
+    if (S.lg && !S.lgDone && (!S.pend || S.pend.kind !== "lg")) { S.pend = null; prepLeague(); }
     var st = standings(), rows = [], acts = [];
     each(st, function (x, i) {
       rows.push({ rank: i + 1, name: idName(x.id), w: x.w, l: x.l, me: x.id === S.teamId, top8: i < 8 });
     });
     var pend = S.pend;
-    if (pend) acts.push(act("pre", "准备对 " + idName(pend.oppId), pend.label, "gold"));
+    if (pend) {
+      acts.push(act("pre", "准备对 " + idName(pend.oppId), lineupReady() ? pend.label : "首发不齐，先排阵容", "gold"));
+      acts.push(act("sim", "模拟本场", "助教自动 BP，直接出结果"));
+    }
     if (S.lgDone) acts.push(act("toplayoff", "进季后赛", "前八名才有资格", "gold"));
     else {
       acts.push(act("skip", "把剩下的常规赛交给助教", "直接出结果，好坏都认", ""));
     }
+    acts.push(act("lineup", "换阵容", lineupReady() ? "赛季中随时可改" : "首发有空缺，先排人", lineupReady() ? "" : "gold"));
     acts.push(act("go:manage", "回办公室", "训练、抽卡、卖人"));
     return scene("league", {
       kicker: "常规赛 · 第 " + S.season + " 年",
@@ -1418,9 +1656,18 @@ window.MGR = (function () {
   }
   function scPlayoff() {
     var po = S.po || {};
+    /* 自愈：没有待打比赛就重新推进，别让季后赛死在半路 */
+    if (po.seeds && (!S.pend || S.pend.kind !== "po") && !po.done) {
+      S.pend = null;
+      prepPlayoff();
+    }
     var acts = [];
-    if (S.pend) acts.push(act("pre", "准备对 " + idName(S.pend.oppId), S.pend.label, "gold"));
-    else if (po.done) acts.push(act("toworlds", "赛季收尾", "", "gold"));
+    if (S.pend) {
+      acts.push(act("pre", "准备对 " + idName(S.pend.oppId), lineupReady() ? S.pend.label : "首发不齐，先排阵容", "gold"));
+      acts.push(act("sim", "模拟本轮", "这一轮 BO5 交给助教自动跑"));
+    } else if (po.done) acts.push(act("toworlds", "赛季收尾", "", "gold"));
+    acts.push(act("lineup", "换阵容", lineupReady() ? "赛前随时可改" : "首发有空缺，先排人", lineupReady() ? "" : "gold"));
+    acts.push(act("go:manage", "回办公室", "训练、抽卡、卖人"));
     return scene("playoff", {
       kicker: "季后赛 · " + (RDNAME[po.round] || "已结束"),
       title: po.champion ? ("冠军：" + idName(po.champion)) : (po.top4 && po.top4.indexOf(S.teamId) >= 0 ? "还在打" : "已出局"),
@@ -1433,9 +1680,18 @@ window.MGR = (function () {
   }
   function scWorlds() {
     var w = S.wd || {};
+    /* 自愈：世界赛阶段没有待打比赛就重新推进一次，绝不让玩家卡死在只剩两个按钮的页面 */
+    if (!w.done && w.sched && (!S.pend || (S.pend.kind !== "wdg" && S.pend.kind !== "wdb"))) {
+      S.pend = null;
+      prepWorlds();
+    }
     var acts = [];
-    if (S.pend) acts.push(act("pre", "准备对 " + idName(S.pend.oppId), S.pend.label, "gold"));
-    else if (w.done) acts.push(act("toseason", "赛季结束", "", "gold"));
+    if (S.pend) {
+      acts.push(act("pre", "准备对 " + idName(S.pend.oppId), lineupReady() ? S.pend.label : "首发不齐，先排阵容", "gold"));
+      acts.push(act("sim", "模拟本轮", "这一轮交给助教自动跑"));
+    } else if (w.done) acts.push(act("toseason", "赛季结束", "", "gold"));
+    acts.push(act("lineup", "换阵容", lineupReady() ? "赛前随时可改" : "首发有空缺，先排人", lineupReady() ? "" : "gold"));
+    acts.push(act("go:manage", "回办公室", "训练、抽卡、卖人"));
     var g0 = w.groups ? groupRank(0) : [], g1 = w.groups ? groupRank(1) : [];
     function rowsOf(arr) { return arr.map(function (x, i) { return { rank: i + 1, name: idName(x.id), w: x.w, l: x.l, me: x.id === S.teamId }; }); }
     return scene("worlds", {
@@ -1538,6 +1794,12 @@ window.MGR = (function () {
 
   /* ================= 财务 ================= */
   function payAndStart() {
+    if (!lineupReady()) {
+      note("首发还没排齐，排完才能发工资开赛。");
+      S.lineupBack = "cap";
+      S.sub = "lineup";
+      return false;
+    }
     var c = capInfo();
     var short = Math.max(0, c.pay - S.budget);
     S.budget -= c.pay;
@@ -1558,17 +1820,14 @@ window.MGR = (function () {
   function autosellOne() {
     var starterUids = [];
     each(POS, function (p) { if (S.lineup[p]) starterUids.push(S.lineup[p]); });
-    var bench = S.cards.filter(function (c) { return starterUids.indexOf(c.uid) < 0 && POS.indexOf(c.pos) >= 0; });
-    var pool = bench.length ? bench : S.cards.filter(function (c) { return POS.indexOf(c.pos) >= 0; });
+    var pool = S.cards.filter(function (c) { return POS.indexOf(c.pos) >= 0 && sellCheck(c).ok; });
+    if (!pool.length) { note("没人能卖：再卖就凑不齐首发了。先买人或换阵。"); return false; }
+    var bench = pool.filter(function (c) { return starterUids.indexOf(c.uid) < 0; });
+    var arr = bench.length ? bench : pool;
     var best = null;
-    each(pool, function (c) { if (!best || salOf(c) > salOf(best)) best = c; });
+    each(arr, function (c) { if (!best || salOf(c) > salOf(best)) best = c; });
     if (!best) return false;
-    var got = sellPrice(best);
-    S.budget += got;
-    for (var p in S.lineup) if (S.lineup[p] === best.uid) S.lineup[p] = null;
-    S.cards = S.cards.filter(function (c) { return c.uid !== best.uid; });
-    note("把 " + (best.name || "无名") + " 卖了，" + wan(got) + " 到账。人走茶凉。");
-    return true;
+    return doSell(best);
   }
 
   /* ================= 场景分发 ================= */
@@ -1614,8 +1873,8 @@ window.MGR = (function () {
       if (!raw) break;
       if (raw.rarity === "金") { S.pity = 0; S.goldPity = 0; }
       else if (raw.rarity === "紫") { S.pity = 0; }
-      if (seen[raw.id] || S.cards.length >= MAX_CARDS) {
-        var back = (RAR[raw.rarity] || RAR["蓝"]).v;
+      if (seen[raw.id] || S.cards.length >= rosterMax()) {
+        var back = n === 10 ? ((RAR[raw.rarity] || RAR["蓝"]).v) : 0;
         refund += back;
         got.push({ dup: true, name: raw.name || "", cn: raw.cn || "", rar: raw.rarity || "蓝", rc: (RAR[raw.rarity] || RAR["蓝"]).c, back: back, poscn: POSCN[raw.pos] || "" });
         continue;
@@ -1625,9 +1884,21 @@ window.MGR = (function () {
       S.cards.push(c);
       got.push({ dup: false, name: c.name || "", cn: c.cn || "", rar: c.rarity, rc: RAR[c.rarity].c, poscn: POSCN[c.pos] || "", uid: c.uid, ovr: ovrOf(c) });
     }
-    S.tickets += refund;
+    /* 退券必须低于抽卡成本，不能让抽卡变成刷券 */
+    var real = Math.min(refund, cost - 1);
+    if (real < refund) {
+      var over = refund - real;
+      for (var g = got.length - 1; g >= 0 && over > 0; g--) {
+        var b = got[g].back || 0;
+        if (!b) continue;
+        var cut = Math.min(b, over);
+        got[g].back -= cut; over -= cut;
+      }
+    }
+    S.tickets += real;
     S.pull = got;
-    if (refund) note("重复卡分解，退回 " + refund + " 张券。");
+    if (real) note("重复卡折券，退回 " + real + " 张，一定少于这次花掉的 " + cost + " 张。");
+    else if (refund === 0 && got.length && got[got.length - 1].dup) note("单抽重复不退券。想要券就去十连。");
     return true;
   }
 
@@ -1666,7 +1937,7 @@ window.MGR = (function () {
     }
     if (code.indexOf("buy:") === 0) {
       var cid = code.slice(4), raw = cardById(cid), price = buyPrice(cid);
-      if (raw && S.budget >= price && S.cards.length < MAX_CARDS && !ownIds()[cid]) {
+      if (raw && S.budget >= price && S.cards.length < rosterMax() && !ownIds()[cid]) {
         S.budget -= price;
         S.cards.push(mkCard(raw));
         S.market = S.market.filter(function (x) { return x !== cid; });
@@ -1677,12 +1948,7 @@ window.MGR = (function () {
     }
     if (code.indexOf("sell:") === 0) {
       var uid = code.slice(5), cc = findCard(uid);
-      if (cc && S.cards.length > 5) {
-        S.budget += sellPrice(cc);
-        for (var q in S.lineup) if (S.lineup[q] === uid) S.lineup[q] = null;
-        S.cards = S.cards.filter(function (x) { return x.uid !== uid; });
-        note("卖掉 " + (cc.name || "无名") + "，" + wan(sellPrice(cc)) + " 回血。");
-      }
+      if (cc) doSell(cc);
       S.sub = "sell";
       return sceneNow();
     }
@@ -1704,24 +1970,69 @@ window.MGR = (function () {
     }
     if (code.indexOf("tac:") === 0) {
       var tcid = code.slice(4);
-      if (S.bp) S.bp.tac = (S.bp.tac === tcid ? null : tcid);
+      if (S.bp && !(Number(S.tacCd[tcid]) > 0)) S.bp.tac = (S.bp.tac === tcid ? null : tcid);
       S.sub = "bp";
       return sceneNow();
     }
     if (code.indexOf("pick:") === 0) {
-      var hn = code.slice(5), ppos = POS[S.bp.pickPos];
-      if (S.bp && ppos) {
-        S.bp.picks[ppos] = hn;
-        S.bp.pickPos++;
-        if (S.bp.pickPos >= POS.length) { finishBP(); return sceneNow(); }
+      var hn = code.slice(5);
+      if (S.bp) {
+        var ppos = POS[S.bp.pickPos];
+        if (ppos) {
+          S.bp.picks[ppos] = hn;
+          S.bp.pickPos++;
+          if (S.bp.pickPos >= POS.length) { finishBP(); return sceneNow(); }
+        }
       }
       S.sub = "bp";
+      return sceneNow();
+    }
+    if (code === "reuse") {
+      if (S.bp && S.lastBP) {
+        applyLastBP();
+        /* finishBP 成功后已切到 match，别再覆盖回 bp */
+        if (!S.bp) return sceneNow();
+        if (S.sub !== "bp") return sceneNow();
+      } else if (S.bp) { S.bp.step = "pick"; note("没有上一场 BP 可抄，直接进选人。"); }
+      S.sub = "bp";
+      return sceneNow();
+    }
+    if (code === "sim") return quickMatch();
+    if (code === "lineup") {
+      var lback = (S.sub === "league" || S.sub === "playoff" || S.sub === "worlds" || S.sub === "cap") ? S.sub : "manage";
+      return openLineup(lback);
+    }
+    if (code === "expand") {
+      var ec = expandCost();
+      if (rosterMax() < ROSTER_MAX && S.budget >= ec) {
+        S.budget -= ec;
+        S.rosterMax = Math.min(ROSTER_MAX, rosterMax() + 2);
+        note("更衣室加了两排柜子，卡槽开到 " + rosterMax() + "。");
+      }
+      S.sub = "manage";
+      return sceneNow();
+    }
+    if (code === "scout") {
+      var sk = scoutCost();
+      if (S.budget >= sk) {
+        S.budget -= sk;
+        S.scoutUse = (Number(S.scoutUse) || 0) + 1;
+        rollMarket();
+        note("球探跑了一圈，换了一批挂牌。下次再派要涨价。");
+      }
+      S.sub = "market";
+      return sceneNow();
+    }
+    if (code.indexOf("diff:") === 0) {
+      S.diff = diffKey(code.slice(5));
+      note("难度切到「" + D().name + "」：" + D().desc);
+      S.sub = "menu";
       return sceneNow();
     }
     switch (code) {
       case "go": S.sub = "team"; return sceneNow();
       case "custom": S.sub = "team"; return sceneNow();
-      case "restart": S = null; return scMenu();
+      case "restart": S = newState({ diff: S ? S.diff : "normal" }); S.sub = "menu"; return scMenu();
       case "keep": S.sub = "lineup"; return sceneNow();
       case "redraft":
         if (S.redraft > 0) { S.redraft--; doInitialDraft(); }
@@ -1730,11 +2041,19 @@ window.MGR = (function () {
       case "clear": S.lineup = { TOP: null, JUG: null, MID: null, BOT: null, SUP: null }; S.sub = "lineup"; return sceneNow();
       case "ready":
         if (!lineupReady()) return scLineup();
-        S.pendingWin = null;
-        rollPatch(); rollCoachOffers(); rollMarket(); grantTactics(1);
-        S.marketRound = 0;
-        S.sub = "manage"; return sceneNow();
-      case "back": S.sub = "manage"; return sceneNow();
+        if (!S.draftDone) {
+          S.draftDone = true;
+          S.pendingWin = null;
+          rollPatch(); rollCoachOffers(); rollMarket(); grantTactics(1);
+          S.marketRound = 0;
+        }
+        var backR = S.lineupBack || (seasonStarted() ? stageSub() : "manage");
+        S.lineupBack = null;
+        S.sub = backR; return sceneNow();
+      case "back":
+        var bk = (S.sub === "lineup" && S.lineupBack) ? S.lineupBack : "manage";
+        S.lineupBack = null;
+        S.sub = bk; return sceneNow();
       case "focus_back": S.trainFocus = null; S.sub = "train"; return sceneNow();
       case "sellmode": S.sub = "sell"; return sceneNow();
       case "g1": doPull(1); S.sub = "gacha"; return sceneNow();
@@ -1747,7 +2066,10 @@ window.MGR = (function () {
       case "go:start": if (seasonStarted()) { S.sub = stageSub(); return sceneNow(); } S.sub = "cap"; return sceneNow();
       case "go:league": S.sub = stageSub(); return sceneNow();
       case "go:manage": S.sub = "manage"; return sceneNow();
-      case "tax": case "ok": if (seasonStarted()) { S.sub = stageSub(); return sceneNow(); } payAndStart(); return sceneNow();
+      case "tax": case "ok":
+        if (seasonStarted()) { S.sub = stageSub(); return sceneNow(); }
+        if (!lineupReady()) { note("首发不齐，排完再开赛。"); return openLineup("cap"); }
+        payAndStart(); return sceneNow();
       case "autosell": autosellOne(); S.sub = "cap"; return sceneNow();
       case "bpstep": if (S.bp && S.bp.myBans.length >= 3) S.bp.step = "pick"; S.sub = "bp"; return sceneNow();
       case "autopick":
@@ -1760,20 +2082,25 @@ window.MGR = (function () {
           finishBP();
         }
         return sceneNow();
-      case "pre": if (S.pend) startBP(S.pend); return sceneNow();
+      case "pre":
+        if (!S.pend) return sceneNow();
+        if (!lineupReady()) return toLineupGuard("首发不齐，先排阵容再打。");
+        startBP(S.pend);
+        return sceneNow();
       case "next": onMatchNext(); return sceneNow();
       case "skip":
-        while (S.pend || !S.lgDone) {
+        if (!lineupReady()) return toLineupGuard("首发不齐，先排阵再让助教代打。");
+        var gs = 0;
+        while ((S.pend || !S.lgDone) && gs++ < 40) {
           if (!S.pend) { prepLeague(); if (!S.pend) break; }
-          var opp = S.pend.oppId;
-          var theirs = aiSide(opp, aiPicksFor(opp));
-          var mine = buildMySide({ picks: {}, tac: null }, theirs, null);
-          var res = window.MATCH.simBo(mine, theirs, { bestOf: S.pend.bestOf || 3, dim: "GAME", patchBuffs: S.patch });
-          S.lastMatch = { win: res.win, w: res.w, l: res.l, label: S.pend.label, oppId: opp, oppName: idName(opp), keyVars: [] };
-          finishMatch(res.win);
+          var pendSk = S.pend, bpSk = autoBPFor(pendSk);
+          var theirsSk = aiSide(pendSk.oppId, bpSk.aiPicks);
+          var mineSk = buildMySide(bpSk, theirsSk, bpSk.aiPicks);
+          if (!mineSk) return toLineupGuard("首发不齐，先排阵再让助教代打。");
+          var resSk = applyResult(pendSk, bpSk, theirsSk, mineSk);
+          finishMatch(resSk.win);
           if (S.lgDone) break;
         }
-        S.sub = S.lgDone ? "league" : "league";
         return sceneNow();
       case "toplayoff": startPlayoff(); return sceneNow();
       case "toworlds":
@@ -1820,6 +2147,12 @@ window.MGR = (function () {
   return {
     VERSION: "1.0.0",
     POS: POS, POSCN: POSCN, STAT: STAT,
+    /* 难度分级：ui.js 先选难度，再 MGR.start({ diff: "easy" | "normal" | "hard" }) */
+    DIFFS: DIFFS, DIFF_ORDER: DIFF_ORDER,
+    diff: function () { return diffBrief(); },
+    lineupReady: function () { return S ? lineupReady() : false; },
+    rosterMax: function () { return rosterMax(); },
+    openLineup: function (back) { return openLineup(back || "manage"); },
     start: start,
     scene: sceneNow,
     choose: choose,
