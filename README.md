@@ -152,6 +152,11 @@ lol-career/
   node tools/probe.cjs three normal 20250101   # 单局打印赛段名次/国际赛/时间线
   ```
   项目内置 node 路径：`C:\Users\青雨\.dsh\dsh-runtimes\dsh-primary-runtime\dependencies\node\bin\node.exe`
+- **打包发布**（改完代码再跑，否则线上还吃旧缓存）：
+  ```
+  node tools/build_dist.cjs
+  ```
+  这会把运行所需的文件复制到 `dist/dengshen/`，给所有 css / js 的引用加上按内容算出来的 `?v=` 版本号，顺手检查 `index.html` 有没有引用不存在的文件，最后把 `og.png`、`icon-192.png`、`apple-touch-icon.png` 一起带上。线上地址 <https://qingyu107.github.io/dengshen/>，分享出去时用的是 `og.png` 那张 1200×630 的社交卡。
 
 ## 八、已知边界
 
@@ -261,3 +266,11 @@ lol-career/
 - **跳过分**：当月最低胜率超过 80% 时给一个「挂机五场」，直接结算本月常规赛，但有两成概率爆冷翻车。
 - **世界赛对阵树**：engine.js 的 worldsTreeScene() 与 ui.js 的 renderWorldsTree()，八强到决赛整棵树，可只看签位、也可整届模拟。
 - **弹幕降噪**：单屏起始 3 条、每 1.1 秒补一条、同屏上限 7 条。
+
+## 十五、v3.7（美术资产接入 / WebP）
+
+- **场景底图**：`assets/bg/` 十张（menu、ldl、lpl、playoff、worlds、ending、bp、mgr_office、mgr_training、mgr_market），由 `js/art.js` 的 `sceneBg()` 按当前场景挑图，铺在 `#bgPhoto` 上，压到 42% 不抢正文。
+- **图标与徽章**：商店十二件商品走 `assets/icons/*.webp`（对应 `js/data/shop.js` 的 `icon` 字段）；战队徽章走 `assets/crests/*.webp` 八枚，`crest()` 按队名哈希后叠队伍色；头像走 `assets/avatars/*.webp` 六种，按位置后缀（JUG/SUP/COACH）与资历哈希分配。
+- **卡面与结局**：抽卡卡面按 `build` 流派取 `assets/cards/*.webp`；结局页按评级取 `assets/ending/*.webp`；档案室编年史用 `assets/archive/*.webp`，没有对应年份就取不晚于该年的最近一张。
+- **体积**：五十四张 WebP 共 3.78 MB，PNG 母版留在 `E:\素材\assets`（65 MB），`tools/build_dist.cjs` 会把 `assets/` 一起打进 `dist`。
+- **OG 与图标**：`og.png`（1200×630）、`favicon.png`/`favicon-32.png`/`icon-192.png`/`apple-touch-icon.png` 全部替换，`index.html` 的 `og:image` 与图标链已指向新图。
