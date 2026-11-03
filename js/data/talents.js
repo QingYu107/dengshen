@@ -9,6 +9,7 @@ window.DATA_TALENTS = [
   /* ================= talent · 被动，永久生效（40） ================= */
   {
     id: "tal_msi_research",
+    src: { type: "real", who: "LPL 赛前采访名场面", year: 2021, event: "赛前采访名句，赛后常被反讽成“研究回程机票”", quote: "我已经在研究 MSI 的对手了", note: "原梗来源；说话人与年份存疑，卡面效果为二创" },
     name: "我已经在研究 MSI 的对手了",
     type: "talent",
     rarity: "gold",
@@ -21,6 +22,7 @@ window.DATA_TALENTS = [
   },
   {
     id: "tal_gnar",
+    src: { type: "real", who: "LPL 教练 / 弹幕", year: 2022, event: "对上路选手英雄池的经典质问，“纳尔”成了不会新英雄的代名词", quote: "一个赛季练一个纳尔有这么难吗", note: "原梗来源；具体出处存疑，卡面为二创" },
     name: "一个赛季练一个纳尔有这么难吗",
     type: "talent",
     rarity: "purple",
@@ -33,6 +35,7 @@ window.DATA_TALENTS = [
   },
   {
     id: "tal_sunrise",
+    src: { type: "real", who: "LPL 选手赛后采访", year: 2021, event: "输比赛后的采访金句，被抗吧用来嘲讽“忘性大”", quote: "太阳升起就把昨天忘掉", note: "原梗来源；说话人与年份存疑，卡面为二创" },
     name: "太阳升起就把昨天忘掉",
     type: "talent",
     rarity: "gold",
@@ -45,6 +48,7 @@ window.DATA_TALENTS = [
   },
   {
     id: "tal_4396",
+    src: { type: "real", who: "Clearlove（厂长）", year: 2016, event: "2016 世界赛 EDG 打野盲僧，全场伤害 4396", quote: "4396", note: "原梗来源；卡面效果为二创" },
     name: "4396",
     type: "talent",
     rarity: "purple",
@@ -57,6 +61,7 @@ window.DATA_TALENTS = [
   },
   {
     id: "tal_carry_every",
+    src: { type: "real", who: "LPL 观众 / 弹幕", year: 0, event: "“把把 C”是观众对核心选手的通用要求，混一把就被骂÷", quote: "把把 C", note: "圈内通用说法；卡面效果为二创" },
     name: "把把 C",
     type: "talent",
     rarity: "purple",
@@ -69,6 +74,7 @@ window.DATA_TALENTS = [
   },
   {
     id: "tal_four_protect_one",
+    src: { type: "real", who: "Uzi / RNG", year: 2018, event: "2018 年 RNG 围绕 Uzi 的四保一体系，赢了一起吹、输了 AD 背锅", quote: "四保一", note: "原梗来源；卡面效果为二创" },
     name: "四保一",
     type: "talent",
     rarity: "purple",
@@ -81,6 +87,7 @@ window.DATA_TALENTS = [
   },
   {
     id: "tal_dice",
+    src: { type: "real", who: "369（白家浩）", year: 2022, event: "369 的状态起伏被称作“摇骰子”：摇到 9 是世界级，摇到 3 是人机", quote: "摇骰子", note: "原梗来源；卡面效果为二创" },
     name: "摇骰子",
     type: "talent",
     rarity: "purple",
@@ -93,6 +100,7 @@ window.DATA_TALENTS = [
   },
   {
     id: "tal_genshin",
+    src: { type: "real", who: "网络热梗“原神启动”", year: 2022, event: "2022 年爆火的网络梗，被拿来调侃选手赛前打原神", quote: "原神，启动！", note: "网络梗，非选手原话；卡面为二创" },
     name: "原神启动",
     type: "talent",
     rarity: "blue",
@@ -105,6 +113,7 @@ window.DATA_TALENTS = [
   },
   {
     id: "tal_edg_jungle",
+    src: { type: "parody", who: "EDG 打野（Clearlove / Jiejie）", year: 2021, event: "“重生之我在 EDG 打野”类网文标题在 2021 夺冠后流行", note: "标题梗真实存在，情节与效果为二创" },
     name: "重生之我在 EDG 打野",
     type: "talent",
     rarity: "purple",
@@ -117,6 +126,7 @@ window.DATA_TALENTS = [
   },
   {
     id: "tal_meta_us",
+    src: { type: "parody", who: "LPL 队伍/版本叙事", year: 2020, event: "“我们就是版本”式狂言：队伍自己定义 meta，不等拳头改", note: "狂言类梗，非逐字原话；卡面为二创" },
     name: "我们就是版本",
     type: "talent",
     rarity: "blue",
@@ -129,6 +139,7 @@ window.DATA_TALENTS = [
   },
   {
     id: "tal_meta_me",
+    src: { type: "parody", who: "抗吧狂言句式", year: 0, event: "“爷就是版本”是抗吧常用的狂言句式", note: "网络句式，非具体选手原话；卡面为二创" },
     name: "爷就是版本",
     type: "talent",
     rarity: "blue",
@@ -141,6 +152,7 @@ window.DATA_TALENTS = [
   },
   {
     id: "tal_lv2_gank",
+    src: { type: "real", who: "LPL 打野通用", year: 2019, event: "“二级抓下”是 LPL 打野的经典节奏梗，下路永远在挨抓", quote: "二级抓下", note: "圈内通用说法；卡面效果为二创" },
     name: "二级抓下",
     type: "talent",
     rarity: "blue",
@@ -153,6 +165,7 @@ window.DATA_TALENTS = [
   },
   {
     id: "tal_reverse_q",
+    src: { type: "real", who: "GodV（韦神 / LGD）", year: 2015, event: "2015 世界赛小组赛 LGD，韦神一记反方向的 Q 成了 LPL 最长寿的表情包", quote: "反向 Q", note: "原梗来源；卡面效果为二创" },
     name: "反向 Q",
     type: "talent",
     rarity: "white",
@@ -165,6 +178,7 @@ window.DATA_TALENTS = [
   },
   {
     id: "tal_all_brawl",
+    src: { type: "parody", who: "2018 iG 式莽夫队", year: 2018, event: "“全员莽夫”是 LPL 对敢打敢拼队伍的称呼", note: "评价类梗，非原话；卡面为二创" },
     name: "全员莽夫",
     type: "talent",
     rarity: "blue",
@@ -177,6 +191,7 @@ window.DATA_TALENTS = [
   },
   {
     id: "tal_kr_rank1",
+    src: { type: "real", who: "LPL 选手通用", year: 0, event: "韩服第一是 LPL 选手的标配头衔，“rank 猛、正赛拉”是常见反差", quote: "韩服第一", note: "圈内通用说法；卡面效果为二创" },
     name: "韩服第一",
     type: "talent",
     rarity: "blue",
@@ -189,6 +204,7 @@ window.DATA_TALENTS = [
   },
   {
     id: "tal_no_overtime",
+    src: { type: "original", note: "原创梗，非真实选手言论" },
     name: "永不加班",
     type: "talent",
     rarity: "blue",
@@ -201,6 +217,7 @@ window.DATA_TALENTS = [
   },
   {
     id: "tal_brawl_ok",
+    src: { type: "real", who: "电竞圈通用说法", year: 0, event: "“莽就完事了”是 LPL 观众对敢打的经典评价", quote: "莽就完事了", note: "圈内通用说法；卡面效果为二创" },
     name: "莽就完事了",
     type: "talent",
     rarity: "blue",
@@ -213,6 +230,7 @@ window.DATA_TALENTS = [
   },
   {
     id: "tal_phoenix",
+    src: { type: "parody", who: "FPX（2019 世界冠军，队名 Phoenix）", year: 2019, event: "FPX 队名 Phoenix / 不死鸟，夺冠后“涅槃”成了官方叙事", note: "队伍意象真实，情节与效果为二创" },
     name: "不死鸟",
     type: "talent",
     rarity: "blue",
@@ -225,6 +243,7 @@ window.DATA_TALENTS = [
   },
   {
     id: "tal_world_first_top",
+    src: { type: "real", who: "Bin（陈泽彬）", year: 2024, event: "Bin 多次在采访中自称世界第一上单；“世界第一上单”在 TheShy / Zeus / Bin 之间来回交接", quote: "世界第一上单", note: "原梗来源；逐字原话以当时采访为准，卡面为二创" },
     name: "世界第一上单",
     type: "talent",
     rarity: "gold",
@@ -237,6 +256,7 @@ window.DATA_TALENTS = [
   },
   {
     id: "tal_uncrowned",
+    src: { type: "parody", who: "Chovy / knight / Uzi 等无冠强者", year: 2024, event: "“无冠之王”用来形容联赛无敌、世界赛差一口气的选手", note: "评价类梗，非原话；卡面为二创" },
     name: "无冠之王",
     type: "talent",
     rarity: "gold",
@@ -249,6 +269,7 @@ window.DATA_TALENTS = [
   },
   {
     id: "tal_kangya_bar",
+    src: { type: "real", who: "百度贴吧·抗压吧", year: 2013, event: "抗压吧是 LPL 最大的黑子聚集地，“抗压吧吧主”指被骂最多的人", quote: "抗压吧", note: "社区梗；卡面效果为二创" },
     name: "抗压吧吧主",
     type: "talent",
     rarity: "purple",
@@ -261,6 +282,7 @@ window.DATA_TALENTS = [
   },
   {
     id: "tal_jungle_king",
+    src: { type: "real", who: "Clearlove（厂长）", year: 2015, event: "厂长“野区养猪”时期，EDG 打野的野区统治力", quote: "你的野区我的家", note: "原梗来源；卡面效果为二创" },
     name: "厂长の野区",
     type: "talent",
     rarity: "purple",
@@ -273,6 +295,7 @@ window.DATA_TALENTS = [
   },
   {
     id: "tal_glass_body",
+    src: { type: "original", note: "原创梗，非真实选手言论" },
     name: "玻璃人",
     type: "talent",
     rarity: "blue",
@@ -285,6 +308,7 @@ window.DATA_TALENTS = [
   },
   {
     id: "tal_ghost_champ",
+    src: { type: "parody", who: "LPL 粉丝", year: 0, event: "“虚空冠军”指粉丝替选手想象出来的冠军", note: "网络说法，非原话；卡面为二创" },
     name: "虚空冠军",
     type: "talent",
     rarity: "white",
@@ -297,6 +321,7 @@ window.DATA_TALENTS = [
   },
   {
     id: "tal_actor",
+    src: { type: "parody", who: "电竞圈“演员 / 假赛”传闻", year: 2020, event: "LDL / LPL 曾多次查处假赛，“演员”成了骂人词", note: "基于真实假赛事件二创，不指向具体选手；卡面为二创" },
     name: "演员",
     type: "talent",
     rarity: "white",
@@ -309,6 +334,7 @@ window.DATA_TALENTS = [
   },
   {
     id: "tal_slacking",
+    src: { type: "real", who: "电竞圈通用说法", year: 2022, event: "“开摆”是 2022 年前后流行的摆烂说法，指选手放弃训练和比赛", quote: "开摆", note: "圈内通用说法；卡面效果为二创" },
     name: "开摆",
     type: "talent",
     rarity: "white",
@@ -321,6 +347,7 @@ window.DATA_TALENTS = [
   },
   {
     id: "tal_dog_down",
+    src: { type: "real", who: "Uzi（小狗）", year: 2018, event: "2018 世界赛 RNG 八强出局后，“小狗倒了”成了抗吧与弹幕的经典哭腔梗", quote: "小狗倒了", note: "原梗来源；卡面为二创" },
     name: "小狗倒了",
     type: "talent",
     rarity: "white",
@@ -333,6 +360,7 @@ window.DATA_TALENTS = [
   },
   {
     id: "tal_world_focus",
+    src: { type: "parody", who: "LPL 大场面选手", year: 0, event: "“世界聚焦于你”是赛前短片与解说的常用句式", note: "句式梗，非原话；卡面为二创" },
     name: "世界聚焦于你",
     type: "talent",
     rarity: "purple",
@@ -345,6 +373,7 @@ window.DATA_TALENTS = [
   },
   {
     id: "tal_no_loss_talk",
+    src: { type: "real", who: "LPL 解说 / 弹幕", year: 2015, event: "“这波不亏”是解说圆场的经典话术，后来成了嘲讽", quote: "这波不亏", note: "原梗来源；卡面效果为二创" },
     name: "这波不亏",
     type: "talent",
     rarity: "blue",
@@ -357,6 +386,7 @@ window.DATA_TALENTS = [
   },
   {
     id: "tal_solo_kill_faker",
+    src: { type: "real", who: "Faker 的对手们", year: 2016, event: "“单杀 Faker”一度是 LPL 选手的荣誉勋章，够吹到退役", quote: "单杀 Faker", note: "圈内通用说法；卡面效果为二创" },
     name: "单杀 Faker",
     type: "talent",
     rarity: "gold",
@@ -369,6 +399,7 @@ window.DATA_TALENTS = [
   },
   {
     id: "tal_super_ghost",
+    src: { type: "real", who: "电竞圈通用说法", year: 0, event: "“超鬼”指死太多次（0/8 起步），比“超神”更常见", quote: "超鬼", note: "圈内通用说法；卡面效果为二创" },
     name: "超鬼",
     type: "talent",
     rarity: "white",
@@ -381,6 +412,7 @@ window.DATA_TALENTS = [
   },
   {
     id: "tal_director",
+    src: { type: "parody", who: "LPL 单核队", year: 2019, event: "“院长”指一个人扛全队的选手，队友负责在旁边鼓掌", note: "评价类梗；卡面为二创" },
     name: "院长",
     type: "talent",
     rarity: "blue",
@@ -393,6 +425,7 @@ window.DATA_TALENTS = [
   },
   {
     id: "tal_hand_monster",
+    src: { type: "original", note: "原创梗，非真实选手言论" },
     name: "手速怪物",
     type: "talent",
     rarity: "blue",
@@ -405,6 +438,7 @@ window.DATA_TALENTS = [
   },
   {
     id: "tal_review_freak",
+    src: { type: "parody", who: "LPL 复盘文化", year: 2020, event: "选手 / 解说逐帧复盘是 LPL 的日常，凌晨三点的录像室", note: "现象真实，情节为二创" },
     name: "复盘狂",
     type: "talent",
     rarity: "blue",
@@ -417,6 +451,7 @@ window.DATA_TALENTS = [
   },
   {
     id: "tal_top_star",
+    src: { type: "parody", who: "LPL 顶流选手", year: 2023, event: "商务与舆论压过训练，“顶流”成了双刃剑", note: "现象真实，情节为二创" },
     name: "顶流",
     type: "talent",
     rarity: "purple",
@@ -431,6 +466,7 @@ window.DATA_TALENTS = [
   /* ================= skill · 主动，一赛季一次（13） ================= */
   {
     id: "sk_steal_home",
+    src: { type: "real", who: "LPL 名场面", year: 2019, event: "“偷家”是 LoL 经典战术，LPL 多次出现决胜局偷家翻盘", quote: "偷家", note: "通用战术梗；卡面效果为二创" },
     name: "偷家",
     type: "skill",
     rarity: "purple",
@@ -443,6 +479,7 @@ window.DATA_TALENTS = [
   },
   {
     id: "sk_restart",
+    src: { type: "real", who: "LPL 重开事件", year: 2021, event: "比赛中途重开在 LPL 引发过争议，“这局不算”成了梗", quote: "重开", note: "圈内通用说法；卡面为二创" },
     name: "重开",
     type: "skill",
     rarity: "blue",
@@ -455,6 +492,7 @@ window.DATA_TALENTS = [
   },
   {
     id: "sk_mind_game",
+    src: { type: "parody", who: "LPL 赛前垃圾话传统", year: 2019, event: "赛前嘴炮是 LPL 的固定节目，采访区的狠话比 BP 好看", note: "现象真实，台词为二创" },
     name: "心理战",
     type: "skill",
     rarity: "purple",
@@ -467,6 +505,7 @@ window.DATA_TALENTS = [
   },
   {
     id: "sk_hide_card",
+    src: { type: "real", who: "LPL 教练组", year: 2021, event: "藏一手指季后赛掏新阵容、常规赛故意输", quote: "藏一手", note: "圈内通用说法；卡面为二创" },
     name: "藏一手",
     type: "skill",
     rarity: "blue",
@@ -479,6 +518,7 @@ window.DATA_TALENTS = [
   },
   {
     id: "sk_burst",
+    src: { type: "real", who: "电竞圈通用说法", year: 0, event: "“爆种”指突然状态爆发、打穿对面", quote: "爆种", note: "圈内通用说法；卡面为二创" },
     name: "爆种",
     type: "skill",
     rarity: "blue",
@@ -491,6 +531,7 @@ window.DATA_TALENTS = [
   },
   {
     id: "sk_one_through_five",
+    src: { type: "real", who: "LPL 季后赛", year: 2022, event: "双败赛制下从败者组一穿多支队伍", quote: "一穿五", note: "圈内通用说法；卡面为二创" },
     name: "一穿五",
     type: "skill",
     rarity: "gold",
@@ -503,6 +544,7 @@ window.DATA_TALENTS = [
   },
   {
     id: "sk_penta",
+    src: { type: "original", note: "原创梗，非真实选手言论" },
     name: "五杀",
     type: "skill",
     rarity: "purple",
@@ -515,6 +557,7 @@ window.DATA_TALENTS = [
   },
   {
     id: "sk_smite_baron",
+    src: { type: "real", who: "Condi（WE 打野）", year: 2017, event: "Condi 的抢龙是 2017 年 LPL 顶流剪辑素材", quote: "抢龙", note: "原梗来源；卡面为二创" },
     name: "惩戒抢龙",
     type: "skill",
     rarity: "blue",
@@ -527,6 +570,7 @@ window.DATA_TALENTS = [
   },
   {
     id: "sk_hold_on",
+    src: { type: "real", who: "国服玩家 / 解说", year: 2015, event: "“稳住，我们能赢”是国服经典快捷语，逆风局自我催眠", quote: "稳住，我们能赢", note: "原梗来源；卡面为二创" },
     name: "稳住我们能赢",
     type: "skill",
     rarity: "blue",
@@ -539,6 +583,7 @@ window.DATA_TALENTS = [
   },
   {
     id: "sk_face_ult",
+    src: { type: "real", who: "电竞圈通用说法", year: 0, event: "“贴脸开大”是嘲讽无脑开团的常用说法", quote: "贴脸开大", note: "圈内通用说法；卡面为二创" },
     name: "贴脸开大",
     type: "skill",
     rarity: "blue",
@@ -551,6 +596,7 @@ window.DATA_TALENTS = [
   },
   {
     id: "sk_reverse_sweep",
+    src: { type: "real", who: "TES / DRX", year: 2020, event: "2020 世界赛八强 TES 让二追三 FNC；2022 八强 DRX 让二追三 EDG", quote: "让二追三", note: "原梗来源；卡面为二创" },
     name: "让二追三",
     type: "skill",
     rarity: "purple",
@@ -563,6 +609,7 @@ window.DATA_TALENTS = [
   },
   {
     id: "sk_bp_art",
+    src: { type: "parody", who: "LPL 教练组", year: 0, event: "BP 被复盘、被骂是 LPL 日常", note: "现象真实，情节为二创" },
     name: "BP 的艺术",
     type: "skill",
     rarity: "white",
@@ -577,6 +624,7 @@ window.DATA_TALENTS = [
   /* ================= trait · 性格小被动（14） ================= */
   {
     id: "tr_mouth_king",
+    src: { type: "real", who: "电竞圈通用说法", year: 0, event: "“嘴强王者”指嘴上功夫天下第一", quote: "嘴强王者", note: "圈内通用说法；卡面为二创" },
     name: "嘴强王者",
     type: "trait",
     rarity: "purple",
@@ -589,6 +637,7 @@ window.DATA_TALENTS = [
   },
   {
     id: "tr_no_love",
+    src: { type: "real", who: "电竞圈通用说法", year: 2015, event: "“电子竞技没有爱情”是圈内长期流传的说法", quote: "电子竞技没有爱情", note: "圈内通用说法；卡面为二创" },
     name: "电子竞技没有爱情",
     type: "trait",
     rarity: "blue",
@@ -601,6 +650,7 @@ window.DATA_TALENTS = [
   },
   {
     id: "tr_real_fragrance",
+    src: { type: "real", who: "网络梗“真香”（王境泽）", year: 2018, event: "《变形计》王境泽“真香”成全网梗，被拿来形容选手嘴上嫌弃、真香上场", quote: "真香", note: "网络梗，非电竞原话；卡面为二创" },
     name: "真香",
     type: "trait",
     rarity: "white",
@@ -613,6 +663,7 @@ window.DATA_TALENTS = [
   },
   {
     id: "tr_workaholic",
+    src: { type: "real", who: "电竞圈通用说法", year: 2021, event: "2021 年后流行的内卷说法，指队内最拼的选手", quote: "卷王", note: "圈内通用说法；卡面为二创" },
     name: "卷王",
     type: "trait",
     rarity: "white",
@@ -625,6 +676,7 @@ window.DATA_TALENTS = [
   },
   {
     id: "tr_big_daddy",
+    src: { type: "real", who: "电竞圈通用说法", year: 0, event: "观众对队内核心的称呼，“大爹”要扛着全队赢", quote: "大爹", note: "圈内通用说法；卡面为二创" },
     name: "大爹",
     type: "trait",
     rarity: "white",
@@ -637,6 +689,7 @@ window.DATA_TALENTS = [
   },
   {
     id: "tr_glass_heart",
+    src: { type: "real", who: "电竞圈通用说法", year: 0, event: "“玻璃心”指被喷两句就崩的选手", quote: "玻璃心", note: "圈内通用说法；卡面为二创" },
     name: "玻璃心",
     type: "trait",
     rarity: "white",
@@ -649,6 +702,7 @@ window.DATA_TALENTS = [
   },
   {
     id: "tr_slack",
+    src: { type: "real", who: "电竞圈通用说法", year: 0, event: "训练赛摸鱼，“摸鱼”是打工人与选手共用的词", quote: "摸鱼", note: "圈内通用说法；卡面为二创" },
     name: "摸鱼",
     type: "trait",
     rarity: "white",
@@ -661,6 +715,7 @@ window.DATA_TALENTS = [
   },
   {
     id: "tr_farm_machine",
+    src: { type: "real", who: "电竞圈通用说法", year: 0, event: "眼里只有兵的补刀型选手，团战开打还在补刀", quote: "补刀机器", note: "圈内通用说法；卡面为二创" },
     name: "补刀机器",
     type: "trait",
     rarity: "blue",
@@ -673,6 +728,7 @@ window.DATA_TALENTS = [
   },
   {
     id: "tr_happy_yasuo",
+    src: { type: "real", who: "网络梗（快乐亚索）", year: 2016, event: "亚索玩家自嘲“快乐就完事了”", quote: "快乐亚索", note: "网络梗，非电竞原话；卡面为二创" },
     name: "快乐亚索",
     type: "trait",
     rarity: "purple",
@@ -685,6 +741,7 @@ window.DATA_TALENTS = [
   },
   {
     id: "tr_kda_slave",
+    src: { type: "real", who: "电竞圈通用说法", year: 0, event: "为保 KDA 不敢出手，数据好看但赢不了", quote: "铁分奴", note: "圈内通用说法；卡面为二创" },
     name: "铁分奴",
     type: "trait",
     rarity: "blue",
@@ -697,6 +754,7 @@ window.DATA_TALENTS = [
   },
   {
     id: "tr_rank_god",
+    src: { type: "real", who: "电竞圈通用说法", year: 0, event: "rank 猛、正赛隐身，数据好但赢不了关键局", quote: "rank 战神", note: "圈内通用说法；卡面为二创" },
     name: "rank 战神",
     type: "trait",
     rarity: "blue",
@@ -709,6 +767,7 @@ window.DATA_TALENTS = [
   },
   {
     id: "tr_breakdown",
+    src: { type: "real", who: "电竞圈通用说法", year: 2020, event: "“破防”是 2020 年后流行的网络词，被喷到心态崩", quote: "破防", note: "圈内通用说法；卡面为二创" },
     name: "破防",
     type: "trait",
     rarity: "white",
@@ -721,6 +780,7 @@ window.DATA_TALENTS = [
   },
   {
     id: "tr_locker_leader",
+    src: { type: "parody", who: "LPL 战队", year: 0, event: "更衣室领袖指能压住队内矛盾的选手", note: "现象真实，情节为二创" },
     name: "更衣室领袖",
     type: "trait",
     rarity: "white",
@@ -735,6 +795,7 @@ window.DATA_TALENTS = [
   /* ================= item · 外设与补给（6） ================= */
   {
     id: "it_netbar_keyboard",
+    src: { type: "original", note: "原创梗，非真实选手言论" },
     name: "网吧顺来的键盘",
     type: "item",
     rarity: "white",
@@ -747,6 +808,7 @@ window.DATA_TALENTS = [
   },
   {
     id: "it_cheap_mouse",
+    src: { type: "original", note: "原创梗，非真实选手言论" },
     name: "九块九包邮鼠标",
     type: "item",
     rarity: "white",
@@ -759,6 +821,7 @@ window.DATA_TALENTS = [
   },
   {
     id: "it_gaming_chair",
+    src: { type: "original", note: "原创梗，非真实选手言论" },
     name: "电竞椅",
     type: "item",
     rarity: "blue",
@@ -771,6 +834,7 @@ window.DATA_TALENTS = [
   },
   {
     id: "it_fake_supplement",
+    src: { type: "parody", who: "电竞圈新闻", year: 2020, event: "选手误服三无营养品的报道", note: "基于真实报道二创，不指向具体选手" },
     name: "三无营养品",
     type: "item",
     rarity: "white",
@@ -783,6 +847,7 @@ window.DATA_TALENTS = [
   },
   {
     id: "it_custom_mouse",
+    src: { type: "original", note: "原创梗，非真实选手言论" },
     name: "定制鼠标",
     type: "item",
     rarity: "purple",
@@ -797,6 +862,7 @@ window.DATA_TALENTS = [
   /* ================= fate · 大奇遇，一局一次（5） ================= */
   {
     id: "fa_god_descend",
+    src: { type: "real", who: "TheShy（IG）", year: 2018, event: "2018 世界赛半决赛 IG vs G2，TheShy 剑魔一打多被称“天神下凡”", quote: "天神下凡", note: "解说 / 观众评价，非本人原话；卡面为二创" },
     name: "天神下凡",
     type: "fate",
     rarity: "red",
@@ -809,6 +875,7 @@ window.DATA_TALENTS = [
   },
   {
     id: "fa_last_dance",
+    src: { type: "real", who: "Deft（金赫奎）", year: 2022, event: "2022 世界赛 DRX 从入围赛杀到决赛 3:2 T1，Deft 最后一舞终夺冠", quote: "最后一舞", note: "原梗来源；卡面为二创" },
     name: "最后一舞",
     type: "fate",
     rarity: "red",
@@ -821,6 +888,7 @@ window.DATA_TALENTS = [
   },
   {
     id: "fa_only_chance",
+    src: { type: "real", who: "ShowMaker（许秀 / DWG）", year: 2020, event: "2020 世界赛决赛前：如今奖杯就在眼前，我必须考虑这是不是我此生仅有的机会", quote: "如今奖杯就在眼前，我必须考虑这会不会是我此生仅有的机会", note: "原梗来源；卡面为二创" },
     name: "此生仅有的机会",
     type: "fate",
     rarity: "gold",
@@ -833,6 +901,7 @@ window.DATA_TALENTS = [
   },
   {
     id: "fa_reforge",
+    src: { type: "real", who: "ShowMaker（许秀 / DWG）", year: 2020, event: "2020 世界赛喊出重铸 LCK 荣光", quote: "重铸 LCK 荣光，我辈义不容辞", note: "原梗来源；卡面为二创" },
     name: "我辈义不容辞",
     type: "fate",
     rarity: "gold",
@@ -845,6 +914,7 @@ window.DATA_TALENTS = [
   },
   {
     id: "fa_we_are_champions",
+    src: { type: "real", who: "2018 iG / LPL 解说", year: 2018, event: "2018 世界赛决赛 iG 3:0 FNC，LPL 第一座世界冠军", quote: "我们是冠军！", note: "原梗来源；卡面为二创" },
     name: "我们是冠军",
     type: "fate",
     rarity: "purple",
@@ -859,6 +929,7 @@ window.DATA_TALENTS = [
   /* ================= 后补 · 嘴臭特供（8） ================= */
   {
     id: "x_hupu_23",
+    src: { type: "real", who: "虎扑", year: 2023, event: "虎扑给选手打分，2.3 分成了“菜”的量词", quote: "虎扑评分 2.3", note: "平台现象真实，具体分数为二创" },
     name: "虎扑评分 2.3",
     type: "talent",
     rarity: "white",
@@ -871,6 +942,7 @@ window.DATA_TALENTS = [
   },
   {
     id: "x_buy_account",
+    src: { type: "parody", who: "LPL 选手", year: 2021, event: "选手被扒出买号 / 代练的报道", note: "基于真实报道二创，不指向具体选手" },
     name: "买了个韩服王者号",
     type: "talent",
     rarity: "white",
@@ -883,6 +955,7 @@ window.DATA_TALENTS = [
   },
   {
     id: "x_live_flame",
+    src: { type: "parody", who: "LPL 选手直播", year: 2023, event: "直播口嗨队友的切片", note: "现象真实，具体台词为二创" },
     name: "直播开喷队友",
     type: "trait",
     rarity: "purple",
@@ -895,6 +968,7 @@ window.DATA_TALENTS = [
   },
   {
     id: "x_interview_war",
+    src: { type: "parody", who: "LPL 采访名场面", year: 2023, event: "采访区放狠话、后来又被打脸的固定剧情", note: "现象真实，台词为二创" },
     name: "赛后采访开团",
     type: "skill",
     rarity: "blue",
@@ -907,6 +981,7 @@ window.DATA_TALENTS = [
   },
   {
     id: "x_bo5_choke",
+    src: { type: "parody", who: "世界赛决胜局", year: 2024, event: "BO5 决胜局手抖是 LPL 世界赛的固定节目", note: "现象真实，情节为二创" },
     name: "决胜局手抖",
     type: "talent",
     rarity: "white",
@@ -919,6 +994,7 @@ window.DATA_TALENTS = [
   },
   {
     id: "x_ldl_emperor",
+    src: { type: "parody", who: "LDL", year: 2022, event: "LDL 第一上 LPL 就原形毕露是常见剧本", note: "现象真实，情节为二创" },
     name: "LDL 皇帝",
     type: "talent",
     rarity: "blue",
@@ -931,6 +1007,7 @@ window.DATA_TALENTS = [
   },
   {
     id: "x_carry_or_feed",
+    src: { type: "real", who: "LPL 弹幕", year: 0, event: "形容选手发挥只有两极——要么 C，要么送", quote: "要么 C 要么送", note: "圈内通用说法；卡面为二创" },
     name: "要么 C 要么送",
     type: "talent",
     rarity: "purple",
@@ -943,6 +1020,7 @@ window.DATA_TALENTS = [
   },
   {
     id: "x_netbar_smell",
+    src: { type: "original", note: "原创梗，非真实选手言论" },
     name: "网吧包夜的烟味队服",
     type: "item",
     rarity: "white",
