@@ -1,4 +1,4 @@
-# 登神 · 从 LDL 打上来
+﻿# 登神 · 从 LDL 打上来
 
 一个英雄联盟职业生涯文字模拟游戏。**三年，从 LDL 打到世界赛。** 也可以在**无尽生涯**里一直打到自己按停止键。
 
@@ -156,7 +156,12 @@ lol-career/
   ```
   node tools/build_dist.cjs
   ```
-  这会把运行所需的文件复制到 `dist/dengshen/`，给所有 css / js 的引用加上按内容算出来的 `?v=` 版本号，顺手检查 `index.html` 有没有引用不存在的文件，最后把 `og.png`、`icon-192.png`、`apple-touch-icon.png` 一起带上。线上地址 <https://qingyu107.github.io/dengshen/>，分享出去时用的是 `og.png` 那张 1200×630 的社交卡。
+  这会把运行所需的文件复制到 `dist/dengshen/`，给所有 css / js 的引用加上按内容算出来的 `?v=` 版本号，顺手检查 `index.html` 有没有引用不存在的文件，把 `assets/`（WebP）、`og.png`、图标一起带上，再写一个 `.nojekyll` 让 Pages 原样发布不跑 Jekyll。
+  ```
+  node tools/publish_delta.cjs QingYu107/dengshen
+  ```
+  增量发布：对比本地和远端的 git blob 哈希，只上传变化的文件（首次发全量），远端多出来的文件会删掉，仓库始终和 `dist/dengshen/` 一致。token 从 `GH_TOKEN` 或 `gh auth token` 读，不落盘不打印。
+  线上地址 <https://qingyu107.github.io/dengshen/>，仓库 <https://github.com/QingYu107/dengshen>；分享出去用的是 `og.png` 那张 1200×630 的社交卡。
 
 ## 八、已知边界
 
