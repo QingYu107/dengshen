@@ -130,8 +130,8 @@ window.GAME = (function () {
   };
   const DIFFS = {
     easy: { key: "easy", name: "青训营", desc: "数值成长 +20%，对手弱 4 点，伤病少一半。先去爽一把。", growth: 1.2, opp: -4, bad: .7, luck: 1.1, inj: .5 },
-    normal: { key: "normal", name: "职业联赛", desc: "标准难度。这是一个正常人的三年。", growth: 1.0, opp: 0, bad: 1, luck: 1, inj: .85 },
-    hard: { key: "hard", name: "首发压力", desc: "成长 −15%，对手强 4 点。教练不惯着你。", growth: .85, opp: 4, bad: 1.25, luck: .9, inj: 1 },
+    normal: { key: "normal", name: "职业联赛", desc: "标准难度。这是一个正常人的三年。", growth: 1.0, opp: 0, bad: 1, luck: 1, inj: .45 },
+    hard: { key: "hard", name: "首发压力", desc: "成长 −15%，对手强 4 点。教练不惯着你。", growth: .85, opp: 4, bad: 1.25, luck: .9, inj: .7 },
     hell: { key: "hell", name: "废物中单", desc: "成长 −25%，对手强 6 点。全网都在等你退役。", growth: .75, opp: 6, bad: 1.5, luck: .8, inj: 1.15 }
   };
   /* 伤病系数 = 难度系数 × 模式系数（三年之约是短跑，不该被伤病吃掉一小半生涯） */
@@ -1275,6 +1275,15 @@ window.GAME = (function () {
     return arr.length ? pick(arr) : "";
   }
   const BAD_STORY = ["corrupt", "scandal", "secret", "banned", "blood", "stalker", "injury"];
+  /* 隐藏线/黑线结局门槛：无尽长局里不能随便撞见——banned 要有前科（corrupt≥25），
+     blood 要黑粉≥8000，stalker 要黑粉≥5000；普通三年模式保持原样（repair_check 的 story.endings 走 three） */
+  function hiddenLineGate(kind) {
+    if (!(S.mode === "endless" || S.endless)) return true;
+    if (kind === "banned") return (S.story.corrupt || 0) >= 25;
+    if (kind === "blood") return (S.haters || 0) >= 25000 && (S.story.corrupt || 0) >= 15;
+    if (kind === "stalker") return (S.haters || 0) >= 12000;
+    return true;
+  }
 
   function checkEvent() {
     if (S.pending.length) {
@@ -1327,7 +1336,10 @@ window.GAME = (function () {
           if (evA.next && evA.next.id) S.pending.push(evA.next.id);
           if (oA.next && oA.next.id) S.pending.push(oA.next.id);
         }
-        const afterA = evA.ending ? () => ending(evA.ending)
+        const endReasonA = evA.ending || oA.ending || "";
+        const blockedA = !!endReasonA && !hiddenLineGate(endReasonA);
+        const afterA = blockedA ? () => (S.pending.length ? checkEvent() : phase())
+          : evA.ending ? () => ending(evA.ending)
           : oA.ending ? () => ending(oA.ending)
             : () => {
               if (S._matePending) { const ev3 = mateStep3Event(); if (ev3) return showEvent(ev3); }
@@ -1378,14 +1390,18 @@ window.GAME = (function () {
         const body = [pickVar(o.res)].filter(Boolean).join("\n\n")
           + (extra ? "\n\n" + extra : "")
           + (echo ? "\n\n" + echo : "");
-        const after = ev.ending ? () => ending(ev.ending)
+        /* 隐藏结局门槛：无尽模式没到条件就压下去（banned 记 scandal+6），不直接进结局 */
+        const endReason = ev.ending || o.ending || "";
+        const endBlocked = !!endReason && !hiddenLineGate(endReason);
+        const after = endBlocked ? () => (S.pending.length ? checkEvent() : phase())
+          : ev.ending ? () => ending(ev.ending)
           : o.ending ? () => ending(o.ending)
             : () => {
               /* 队友线第 3 步：立刻接三选一事件，不拖到下个月 */
               if (S._matePending) { const ev3 = mateStep3Event(); if (ev3) return showEvent(ev3); }
               return S.pending.length ? checkEvent() : phase();
             };
-        return result(ev.title || "场外", body, "story", after);
+        return result(ev.title || "场外", body + (endBlocked ? "\n\n（这事被压下去了。联盟那边有人给你递了句话：别再往前走了。）" : ""), "story", after);
       }
     });
   }
@@ -1420,7 +1436,14 @@ window.GAME = (function () {
       /* 队友关系：mateAff（±5~15 改 aff）/ mateLine（推进线）/ mateDone（三选一结果） */
       if (k === "mateAff" || k === "mateLine" || k === "mateDone") { applyMateEff(k, v); continue; }
       if (k === "story" && v && typeof v === "object") {
-        for (const sk in v) S.story[sk] = clamp((S.story[sk] || 0) + v[sk], 0, 99);
+        for (const sk in v) {
+          /* 隐藏线门槛：不够格就不落 flag，banned 改成 scandal+6 留个污点 */
+          if (["banned", "blood", "stalker"].indexOf(sk) >= 0 && !hiddenLineGate(sk)) {
+            if (sk === "banned") S.story.scandal = clamp((S.story.scandal || 0) + 6, 0, 99);
+            continue;
+          }
+          S.story[sk] = clamp((S.story[sk] || 0) + v[sk], 0, 99);
+        }
         continue;
       }
       if (typeof v !== "number" || !isFinite(v)) continue;
@@ -3124,10 +3147,11 @@ window.GAME = (function () {
     else if (reason === "lck_burn") end = { name: "首尔失速", rank: "C-", sub: "去的时候是天才，回来的时候是新闻里的名字", text: "第一年你打得很好，第二年版本一变，你成了替补席上最贵的那个人。\n\n第三年合同到期，没有队伍续约。你拖着行李箱从仁川机场出来，接机的人只有你妈。\n\n后来有人在论坛问“当年那个去 LCK 的中单现在在哪”，底下回复：别提了。" };
     else if (bestWorlds === "决赛" || bestWorlds === "四强") end = { name: "人间理想", rank: "A+", sub: "世界赛四强", text: "你打到过世界赛的半决赛。这成绩放在 LPL 不算顶，但足够让你回老家时，被小区保安认出来。\n\n那场半决赛第五局，你的操作至今还在赛事集锦里循环播放。弹幕每次都会刷一句“如果那波不退就好了”。你也这么想过，想了三年。\n\n退役后你在这座城市买了房，离基地两站地铁。有时候加班到很晚，你会绕一下，从基地楼下走过去，灯还亮着。" };
     /* —— 国内荣誉分档：三年拿到的冠军数量决定“国内”这条线的天花板 —— */
-    else if (!hasWorlds && titles.length >= 14 && S.st.FAME >= 97) end = { name: "赛区神话", rank: "S+", sub: "三年，国内没人是你的对手", text: "三年，十四个冠军。决赛你打得太多了，多到后来赢的时候，你第一反应是看表，算颁奖还要站多久。\n\n其他队的教练开会研究你，研究了三年，结论是“等他退役”。你的英雄池被做成课程卖，青训营报名表上有一栏：最想成为的选手。\n\n世界赛你一次都没赢下来，这是唯一的遗憾。但国内这条线，你已经是天花板了。退役那天联盟把三年的冠军奖杯摆成一排，让你站中间拍照。你拍了，然后问：能帮我搬回家吗。" };
-    else if (!hasWorlds && titles.length >= 13 && S.st.FAME >= 93) end = { name: "赛区之王", rank: "S", sub: "国内赢到没有对手", text: "你在国内赢得太稳了，稳到解说都开始用“例行公事”形容你的决赛。奖杯一个接一个，赞助商排队，联盟的年度最佳拿到手软。\n\n只有你自己知道，每次出国回来，时差倒不过来，躺在酒店床上会想：如果他们那边也打国内这套，我还能赢吗。\n\n这个问题没有答案。但你退役那天，赛区做了一个专题片，标题叫《三年》。片尾打出一行字：他赢下了这里能赢的一切。" };
-    else if (titles.length >= 12) end = { name: "国内霸主", rank: "A+", sub: "联赛之王", text: "国内该拿的都拿了。虎扑上有人做了张图：LPL 三年，你的 ID 出现次数比解说词还多。\n\n你在国内赢到没人想跟你打训练赛，出国就被人针对。这不是你的错，但骂声最后都落在你身上。\n\n退役那天联盟给你颁了个“赛区贡献奖”，你捧着那个水晶牌子，忽然想起第一次拿联赛冠军时，奖杯比这个沉得多。" };
-    else if (titles.length >= 10) end = { name: "国内霸主", rank: "A", sub: "联赛之王", text: "国内该拿的都拿了。虎扑上有人做了张图：LPL 三年，你的 ID 出现次数比解说词还多。\n\n你在国内赢到没人想跟你打训练赛，出国就被人针对。这不是你的错，但骂声最后都落在你身上。\n\n退役那天联盟给你颁了个“赛区贡献奖”，你捧着那个水晶牌子，忽然想起第一次拿联赛冠军时，奖杯比这个沉得多。" };
+    else if (!hasWorlds && titles.length >= 14 && S.st.FAME >= 97 && myOvr() >= 72) end = { name: "赛区神话", rank: "S+", sub: "三年，国内没人是你的对手", text: "三年，十四个冠军。决赛你打得太多了，多到后来赢的时候，你第一反应是看表，算颁奖还要站多久。\n\n其他队的教练开会研究你，研究了三年，结论是“等他退役”。你的英雄池被做成课程卖，青训营报名表上有一栏：最想成为的选手。\n\n世界赛你一次都没赢下来，这是唯一的遗憾。但国内这条线，你已经是天花板了。退役那天联盟把三年的冠军奖杯摆成一排，让你站中间拍照。你拍了，然后问：能帮我搬回家吗。" };
+    else if (!hasWorlds && titles.length >= 13 && S.st.FAME >= 93 && myOvr() >= 75) end = { name: "赛区之王", rank: "S", sub: "国内赢到没有对手", text: "你在国内赢得太稳了，稳到解说都开始用“例行公事”形容你的决赛。奖杯一个接一个，赞助商排队，联盟的年度最佳拿到手软。\n\n只有你自己知道，每次出国回来，时差倒不过来，躺在酒店床上会想：如果他们那边也打国内这套，我还能赢吗。\n\n这个问题没有答案。但你退役那天，赛区做了一个专题片，标题叫《三年》。片尾打出一行字：他赢下了这里能赢的一切。" };
+    else if (titles.length >= 12 && myOvr() >= 70) end = { name: "国内霸主", rank: "A+", sub: "联赛之王", text: "国内该拿的都拿了。虎扑上有人做了张图：LPL 三年，你的 ID 出现次数比解说词还多。\n\n你在国内赢到没人想跟你打训练赛，出国就被人针对。这不是你的错，但骂声最后都落在你身上。\n\n退役那天联盟给你颁了个“赛区贡献奖”，你捧着那个水晶牌子，忽然想起第一次拿联赛冠军时，奖杯比这个沉得多。" };
+    else if (titles.length >= 11 && myOvr() >= 70) end = { name: "国内霸主", rank: "A", sub: "联赛之王", text: "国内该拿的都拿了。虎扑上有人做了张图：LPL 三年，你的 ID 出现次数比解说词还多。\n\n你在国内赢到没人想跟你打训练赛，出国就被人针对。这不是你的错，但骂声最后都落在你身上。\n\n退役那天联盟给你颁了个“赛区贡献奖”，你捧着那个水晶牌子，忽然想起第一次拿联赛冠军时，奖杯比这个沉得多。" };
+    else if (titles.length >= 12) end = { name: "国内霸主", rank: "A-", sub: "联赛之王（差一口气）", text: "国内该拿的都拿了。虎扑上有人做了张图：LPL 三年，你的 ID 出现次数比解说词还多。\n\n你在国内赢到没人想跟你打训练赛，出国就被人针对。这不是你的错，但骂声最后都落在你身上。\n\n退役那天联盟给你颁了个“赛区贡献奖”，你捧着那个水晶牌子，忽然想起第一次拿联赛冠军时，奖杯比这个沉得多。" };
     else if (titles.length >= 8) end = { name: "联赛常客", rank: "B+", sub: "冠军拿过，但不多", text: "你拿过冠军，不止一个，但也没到统治的程度。每次夺冠之后，版本一变，你又得从头学起。\n\n三年里你搬了四次基地，换过三个辅助。最巅峰的那半年，你觉得谁都能打；剩下的两年半，你在跟版本较劲。\n\n退役那天没有发布会。你在群里发了个红包，说谢谢大家，然后一个人去楼下的面馆吃了顿加辣的。" };
     else if (titles.length >= 5) end = { name: "联赛常客", rank: "B+", sub: "冠军拿过，但不多", text: "你拿过冠军，不止一个，但也没到统治的程度。每次夺冠之后，版本一变，你又得从头学起。\n\n三年里你搬了四次基地，换过三个辅助。最巅峰的那半年，你觉得谁都能打；剩下的两年半，你在跟版本较劲。\n\n退役那天没有发布会。你在群里发了个红包，说谢谢大家，然后一个人去楼下的面馆吃了顿加辣的。" };
     else if (titles.length >= 3) end = { name: "联赛常客", rank: "B-", sub: "冠军拿过，但不多", text: "你拿过冠军，不止一个，但也没到统治的程度。每次夺冠之后，版本一变，你又得从头学起。\n\n三年里你搬了四次基地，换过三个辅助。最巅峰的那半年，你觉得谁都能打；剩下的两年半，你在跟版本较劲。\n\n退役那天没有发布会。你在群里发了个红包，说谢谢大家，然后一个人去楼下的面馆吃了顿加辣的。" };
