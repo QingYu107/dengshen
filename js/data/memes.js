@@ -6,6 +6,7 @@
     /* ---------- LDL 时期：还没人认识你，但已经有人在排位里认识你 ---------- */
     {
       id: "mem_ldl_zhukai", cat: "life", w: 12, once: true, year: 1,
+      who: "LPL 老教练（传闻）", srcType: "parody", quote: "有点东西，就是不会打团", source: "贴吧 / 粉丝群传闻，二创", ctx: "LDL 时期被老教练在粉丝群点评，圈内最常见的“被看见”方式",
       req: { stage: ["LDL"] },
       text: "网上传疯了：LPL 某位老教练在粉丝群里说，LDL 里有个 ID 有点东西，就是不会打团。",
       sub: "评论区第一条：这说的不就是我们队那个吗？",
@@ -19,6 +20,7 @@
     /* ---------- 排位撞车：最真实的实力检测 ---------- */
     {
       id: "mem_rank_faker", cat: "training", w: 14, once: true, year: 2,
+      who: "Faker（李相赫）", srcType: "parody", quote: "gg", source: "韩服排位二创场景", ctx: "凌晨两点韩服排到 Faker，他补位到你位置上",
       req: { stage: ["LPL"] },
       text: "凌晨两点，韩服。你排到了 Faker，他补位到你的位置。",
       sub: "弹幕已经疯了：他知道你是谁吗？",
@@ -30,6 +32,7 @@
     },
     {
       id: "mem_rank_chovy", cat: "training", w: 12, once: true, year: 2,
+      who: "Chovy（郑志勋）", srcType: "parody", quote: "这就是顶级中单的基本功", source: "解说词二创", ctx: "15 分钟补刀差 60，回放里看到自己漏了三波炮车",
       req: { stage: ["LPL"] },
       text: "遇到 Chovy。15 分钟，他补刀比你多 60。解说在你的比赛里提了一嘴：这就是顶级中单的基本功。",
       sub: "你回放录像，看到自己漏了三波炮车。",
@@ -41,6 +44,7 @@
     },
     {
       id: "mem_369_dice", cat: "match", w: 12, once: true, year: 2,
+      who: "369（白家浩）", srcType: "real", quote: "摇骰子", source: "2022 年 LPL 观众对状态起伏的称呼", ctx: "摇到 9 是世界级，摇到 3 是人机，赛前没人知道今天摇到几",
       req: { stage: ["LPL"] },
       text: "赛前看数据，对面那个位置上坐着 369。你队友凑过来：他今天状态是几？",
       sub: "这个问题没有人能回答。他自己也不知道。",
@@ -54,6 +58,7 @@
     /* ---------- 舆论：成名之后，名字就不归你管了 ---------- */
     {
       id: "mem_doinb_cast", cat: "media", w: 12, once: true, year: 2,
+      who: "Doinb（金泰相）", srcType: "parody", quote: "这个选手操作有，但是不会打支援", source: "直播点评，二创台词", ctx: "Doinb 直播间点评选手是 LPL 的固定节目",
       req: { stage: ["LPL"] },
       text: "Doinb 在直播间点评你：这个选手操作有，但是不会打支援，中单不能只会对线。",
       sub: "弹幕：说得对 / 早说了 / 他谁啊。",
@@ -65,6 +70,7 @@
     },
     {
       id: "mem_hupu_23", cat: "media", w: 13, year: 2,
+      who: "虎扑", srcType: "real", quote: "虎扑评分 2.3", source: "虎扑选手评分版块", ctx: "赛后 2.3 分成了“菜”的量词，热评比比赛好看",
       req: { stage: ["LPL"] },
       text: "比赛打完，虎扑评分 2.3。热评第一是：他没上场，但他上场了。",
       sub: "你妈转发了这条，附了一个问号。",
@@ -76,6 +82,7 @@
     },
     {
       id: "mem_uzi_rumor", cat: "drama", w: 11, once: true, year: 2,
+      who: "Uzi（简自豪）/ 营销号", srcType: "parody", quote: "某退役传奇 ADC 正在考虑复出", source: "营销号爆料，二创", ctx: "复出传闻是 LPL 的周期性节目，配图一年能 P 八百张",
       req: { stage: ["LPL"] },
       text: "营销号爆料：某退役传奇 ADC 正在考虑复出。配图是你和他被 P 在一起的合照。",
       sub: "你队友发来链接：兄弟，你要火了。",
@@ -87,6 +94,7 @@
     },
     {
       id: "mem_knight_compare", cat: "media", w: 11, year: 3,
+      who: "knight（卓定）/ 官方对比视频", srcType: "real", quote: "左手右手一个慢动作", source: "官方中单对比视频弹幕", ctx: "官方做对比视频，弹幕刷“左手右手一个慢动作”",
       req: { stage: ["LPL"] },
       text: "官方做了个中单对比视频，把你和 knight 放在一起。弹幕刷：左手右手一个慢动作。",
       sub: "视频里你被选中的片段，都是被单杀的那几秒。",
@@ -100,6 +108,7 @@
     /* ---------- 对局内外的真对手 ---------- */
     {
       id: "mem_theshy_dive", cat: "match", w: 12, once: true, year: 2,
+      who: "TheShy（姜承録）", srcType: "real", quote: "他怎么敢的？", source: "2018 年后关于 TheShy 越塔的弹幕名言", ctx: "三级兵线压塔下直接越塔，LPL 上单的集体噩梦",
       req: { stage: ["LPL"] },
       text: "训练赛对上 TheShy。三级，兵线在塔前，他直接越塔。",
       sub: "你的下路双人组在语音里大叫：他怎么敢的？",
@@ -111,6 +120,7 @@
     },
     {
       id: "mem_bin_praise", cat: "match", w: 10, once: true, year: 2,
+      who: "Bin（陈泽彬）", srcType: "parody", quote: "他线上不输任何人", source: "赛后采访，二创台词", ctx: "Bin 夸对手是 LPL 采访名场面",
       req: { stage: ["LPL"] },
       text: "赛后采访，Bin 被问到对位感受，他说：他线上不输任何人。",
       sub: "记者追问：包括你吗？他笑了笑没说话。",
@@ -122,6 +132,7 @@
     },
     {
       id: "mem_ruler_scrim", cat: "training", w: 10, once: true, year: 3,
+      who: "Ruler（朴载赫）", srcType: "parody", quote: "第三把开始前，对面教练走进了语音", source: "训练赛传闻，二创", ctx: "训练赛打爆对面两把，下一把他们教练亲自进语音",
       req: { stage: ["LPL"] },
       text: "训练赛，你在一波团里打爆了 Ruler。连续两把。",
       sub: "第三把开始前，对面教练走进了语音。",
@@ -133,6 +144,7 @@
     },
     {
       id: "mem_deft_retire", cat: "life", w: 9, once: true, year: 3,
+      who: "Deft（金赫奎）", srcType: "parody", quote: "他把整个青春留在召唤师峡谷", source: "Deft 退役仪式，二创台词", ctx: "退役仪式镜头扫到你，新一代选手坐在台下",
       req: { stage: ["LPL"] },
       text: "Deft 的退役仪式。镜头扫到观众席，刚好扫到你。解说：新一代的选手也坐在下面。",
       sub: "你想起自己刚打职业那年，也是在台下看别人的最后一场。",
@@ -144,6 +156,7 @@
     },
     {
       id: "mem_rookie_hand", cat: "match", w: 9, once: true, year: 2,
+      who: "Rookie（宋义进）", srcType: "parody", quote: "你打得很好，别急", source: "赛后握手，二创台词", ctx: "赢了才说的安慰，分不清是客套还是真心",
       req: { stage: ["LPL"] },
       text: "比赛结束，Rookie 走过来跟你握手，说：你打得很好，别急。",
       sub: "他是赢了才说的。你分不清这是安慰还是客套。",
