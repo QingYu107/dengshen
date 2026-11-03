@@ -1,4 +1,4 @@
-﻿/* 《登神》界面层 —— 场景渲染 + 交互绑定 */
+/* 《登神》界面层 —— 场景渲染 + 交互绑定 */
 (function () {
   "use strict";
   const A = window.ART, G = window.GAME;
@@ -14,6 +14,7 @@
   let diff = "normal";
   let mode = "three";       // three | endless
   let started = false;
+  let glossTab = "";        // 图鉴当前分组
 
   /* ---------- 工具 ---------- */
   const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -1069,6 +1070,7 @@
       <div class="story" style="margin-top:10px">${br(s.text)}</div>
       ${(s.notes && s.notes.length) ? `<div class="row" style="flex-wrap:wrap;gap:6px;margin-top:10px">${s.notes.map(n => `<span class="chip gold">${esc(n)}</span>`).join("")}</div>` : ""}
       ${s.flipNote ? `<p class="quote" style="color:var(--gold)">${esc(s.flipNote)}</p>` : ""}
+      ${s.echo ? `<p class="quote dim" style="margin-top:6px">${esc(s.echo)}</p>` : ""}
       <div class="divider"></div>
       <div class="match-row">
         <span class="res ${g.win ? "w" : "l"}">${g.win ? "胜" : "负"}</span>
@@ -1258,7 +1260,7 @@
 
   function renderEnding(s) {
     const isEndless = s.mode === "endless";
-    const reasonText = { age: "打到了打不动", fade: "没人要了", retire: "自己按下的停止键", three: "三年打完，落子无悔" }[s.reason || "three"] || "";
+    const reasonText = { age: "打到了打不动", fade: "没人要了", retire: "自己按下的停止键", three: "三年打完，落子无悔", banned: "被查出来的那件事", blood: "场外的那一刀", stalker: "追着你跑的人" }[s.reason || "three"] || "";
     return shell(`<div class="fade-in">
       <div class="ending-hero has-art">
         <div class="ending-art" style="background-image:url('${A.endingArt(s)}')" aria-hidden="true"></div>
@@ -1273,6 +1275,7 @@
       </div>
       <div class="panel">
         <div class="story">${br(s.end.text)}</div>
+        ${s.end.echo ? `<p class="quote" style="margin-top:10px;color:var(--dim)">${esc(s.end.echo)}</p>` : ""}
         <div class="divider"></div>
         <div class="stat-grid">
           <div class="stat-cell"><div class="k">最终 OVR</div><div class="v gold">${s.ovr}</div></div>
@@ -2284,10 +2287,69 @@ ${(s.oppBans || []).length ? `<div class="row wrap" style="gap:6px;margin-top:8p
       <button class="btn small" style="width:auto" data-act="quicksave" ${canSave ? "" : "disabled"} title="${canSave ? "自动档" : "只能月初存档"}">${canSave ? "存档" : "存档 · 月初"}</button>
       <button class="btn small" style="width:auto" data-act="tab-slots">读档</button>
       <button class="btn small ghost" style="width:auto" data-act="tab-codex">档案</button>
+      <button class="btn small ghost" style="width:auto" data-act="glossary">图鉴</button>
       <button class="btn small ghost" style="width:auto" data-act="dm-toggle">弹幕${DM.on ? "开" : "关"}</button>
       <button class="btn small ghost" style="width:auto" data-act="snd-toggle">声音${(window.SND && window.SND.muted && window.SND.muted()) ? "关" : "开"}</button>
       <span class="small-note mono" style="margin-left:6px">${S ? tickLabel(S.tick) : ""}${S && S.endless ? " · 第 " + S.season + " 季" : ""}</span>
     `;
+  }
+
+  /* ---------- 图鉴：底栏随时可开，不用离开当前场景 ---------- */
+  function glossaryHTML() {
+    const D = window.DATA_GLOSSARY || {};
+    const groups = (D.groups || []).filter(g => g && g.items && g.items.length);
+    if (!groups.length) return `<div class="gloss"><div class="gloss-main"><p class="dim">图鉴数据没加载。</p></div></div>`;
+    let key = glossTab;
+    if (!key || !groups.some(g => g.key === key)) key = groups[0].key;
+    const cur = groups.filter(g => g.key === key)[0];
+    return `<div class="gloss fade-in" data-act="gloss-stop">
+      <div class="gloss-head">
+        <div>
+          <div class="kicker">GLOSSARY</div>
+          <h2>图鉴</h2>
+          <p class="dim" style="margin:4px 0 0">数值、机制、暗线、效果词——看不懂的地方查这里。</p>
+        </div>
+        <button class="btn small ghost" style="width:auto" data-act="gloss-close">关闭</button>
+      </div>
+      <div class="gloss-body">
+        <div class="gloss-tabs">
+          ${groups.map(g => `<button class="gloss-tab ${g.key === key ? "on" : ""}" data-act="gloss-tab" data-v="${esc(g.key)}">${esc(g.name)}</button>`).join("")}
+        </div>
+        <div class="gloss-main">
+          <p class="gloss-intro">${esc(cur.intro || "")}</p>
+          ${cur.items.map(it => `<div class="gloss-item">
+            <div class="gloss-k">${esc(it.t || it.k || "")}${it.t && it.k ? `<span class="mono">${esc(it.k)}</span>` : ""}</div>
+            <div class="gloss-d">${esc(it.d || "")}</div>
+          </div>`).join("")}
+        </div>
+      </div>
+    </div>`;
+  }
+
+  function openGloss() {
+    let ov = null;
+    try {
+      ov = document.getElementById("glossOverlay");
+      if (!ov) {
+        ov = document.createElement("div");
+        ov.id = "glossOverlay";
+        ov.className = "gloss-overlay";
+        if (typeof ov.setAttribute === "function") ov.setAttribute("data-act", "gloss-close");
+        if (document.body && typeof document.body.appendChild === "function") document.body.appendChild(ov);
+      }
+      ov.innerHTML = glossaryHTML();
+    } catch (e) {
+      try { if (ov) ov.innerHTML = glossaryHTML(); } catch (e2) { }
+    }
+  }
+
+  function closeGloss() {
+    try {
+      const ov = document.getElementById("glossOverlay");
+      if (!ov) return;
+      if (ov.parentNode && typeof ov.parentNode.removeChild === "function") ov.parentNode.removeChild(ov);
+      else ov.innerHTML = "";
+    } catch (e) { }
   }
 
   function render() {
@@ -2386,6 +2448,15 @@ ${(s.oppBans || []).length ? `<div class="row wrap" style="gap:6px;margin-top:8p
         break;
       }
       case "tab": tab = v || "main"; render(); break;
+      case "glossary": openGloss(); break;
+      case "gloss-close": closeGloss(); break;
+      case "gloss-tab": {
+        glossTab = v || "";
+        const ov = document.getElementById("glossOverlay");
+        if (ov) ov.innerHTML = glossaryHTML();
+        break;
+      }
+      case "gloss-stop": break;
       case "dm-toggle": DM.on = !DM.on; if (window.LIVE) LIVE.toggle(DM.on); if (!DM.on) dmStop(); else if (view === "game" && sc) dmStart(sc); sfx("notify"); render(); break;
       case "snd-toggle": {
         const a = window.SND;
@@ -2452,7 +2523,8 @@ ${(s.oppBans || []).length ? `<div class="row wrap" style="gap:6px;margin-top:8p
       }
       case "codex-clear": codexQ = ""; bPage = 0; cardPage = 0; render(); break;
       case "menu": view = "menu"; tab = "main"; started = false; render(); break;
-      case "restart": startNew(); break;
+      /* 再来一局 = 回主菜单新开一局：模式、难度、建号全部重选一遍 */
+      case "restart": sc = null; view = "menu"; tab = "diff"; started = false; render(); break;
       case "name-ok": doName(); break;
       case "choose": advance(i, v); break;
       case "pick": advance(i); break;
@@ -2478,6 +2550,11 @@ ${(s.oppBans || []).length ? `<div class="row wrap" style="gap:6px;margin-top:8p
   });
 
   document.addEventListener("keydown", e => {
+    if (e.key === "Escape" && document.getElementById("glossOverlay")) {
+      closeGloss();
+      e.preventDefault();
+      return;
+    }
     if (view !== "game" || !sc || mgrMode) return;
     const k = e.key, t = sc.type || "";
     if (k >= "1" && k <= "9") {
