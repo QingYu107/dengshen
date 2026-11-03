@@ -42,6 +42,22 @@
  *
  *   关键判定前可 SND.duck(2.5) 临时压低 BGM；
  *   也可在标题画面/结局用 SND.setMute() / SND.setVolume() 接设置菜单。
+ *
+ * ---- v3.11 多轨 / 情绪推进 -------------------------------------------------
+ * 同一首曲子按"这一场有多要命"分四档：SND.setIntensity(0..3)
+ *   0 安静（只剩 pad 和贝斯）1 常规 2 紧张（加高八度琶音、旋律线、军鼓）
+ *   3 顶到嗓子眼（定音鼓进场、鼓点加花）。强度是逐层加乐器，不是单纯调大音量。
+ *
+ * 曲目现在 14 个：menu ldl lpl playoff worlds victory ending
+ *   tense（BP/局内准备） meme（论坛玩梗） duel（对局） cockfight（斗蛐蛐）
+ *   climax（赛点/决赛） lck（LCK 赛季） collapse（落幕/塌房/退役）
+ *   传别名也行：bp/draft→tense，match/ingame→duel，final/matchpoint→climax，
+ *   lck/korea→lck，retire/defeat→collapse，cf/cockfight→cockfight。
+ *
+ * 一次性情绪音效：SND.cue("climax"|"fall"|"whistle"|"heartbeat"|"finale"|"whoosh")
+ * 结局曲：SND.playEnding("win"|"neutral"|"lose")
+ * 分轨音量：SND.setMusicVolume(0..1.4) / SND.setSfxVolume(0..1.6)
+ * 状态查询：SND.mode() / SND.intensity() / SND.themes() / SND.has(name)
  * ========================================================================== */
 (function () {
   "use strict";
@@ -136,7 +152,10 @@
     masterNow: null,
     mode: null,
     desired: null,
-    track: null
+    track: null,
+    musicVol: 1,
+    sfxVol: 1,
+    intensity: 1
   };
 
   try {
@@ -814,8 +833,132 @@
       prog: [{ root: 55, q: "maj" }, { root: 57, q: "min" }, { root: 52, q: "maj" }, { root: 50, q: "maj" }],
       arp: [0, 2, 4, 2, 5, 4, 2, 0, 7, 5, 4, 2, 0, 2, 4, 5],
       bass: [0, 4, 8, 12], kick: [0, 4, 8, 12], hat: [2, 6, 10, 14], snare: [4, 12]
+    },
+
+    /* 局内对局：一直往前推的鼓，人声进不来，只剩心跳和手速 */
+    duel: {
+      bpm: 126, level: 0.4,
+      padWave: "sawtooth", padCut: 980, padLevel: 0.085, detune: 5,
+      arpKind: "tone", arpWave: "square", arpCut: 3000, arpLevel: 0.03, arpRev: 0.08, arpDur: 1.2,
+      bassWave: "sawtooth", bassCut: 210, bassLevel: 0.17, bassDur: 0.7,
+      rev: 0.12, kickLevel: 0.15, hatLevel: 0.034, snareLevel: 0.07, timp: 0.06,
+      scale: [0, 2, 3, 5, 7, 8, 10],
+      prog: [{ root: 45, q: "min" }, { root: 48, q: "maj" }, { root: 43, q: "maj" }, { root: 41, q: "maj" }],
+      arp: [0, 0, 2, 0, 4, 0, 2, 0, 5, 0, 4, 0, 7, 5, 4, 2],
+      bass: [0, 2, 4, 6, 8, 10, 12, 14], kick: [0, 4, 8, 12], hat: [2, 6, 10, 14], snare: [4, 12],
+      lead: [null, null, null, null, 7, null, null, null, 5, null, 4, null, null, null, null, null]
+    },
+
+    /* 斗蛐蛐：轻快、坏心眼一点的小曲，观众在台下起哄 */
+    cockfight: {
+      bpm: 140, level: 0.38,
+      padWave: "square", padCut: 1250, padLevel: 0.055, detune: 16,
+      arpKind: "bell", arpWave: "square", arpCut: 2500, arpLevel: 0.05, arpRev: 0.2, arpDur: 1.3,
+      bassWave: "triangle", bassCut: 320, bassLevel: 0.13, bassDur: 0.45,
+      rev: 0.2, kickLevel: 0.1, hatLevel: 0.04, snareLevel: 0.05,
+      scale: [0, 2, 4, 7, 9],
+      prog: [{ root: 55, q: "maj" }, { root: 57, q: "min" }, { root: 52, q: "maj" }, { root: 50, q: "maj" }],
+      arp: [0, 2, 4, 2, 7, 4, 2, 4, 0, 2, 4, 7, 9, 7, 4, 2],
+      bass: [0, 4, 8, 12], kick: [0, 8], hat: [2, 6, 10, 14], snare: [4, 12],
+      lead: [null, null, 7, null, null, 9, null, null, 5, null, 4, null, null, 2, null, null]
+    },
+
+    /* 赛点 / 决赛：所有东西一起上，弦乐、铜管、鼓、人声都往上顶 */
+    climax: {
+      bpm: 132, level: 0.56,
+      padWave: "sawtooth", padCut: 1650, padLevel: 0.16, detune: 12, padSub: true,
+      arpKind: "tone", arpWave: "sawtooth", arpCut: 3300, arpLevel: 0.048, arpRev: 0.3, arpDur: 1.0,
+      bassWave: "sawtooth", bassCut: 300, bassLevel: 0.17, bassDur: 0.8,
+      rev: 0.4, kickLevel: 0.16, hatLevel: 0.032, snareLevel: 0.075, timp: 0.12,
+      scale: [0, 2, 3, 5, 7, 8, 11],
+      prog: [{ root: 52, q: "min" }, { root: 45, q: "maj" }, { root: 43, q: "maj" }, { root: 50, q: "maj" }],
+      arp: [0, 4, 2, 4, 5, 4, 2, 4, 7, 5, 4, 5, 9, 7, 5, 4],
+      bass: [0, 2, 4, 6, 8, 10, 12, 14], kick: [0, 4, 8, 12], hat: [1, 3, 5, 7, 9, 11, 13, 15], snare: [4, 12],
+      lead: [null, null, 7, null, null, null, 9, null, 11, null, 9, null, 7, null, 5, null]
+    },
+
+    /* LCK：干净、克制、有电子味的城市夜景，跟 LPL 的吵不一样 */
+    lck: {
+      bpm: 116, level: 0.46,
+      padWave: "triangle", padCut: 1050, padLevel: 0.11, detune: 4,
+      arpKind: "bell", arpWave: "sine", arpCut: 2700, arpLevel: 0.045, arpRev: 0.32, arpDur: 2.0,
+      bassWave: "sine", bassCut: 250, bassLevel: 0.14, bassDur: 1.3,
+      rev: 0.34, kickLevel: 0.1, hatLevel: 0.03, snareLevel: 0.04,
+      scale: [0, 2, 4, 7, 9],
+      prog: [{ root: 57, q: "maj" }, { root: 52, q: "maj" }, { root: 54, q: "maj" }, { root: 55, q: "maj" }],
+      arp: [0, null, 2, null, 4, null, 7, null, 4, null, 2, null, 9, null, 7, null],
+      bass: [0, 4, 8, 12], kick: [0, 8], hat: [2, 6, 10, 14], snare: [4, 12],
+      lead: [null, null, null, 7, null, null, 9, null, null, null, 7, null, 5, null, null, null]
+    },
+
+    /* 落幕：塌房、退役、被遗忘都用它。慢、空，只剩钢琴和一点回声 */
+    collapse: {
+      bpm: 56, level: 0.44,
+      padWave: "sawtooth", padCut: 520, padLevel: 0.14, detune: 3, padSub: true,
+      arpKind: "piano", arpWave: "triangle", arpCut: 2100, arpLevel: 0.055, arpRev: 0.75, arpDur: 6.0,
+      bassWave: "sine", bassCut: 200, bassLevel: 0.11, bassDur: 2.6,
+      rev: 0.72, kickLevel: 0.028, hatLevel: 0, snareLevel: 0,
+      scale: [0, 2, 3, 5, 7, 8, 10],
+      prog: [{ root: 45, q: "min" }, { root: 41, q: "maj" }, { root: 43, q: "maj" }, { root: 40, q: "maj" }],
+      arp: [0, null, null, 3, null, null, 2, null, null, null, 5, null, null, 3, null, null],
+      bass: [0], kick: [0], hat: [], snare: []
     }
   };
+
+  /* ---------------------------------------------------- 强度 / 变体 / 收尾 */
+  // 同一首曲子按"这一场有多要命"分四档，鼓、琶音、定音鼓逐层加进来。
+  var INTENSITY = {
+    kick: [0.55, 1, 1.14, 1.26],
+    hat: [0, 1, 1.15, 1.3],
+    snare: [0, 0.85, 1, 1.15],
+    arp: [0.75, 1, 1.06, 1.12],
+    lead: [0.7, 0.9, 1, 1.1]
+  };
+
+  // 每首曲子三套换法，每 8 小节轮一次：主循环还在，但不会一直听同一句。
+  var VARIANTS = {
+    menu: [
+      {},
+      { prog: [{ root: 50, q: "min" }, { root: 48, q: "maj" }, { root: 45, q: "min" }, { root: 43, q: "maj" }] },
+      { arp: [0, null, 2, null, null, 4, null, 5, null, 4, null, null, 2, null, 4, null] }
+    ],
+    lpl: [
+      {},
+      { prog: [{ root: 57, q: "min" }, { root: 55, q: "maj" }, { root: 48, q: "maj" }, { root: 53, q: "maj" }] },
+      { arp: [0, null, 4, null, 5, null, 7, null, 9, null, 7, null, 5, null, 4, null] }
+    ],
+    playoff: [
+      {},
+      { prog: [{ root: 52, q: "min" }, { root: 50, q: "min" }, { root: 59, q: "dom7" }, { root: 45, q: "maj" }] },
+      { arp: [0, 2, 4, 2, 7, 2, 5, 2, 9, 5, 4, 2, 7, 5, 4, 2] }
+    ],
+    duel: [
+      {},
+      { prog: [{ root: 45, q: "min" }, { root: 50, q: "min" }, { root: 43, q: "maj" }, { root: 48, q: "maj" }] },
+      { arp: [0, 0, 4, 0, 2, 0, 7, 0, 5, 0, 2, 0, 4, 2, 0, 0] }
+    ],
+    climax: [
+      {},
+      { prog: [{ root: 52, q: "min" }, { root: 48, q: "maj" }, { root: 50, q: "maj" }, { root: 45, q: "maj" }] },
+      { arp: [0, 7, 4, 7, 9, 7, 5, 7, 11, 9, 7, 5, 9, 7, 5, 4] }
+    ],
+    cockfight: [
+      {},
+      { prog: [{ root: 55, q: "maj" }, { root: 50, q: "maj" }, { root: 57, q: "min" }, { root: 52, q: "maj" }] },
+      { arp: [0, 4, 7, 4, 2, 4, 7, 9, 7, 4, 2, 0, 2, 4, 7, 4] }
+    ],
+    lck: [
+      {},
+      { prog: [{ root: 57, q: "maj" }, { root: 54, q: "maj" }, { root: 52, q: "maj" }, { root: 50, q: "maj" }] },
+      { arp: [0, null, 4, null, 7, null, 9, null, 7, null, 4, null, 2, null, 0, null] }
+    ]
+  };
+
+  function variantOf(tr) {
+    var vs = VARIANTS[tr.mode];
+    if (!vs || !vs.length) return null;
+    return vs[Math.floor(tr.bar / 8) % vs.length] || null;
+  }
 
   /* -------------------------------------------------------------- BGM 乐器 */
   function playPad(tr, t, dur, chord) {
@@ -947,37 +1090,57 @@
   /* ------------------------------------------------------------ BGM 调度器 */
   function scheduleStep(tr, time, step) {
     var cfg = tr.cfg;
+    var vv = variantOf(tr);
+    var prog = (vv && vv.prog) || cfg.prog;
+    var arpPat = (vv && vv.arp) || cfg.arp;
+    var bassPat = (vv && vv.bass) || cfg.bass;
     var spb = 60 / cfg.bpm;        // 一拍秒数
     var stepSec = spb / 4;          // 十六分音符
     var barSec = spb * 4;
-    var chord = cfg.prog[tr.bar % cfg.prog.length];
+    var chord = prog[tr.bar % prog.length];
+    var it = Math.max(0, Math.min(3, tr.intensity | 0));
     var t = time + Math.random() * 0.004;
 
     if (step === 0) {
       playPad(tr, t, barSec, chord);
-      if (cfg.timp) playTimp(tr, t, cfg.timp);
+      if (cfg.timp) playTimp(tr, t, cfg.timp * (it >= 2 ? 1.15 : 1));
+      if (it >= 3 && cfg.timp) playTimp(tr, t + spb * 2, cfg.timp * 0.6);
     }
 
-    if (cfg.bass && cfg.bass.indexOf(step) >= 0) {
+    if (bassPat && bassPat.indexOf(step) >= 0) {
       var bdur = spb * (cfg.bassDur || 1);
-      var blvl = cfg.bassLevel * (step === 0 ? 1.12 : 0.82);
+      var blvl = cfg.bassLevel * (step === 0 ? 1.12 : 0.82) * (it >= 2 ? 1.05 : 1);
       playBass(tr, t, bdur, Math.max(26, chord.root - 12), blvl);
     }
 
-    if (cfg.arp) {
-      var deg = cfg.arp[step];
+    if (arpPat) {
+      var deg = arpPat[step];
       if (deg != null) {
         var sc = cfg.scale;
         var di = ((deg % sc.length) + sc.length) % sc.length;
         var oct = Math.floor(deg / sc.length);
         var midi = chord.root + 12 + sc[di] + 12 * oct;
-        playArp(tr, t, midi, stepSec * (cfg.arpDur || 2), cfg.arpLevel * (0.82 + Math.random() * 0.3));
+        var alvl = cfg.arpLevel * INTENSITY.arp[it] * (0.82 + Math.random() * 0.3);
+        playArp(tr, t, midi, stepSec * (cfg.arpDur || 2), alvl);
+        // 高强度时加一条高八度的细旋律，把场面往上撑
+        if (it >= 2 && step % 4 === 0) {
+          playArp(tr, t + stepSec * 2, midi + 12, stepSec * (cfg.arpDur || 2) * 0.8, alvl * 0.42);
+        }
       }
     }
 
-    if (cfg.kick && cfg.kick.indexOf(step) >= 0) playKick(tr, t, cfg.kickLevel);
-    if (cfg.hat && cfg.hat.indexOf(step) >= 0) playHat(tr, t, cfg.hatLevel);
-    if (cfg.snare && cfg.snare.indexOf(step) >= 0) playSnare(tr, t, cfg.snareLevel);
+    if (cfg.lead && it >= 2) {
+      var ld = cfg.lead[step];
+      if (ld != null) {
+        var ldi = ((ld % cfg.scale.length) + cfg.scale.length) % cfg.scale.length;
+        var lmidi = chord.root + 24 + cfg.scale[ldi];
+        playArp(tr, t, lmidi, stepSec * 3.2, cfg.arpLevel * 0.75 * INTENSITY.lead[it]);
+      }
+    }
+
+    if (cfg.kick && cfg.kick.indexOf(step) >= 0) playKick(tr, t, cfg.kickLevel * INTENSITY.kick[it]);
+    if (cfg.hat && cfg.hat.indexOf(step) >= 0) playHat(tr, t, cfg.hatLevel * INTENSITY.hat[it]);
+    if (cfg.snare && cfg.snare.indexOf(step) >= 0) playSnare(tr, t, cfg.snareLevel * INTENSITY.snare[it]);
   }
 
   function pump(tr) {
@@ -997,16 +1160,23 @@
     }
   }
 
+  function musicLevel(cfg) {
+    var mv = st.musicVol == null ? 1 : st.musicVol;
+    return cfg.level * Math.max(0.0001, Math.min(1.4, mv));
+  }
+
   function startTrack(mode, cfg) {
     var c = st.ctx;
     var g = c.createGain();
     g.gain.value = 0.0001;
     g.connect(st.duckGain || st.musicBus || st.master);
+    var lvl = musicLevel(cfg);
     var tr = {
-      mode: mode, cfg: cfg, gain: g, dead: false, timer: 0,
+      mode: mode, cfg: cfg, gain: g, dead: false, timer: 0, target: lvl,
+      intensity: st.intensity == null ? 1 : st.intensity,
       next: c.currentTime + 0.1, step: 0, bar: 0, startAt: c.currentTime
     };
-    try { g.gain.linearRampToValueAtTime(cfg.level, c.currentTime + 1.2); } catch (e) {}
+    try { g.gain.linearRampToValueAtTime(lvl, c.currentTime + 1.2); } catch (e) {}
     tr.timer = setInt(function () { pump(tr); }, 25);
     pump(tr);
     return tr;
@@ -1022,7 +1192,7 @@
       var g = tr.gain.gain;
       var now = st.ctx.currentTime;
       // 估算淡入进行到哪，作为 fallback 起点，保证旧曲是从“当前音量”淡出的。
-      var lvl = tr.cfg.level;
+      var lvl = tr.target || musicLevel(tr.cfg);
       var prog = tr.startAt == null ? 1 : (now - tr.startAt) / 1.2;
       prog = Math.max(0.0001, Math.min(1, prog));
       holdParam(g, now, Math.max(0.0001, lvl * prog));
@@ -1033,16 +1203,124 @@
     }, Math.round((f + 0.3) * 1000));
   }
 
+  // 游戏里各处传来的场景名，映射到实际曲目
+  var ALIAS = {
+    bp: "tense", banpick: "tense", draft: "tense",
+    match: "duel", ingame: "duel", game: "duel",
+    cockfight: "cockfight", cf: "cockfight",
+    final: "climax", deciding: "climax", matchpoint: "climax",
+    worlds: "worlds", world: "worlds",
+    lck: "lck", korea: "lck",
+    retire: "collapse", defeat: "collapse", collapse: "collapse",
+    judgement: "collapse"
+  };
+
+  function resolveMode(mode) {
+    var m = mode == null ? "off" : String(mode);
+    if (ALIAS[m]) m = ALIAS[m];
+    return m === "off" || CFG[m] ? m : "off";
+  }
+
   function applyMode(mode) {
     if (!isReady()) return;
-    var m = mode === "off" ? "off" : (CFG[mode] ? mode : "off");
-    if (m === st.mode && (m === "off" || st.track)) return;
+    var m = resolveMode(mode);
+    if (m === st.mode && (m === "off" || st.track)) {
+      if (st.track) st.track.intensity = st.intensity == null ? 1 : st.intensity;
+      return;
+    }
     var old = st.track;
     st.track = null;
     st.mode = m;
     if (old) stopTrack(old, 1.2);
     if (m === "off") return;
     st.track = startTrack(m, CFG[m]);
+    st.track.intensity = st.intensity == null ? 1 : st.intensity;
+  }
+
+  /* ------------------------------------------------------------ 情绪推进 */
+  // 0 安静 / 1 常规 / 2 紧张 / 3 顶到嗓子眼。鼓与琶音逐层加，不是单纯变响。
+  function setIntensity(n) {
+    var v = Number(n);
+    if (!isFinite(v)) return;
+    st.intensity = Math.max(0, Math.min(3, Math.round(v)));
+    if (!st.track) return;
+    st.track.intensity = st.intensity;
+    try {
+      var g = st.track.gain.gain;
+      var now = st.ctx.currentTime;
+      var lvl = (st.track.target || musicLevel(st.track.cfg)) * (0.94 + st.intensity * 0.02);
+      holdParam(g, now, Math.max(0.0001, g.value));
+      g.linearRampToValueAtTime(lvl, now + 0.6);
+      st.track.target = lvl;
+    } catch (e) {}
+  }
+
+  // 一次性情绪音效：转场、赛点、落幕，用来给 BGM 加"事件感"。
+  function cue(name) {
+    if (st.mute) return;
+    if (!isReady()) { if (!init() || !isReady()) return; }
+    resumeCtx();
+    var n = String(name || "whoosh");
+    var t = st.ctx.currentTime + 0.02;
+    var bus = st.sfxBus;
+    try {
+      if (n === "climax") {
+        noiseHit({ dest: bus, t: t, dur: 1.6, type: "bandpass", f0: 400, f1: 5200, sweep: 1.3, q: 1.2, level: 0.075, atk: 0.9, hold: 0.5, rev: 0.5 });
+        tone({ dest: bus, t: t + 1.1, f0: 65, f1: 42, glide: 0.5, dur: 2.4, type: "sine", level: 0.16, atk: 0.01, rev: 0.45 });
+        playTimp({ gain: bus, cfg: CFG.climax }, t + 1.1, 0.16);
+        for (var i = 0; i < 4; i++) {
+          tone({ dest: bus, t: t + 1.12 + i * 0.09, f0: 261.63 * Math.pow(2, i / 4), dur: 2.0, type: "sawtooth", cut: 2400, level: 0.03, atk: 0.02, rev: 0.55 });
+        }
+      } else if (n === "fall") {
+        var notes = [329.63, 293.66, 246.94, 196.0];
+        for (var k = 0; k < notes.length; k++) {
+          piano({ dest: bus, t: t + k * 0.34, f0: notes[k], dur: 2.6, level: 0.07, rev: 0.7 });
+        }
+        tone({ dest: bus, t: t, f0: 55, dur: 3.4, type: "sine", level: 0.09, atk: 0.4, sus: 2.2, rev: 0.4 });
+      } else if (n === "whistle") {
+        noiseHit({ dest: bus, t: t, dur: 1.2, type: "bandpass", f0: 2600, q: 2.4, level: 0.05, atk: 0.05, rev: 0.4 });
+        noiseHit({ dest: bus, t: t + 0.12, dur: 1.0, type: "bandpass", f0: 3400, q: 2.8, level: 0.035, atk: 0.06, rev: 0.4 });
+      } else if (n === "heartbeat") {
+        tone({ dest: bus, t: t, f0: 58, f1: 44, glide: 0.16, dur: 0.26, type: "sine", level: 0.15, atk: 0.005 });
+        tone({ dest: bus, t: t + 0.3, f0: 52, f1: 40, glide: 0.16, dur: 0.24, type: "sine", level: 0.11, atk: 0.005 });
+      } else if (n === "finale") {
+        var ch = [261.63, 329.63, 392.0, 523.25];
+        for (var j = 0; j < ch.length; j++) bell({ dest: bus, t: t + j * 0.14, f0: ch[j], dur: 2.4, level: 0.055, rev: 0.7 });
+        tone({ dest: bus, t: t, f0: 65, dur: 2.8, type: "triangle", level: 0.09, atk: 0.2, sus: 1.6, rev: 0.5 });
+      } else {
+        noiseHit({ dest: bus, t: t, dur: 0.5, type: "bandpass", f0: 900, f1: 300, sweep: 0.4, q: 1.1, level: 0.05, atk: 0.03, rev: 0.25 });
+      }
+    } catch (e) {}
+  }
+
+  // 结局分三种情绪：赢了、就这样、没了。
+  function playEnding(kind) {
+    var k = String(kind || "neutral");
+    if (k === "win" || k === "champion" || k === "victory") { bgm("victory"); cue("finale"); }
+    else if (k === "lose" || k === "bad" || k === "collapse") { bgm("collapse"); cue("fall"); }
+    else { bgm("ending"); }
+  }
+
+  function setMusicVolume(v) {
+    var q = Number(v);
+    if (!isFinite(q)) return;
+    st.musicVol = Math.max(0, Math.min(1.4, q));
+    if (st.track) {
+      try {
+        var g = st.track.gain.gain;
+        var now = st.ctx.currentTime;
+        var lvl = musicLevel(st.track.cfg) * (0.94 + (st.track.intensity || 1) * 0.02);
+        holdParam(g, now, Math.max(0.0001, g.value));
+        g.linearRampToValueAtTime(lvl, now + 0.35);
+        st.track.target = lvl;
+      } catch (e) {}
+    }
+  }
+
+  function setSfxVolume(v) {
+    var q = Number(v);
+    if (!isFinite(q)) return;
+    st.sfxVol = Math.max(0, Math.min(1.6, q));
   }
 
   /* -------------------------------------------------------------- 公开 API */
@@ -1059,12 +1337,12 @@
       var q = Number(opt.vol);
       if (isFinite(q)) v = Math.max(0, Math.min(2, q));
     }
+    v *= (st.sfxVol == null ? 1 : st.sfxVol);
     fn(st.ctx.currentTime + 0.005, v);
   }
 
   function bgm(mode) {
-    var m = mode == null ? "off" : String(mode);
-    if (m !== "off" && !CFG[m]) m = "off";
+    var m = resolveMode(mode);
     st.desired = m;
     if (!isReady()) {
       if (!init() || !isReady()) return;
@@ -1090,6 +1368,31 @@
   };
   API.volume = function () {
     try { return st.vol; } catch (e) { return 0.8; }
+  };
+
+  /* --- 情绪推进 / 分轨音量 / 结局曲（v3.11 多轨组合） --- */
+  API.setIntensity = safeWrap(setIntensity, undefined);
+  API.intensity = function () {
+    try { return st.intensity == null ? 1 : st.intensity; } catch (e) { return 1; }
+  };
+  API.cue = safeWrap(cue, undefined);
+  API.playEnding = safeWrap(playEnding, undefined);
+  API.setMusicVolume = safeWrap(setMusicVolume, undefined);
+  API.musicVolume = function () {
+    try { return st.musicVol == null ? 1 : st.musicVol; } catch (e) { return 1; }
+  };
+  API.setSfxVolume = safeWrap(setSfxVolume, undefined);
+  API.sfxVolume = function () {
+    try { return st.sfxVol == null ? 1 : st.sfxVol; } catch (e) { return 1; }
+  };
+  API.mode = function () {
+    try { return st.mode || "off"; } catch (e) { return "off"; }
+  };
+  API.themes = function () {
+    try { return Object.keys(CFG); } catch (e) { return []; }
+  };
+  API.has = function (name) {
+    try { return !!CFG[resolveMode(name)]; } catch (e) { return false; }
   };
 
   /* -------------------------------------------------- 首次手势兜底（可选） */
