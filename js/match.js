@@ -78,14 +78,30 @@ window.MATCH = (function () {
       coachTrust: desc.coachTrust === undefined ? 50 : desc.coachTrust,
       keyBonus: desc.keyBonus || 0,
       form: desc.form || 0,
-      reveal: desc.reveal || 0
+      reveal: desc.reveal || 0,
+      /* 精力档位（engine 传进来）：★ 有档位时用档位修正替代 (energy-50)*.45，避免双重计算 */
+      energyBand: desc.energyBand || null,
+      labels: []
     };
     /* 英雄熟练度直接写进英雄池维度：本局英雄熟练低于 60 会拖后腿 */
     s.dims.POOL = clamp(s.dims.POOL * .55 + s.heroProf * .45, 1, 99);
     /* 状态维度 */
-    s.dims.FORM = clamp((s.energy - 50) * .45 + (s.morale - 50) * .40 + (s.spirit - 50) * .30
-      + (s.burst || 0) * .12 + s.form * 4, -30, 30);
+    s.dims.FORM = formOf(s);
     return s;
+  }
+
+  /* 状态 → FORM：有档位走档位修正，没有则退回旧的线性式 */
+  function formOf(s) {
+    if (!s) return 0;
+    var base;
+    if (s.energyBand && typeof s.energyBand.form === "number") {
+      base = (s.morale - 50) * .40 + (s.spirit - 50) * .30
+        + (s.burst || 0) * .12 + (s.form || 0) * 4 + s.energyBand.form;
+    } else {
+      base = (s.energy - 50) * .45 + (s.morale - 50) * .40 + (s.spirit - 50) * .30
+        + (s.burst || 0) * .12 + (s.form || 0) * 4;
+    }
+    return clamp(base, -30, 30);
   }
 
   /* ---------- 英雄克制 ---------- */
@@ -136,9 +152,17 @@ window.MATCH = (function () {
     function add(k, v, tone) { if (Math.abs(v) >= .01) tags.push({ k: k, v: v, tone: tone || (v > 0 ? "good" : "bad") }); }
 
     /* 状态 */
-    add("体力", (mine.energy - 60) * .002);
-    add("心态", (mine.morale - 55) * .002);
+    add("体力", (mine.energy - 60) * .002);    add("心态", (mine.morale - 55) * .002);
     add("士气", (mine.spirit - 55) * .0015);
+    /* 精力档位标签：档位修正已写进 FORM 维度，这里只展示，不重复加胜率（nofx） */
+    if (mine.energyBand && typeof mine.energyBand.form === "number" && mine.energyBand.form) {
+      tags.unshift({
+        k: mine.energyBand.form > 0 ? "精力充沛" : "体力不支",
+        v: mine.energyBand.form * .01,
+        tone: mine.energyBand.form > 0 ? "good" : "bad",
+        nofx: true
+      });
+    }
     /* 爆种 */
     if (mine.burst >= 60) add("爆种", .05 + Math.min(.05, mine.burst / 2000));
     /* 本命 */
@@ -164,7 +188,7 @@ window.MATCH = (function () {
       add("关键局", (mine.morale - 55) * .002);
     }
     var sum = 0;
-    tags.forEach(function (t) { sum += t.v; });
+    tags.forEach(function (t) { if (!t.nofx) sum += t.v; });
     p += sum;
     p = clamp(p, .05, .95);
     /* 大优势留 6% 被翻、大劣势留 8% 翻盘 */
@@ -193,7 +217,9 @@ window.MATCH = (function () {
       if (!win) mine.morale = clamp(mine.morale - 6, 0, 100);
       /* 连败心态继续掉 */
       if (l >= 2 && !win) mine.morale = clamp(mine.morale - 4, 0, 100);
-      mine.dims.FORM = clamp((mine.energy - 50) * .45 + (mine.morale - 50) * .40 + (mine.spirit - 50) * .30 + mine.burst * .12, -30, 30);
+      /* 每局重算精力档位：BO5 越打越虚，档位下移 */
+      if (window.GAME && typeof window.GAME.energyBand === "function") mine.energyBand = window.GAME.energyBand(mine.energy);
+      mine.dims.FORM = formOf(mine);
     }
     var winBo = w > l;
     /* 爆冷：按双方基础实力差判定"这算不算冷门" */
