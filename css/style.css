@@ -1220,3 +1220,85 @@ p { margin: 9px 0; }
 .act-btn { background: rgba(9, 13, 20, .55); }
 .act-btn:hover:not(:disabled) { background: rgba(232, 185, 35, .12); }
 .act-btn.is-off, .act-btn.is-used { background: rgba(9, 13, 20, .42); }
+/* ================= v3.12 动效层（fx.js 配套） ================= */
+#fxCanvas.fx-canvas { position: fixed; inset: 0; z-index: 2; pointer-events: none; mix-blend-mode: screen; }
+
+.fx-flash { position: fixed; inset: 0; z-index: 46; pointer-events: none; opacity: 0; }
+.fx-flash.on { animation: fxFlash .52s ease-out both; }
+@keyframes fxFlash { 0% { opacity: 0; } 14% { opacity: 1; } 100% { opacity: 0; } }
+
+#app.fx-shake { animation: fxShake .32s cubic-bezier(.36, .07, .19, .97) both; }
+@keyframes fxShake {
+  10%, 90% { transform: translate3d(calc(var(--fx-shake, 3px) * -.4), 0, 0); }
+  20%, 80% { transform: translate3d(var(--fx-shake, 3px), 0, 0); }
+  30%, 50%, 70% { transform: translate3d(calc(var(--fx-shake, 3px) * -.75), 0, 0); }
+  40%, 60% { transform: translate3d(calc(var(--fx-shake, 3px) * .75), 0, 0); }
+  100% { transform: none; }
+}
+
+#app.scene-in { animation: sceneIn .26s cubic-bezier(.2, .8, .2, 1) both; }
+@keyframes sceneIn { from { opacity: .3; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+/* 点击涟漪：按钮类容器兜住，内容压上来 */
+.btn, .act-btn, .free-btn, .dock .btn, .tab-btn { position: relative; overflow: hidden; }
+.btn > *, .act-btn > *, .free-btn > * { position: relative; z-index: 1; }
+.fx-ripple {
+  position: absolute; border-radius: 50%; pointer-events: none; z-index: 0;
+  background: radial-gradient(circle, rgba(255, 241, 196, .34), rgba(232, 185, 35, .16) 44%, transparent 68%);
+  transform: scale(.18); opacity: .95; animation: fxRipple .6s ease-out forwards;
+}
+@keyframes fxRipple { to { transform: scale(1.65); opacity: 0; } }
+
+/* 悬停微动 */
+.btn { transition: transform .16s cubic-bezier(.2, .8, .2, 1), border-color .16s, background .16s, box-shadow .2s; }
+.btn:hover:not(:disabled) { transform: translateY(-1px); border-color: rgba(232, 185, 35, .44); box-shadow: 0 12px 28px -22px #000; }
+.act-btn { transition: transform .18s cubic-bezier(.2, .8, .2, 1), border-color .18s, background .18s, box-shadow .2s; }
+.act-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 14px 30px -24px #000; }
+.card-face { transition: transform .3s cubic-bezier(.2, .8, .2, 1), box-shadow .3s, border-color .3s; }
+.card-face:hover { transform: translateY(-4px); box-shadow: 0 28px 52px -36px #000, 0 0 0 1px rgba(232, 185, 35, .18) inset; }
+.card-face .card-art { transition: transform .55s cubic-bezier(.2, .8, .2, 1), filter .4s; }
+.card-face:hover .card-art { transform: scale(1.05); filter: brightness(1.12) saturate(1.06); }
+
+/* 进度条重绘时从左长出 */
+.bar i { animation: barGrow .72s cubic-bezier(.2, .8, .2, 1) both; transform-origin: left center; }
+@keyframes barGrow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+/* 对局结果：胜弹一下，负掉下来 */
+.result-win .res, .result-win .gr { animation: popIn .44s cubic-bezier(.2, 1.6, .4, 1) both; }
+.result-lose .res { animation: dropIn .4s ease-out both; }
+@keyframes popIn { from { transform: scale(.72); opacity: .35; } to { transform: none; opacity: 1; } }
+@keyframes dropIn { from { transform: translateY(-7px); opacity: .25; } to { transform: none; opacity: 1; } }
+
+/* 结局：底图缓慢推近、名次呼吸光 */
+.ending-hero .ending-art { animation: heroZoom 18s ease-out both; }
+@keyframes heroZoom { from { transform: scale(1.07); } to { transform: scale(1); } }
+.ending-hero .rank { animation: rankGlow 3.8s ease-in-out infinite; }
+@keyframes rankGlow { 0%, 100% { text-shadow: 0 0 0 rgba(232, 185, 35, 0); } 50% { text-shadow: 0 0 24px rgba(232, 185, 35, .42); } }
+
+/* 抽卡：翻牌错峰 */
+.draw-wrap .card-flip { animation: fadeUp .46s cubic-bezier(.2, .8, .2, 1) both; }
+.draw-wrap .card-flip:nth-child(2) { animation-delay: .07s; }
+.draw-wrap .card-flip:nth-child(3) { animation-delay: .14s; }
+.draw-wrap .card-flip:nth-child(4) { animation-delay: .21s; }
+.draw-wrap .card-flip:nth-child(5) { animation-delay: .28s; }
+.draw-wrap .card-flip:nth-child(6) { animation-delay: .35s; }
+
+/* 行动/商品/编年史行：轻量错峰入场 */
+.panel .act-btn, .panel .offer-row, .panel .chron-row, .panel .stat-cell { animation: fadeUp .36s cubic-bezier(.2, .8, .2, 1) both; }
+.panel .act-btn:nth-child(2), .panel .offer-row:nth-child(2), .panel .stat-cell:nth-child(2) { animation-delay: .035s; }
+.panel .act-btn:nth-child(3), .panel .offer-row:nth-child(3), .panel .stat-cell:nth-child(3) { animation-delay: .07s; }
+.panel .act-btn:nth-child(4), .panel .offer-row:nth-child(4), .panel .stat-cell:nth-child(4) { animation-delay: .105s; }
+.panel .act-btn:nth-child(5), .panel .stat-cell:nth-child(5) { animation-delay: .14s; }
+.panel .act-btn:nth-child(6), .panel .stat-cell:nth-child(6) { animation-delay: .175s; }
+
+/* toast 弹入 */
+#toast.show { transform: translateX(-50%) translateY(0) scale(1); }
+#toast { transform: translateX(-50%) translateY(16px) scale(.96); }
+
+@media (prefers-reduced-motion: reduce) {
+  #fxCanvas.fx-canvas, .fx-flash { display: none !important; }
+  #app.scene-in, #app.fx-shake, .fx-ripple, .bar i, .card-face, .card-face .card-art,
+  .ending-hero .ending-art, .ending-hero .rank, .draw-wrap .card-flip,
+  .panel .act-btn, .panel .offer-row, .panel .chron-row, .panel .stat-cell,
+  .result-win .res, .result-win .gr, .result-lose .res, #toast { animation: none !important; transition: none !important; }
+}
