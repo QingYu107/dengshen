@@ -1,4 +1,4 @@
-/* 《登神》手搓 SVG 美术库 —— 零外部素材 */
+﻿/* 《登神》手搓 SVG 美术库 —— 零外部素材 */
 (function () {
   const H = {
     hash(s) { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; },
@@ -161,5 +161,99 @@
     return `<svg viewBox="0 0 24 24" width="${size}" height="${size}" class="gly" aria-hidden="true">${P[kind] || P.bar}</svg>`;
   }
 
-window.ART = { logo, emblem, posIcon, champIcon, radar, avatar, trophy, glyph, hash: H.hash };
+  /* ================= 位图素材层（assets/*.webp，缺图回退旧 SVG） =================
+   * 素材来自自有生成图，已去水印、按类型统一尺寸并压成 webp。
+   * 路径统一走 assets/<类>/<名>.webp，页面在仓库根目录，preview.html 也一样。
+   */
+  const ASSET = "assets/";
+  function assetUrl(rel) { return ASSET + rel; }
+
+  /* 战队徽章：八枚按哈希分给各队，队伍主色用 CSS 混合叠一层 */
+  const CRESTS = ["dragon", "wolf", "eagle", "tiger", "star", "flame", "ice", "shield"];
+  function crestImg(key, size, color) {
+    size = size || 44;
+    const h = H.hash("crest:" + String(key == null ? "x" : key));
+    const name = CRESTS[h % CRESTS.length];
+    const c = color || "#e8b923";
+    return `<span class="crest-wrap" style="width:${size}px;height:${size}px;--tc:${c}"><img class="crest-img" src="${assetUrl("crests/" + name + ".webp")}" width="${size}" height="${size}" alt="" loading="lazy" decoding="async" onerror="this.style.visibility='hidden'"><span class="crest-tint"></span></span>`;
+  }
+
+  /* 队标：有徽章素材就用素材，不再画手搓形状 */
+  function bmpLogo(team, size) {
+    size = size || 64;
+    const key = (team && (team.logo || team.id || team.name)) || "x";
+    return crestImg(key, size, (team && team.color) || "#e8b923");
+  }
+
+  /* 头像：按位置/身份挑素材，同一个 seed 永远同一张 */
+  function bmpAvatar(seed, color, size) {
+    size = size || 72;
+    const s = String(seed == null ? "x" : seed);
+    let f;
+    if (/(COACH|教练|经理)$/i.test(s)) f = "coach";
+    else if (/JUG$/i.test(s)) f = "jungle";
+    else if (/SUP$/i.test(s)) f = "support";
+    else f = ["rookie", "veteran", "star"][H.hash("av:" + s) % 3];
+    const sun = 0.5; /* 人物眼睛基准线偏上，圆形裁切时往上挪一点 */
+    return `<span class="av-wrap" style="width:${size}px;height:${size}px;--ac:${color || "#e8b923"}"><img class="av-photo" src="${assetUrl("avatars/" + f + ".webp")}" width="${size}" height="${size}" alt="" style="object-position:50% ${sun * 100}%" onerror="this.style.visibility='hidden'"><span class="av-ring"></span></span>`;
+  }
+
+  /* 场景背景：按场景类型挑一张，弱化后铺在最底层 */
+  function sceneBg(scene, ctx) {
+    const el = document.getElementById("bgPhoto");
+    if (!el) return "";
+    const s = String(scene || "");
+    const st = (ctx && ctx.S) || null;
+    let name = "";
+    if (/^mgr/.test(s)) name = /market|sell|draft/.test(s) ? "mgr_market" : (/train/.test(s) ? "mgr_training" : "mgr_office");
+    else if (/^(menu|create|hall|slots|codex|load)/.test(s)) name = "menu";
+    else if (s === "bp") name = "bp";
+    else if (/^ending/.test(s)) name = "ending";
+    else if (/worlds|swiss/i.test(s)) name = "worlds";
+    else if (/playoff|msi|firststand|final/i.test(s)) name = "playoff";
+    else if (/^(action|monthend|shop|gacha|draw|deck|transfer|retire|standings|forum|bar|talk|voice|event|bigevent|patch|prep|highlight|result|matchday|duel|inGame|boGame|skipOffer|moment|series|scrim|ldl|demacia)/.test(s)) name = (st && st.stage === "LDL") ? "ldl" : "lpl";
+    if (!name) { el.classList.remove("on"); el.style.backgroundImage = ""; el.dataset.bg = ""; return ""; }
+    const url = assetUrl("bg/" + name + ".webp");
+    if (el.dataset.bg !== url) { el.dataset.bg = url; el.style.backgroundImage = "url('" + url + "')"; }
+    el.classList.add("on");
+    return url;
+  }
+
+  /* 结局插画：按结局名/评级挑图 */
+  function endingArt(s) {
+    const e = (s && s.end) || s || {};
+    const nm = String(e.name || ""), rk = String(e.rank || "");
+    if (/登神|无冕之王/.test(nm) || /^S/.test(rk)) return assetUrl("ending/worlds.webp");
+    if (/人间理想/.test(nm) || /^A\+/.test(rk)) return assetUrl("ending/worlds.webp");
+    if (/国内霸主|一冠封神/.test(nm) || /^A/.test(rk)) return assetUrl("ending/league.webp");
+    if (/出国留学/.test(nm)) return assetUrl("ending/intl.webp");
+    if (/干净的人|债务缠身/.test(nm)) return assetUrl("ending/intl.webp");
+    if (/名人堂/.test(nm)) return assetUrl("ending/hof.webp");
+    return assetUrl("ending/retire.webp");
+  }
+
+  /* 卡面插画：七种流派各一张 */
+  const CARDS = ["attack", "control", "teamfight", "mental", "money", "jungle", "split"];
+  function cardArt(build, seed) {
+    let k = String(build || "");
+    if (CARDS.indexOf(k) < 0) k = CARDS[H.hash("card:" + String(seed || "x")) % CARDS.length];
+    return assetUrl("cards/" + k + ".webp");
+  }
+
+  /* 编年史年份插画：只给有素材的 6 个年份 */
+  const ARCHIVE_YEARS = [2011, 2013, 2017, 2018, 2021, 2024];
+  function archiveArt(year) {
+    const y = parseInt(String(year), 10);
+    if (!isFinite(y)) return "";
+    /* 素材只有 6 个年份：取不晚于该年的最近一张，2025 之后落到最新一张，保证每行都有图且年代大致对得上 */
+    let pickYear = ARCHIVE_YEARS[0];
+    for (let i = 0; i < ARCHIVE_YEARS.length; i++) if (ARCHIVE_YEARS[i] <= y) pickYear = ARCHIVE_YEARS[i];
+    if (y < ARCHIVE_YEARS[0]) pickYear = ARCHIVE_YEARS[0];
+    return assetUrl("archive/" + pickYear + ".webp");
+  }
+
+  window.ART = {
+    logo: bmpLogo, emblem, posIcon, champIcon, radar, avatar: bmpAvatar, trophy, glyph, hash: H.hash,
+    crest: crestImg, sceneBg, endingArt, cardArt, archiveArt, assetUrl
+  };
 })();
