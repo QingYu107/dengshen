@@ -1,4 +1,4 @@
-/* 《登神》商店道具
+﻿/* 《登神》商店道具
    price 单位：万元
    eff 直接给引擎读：
      stat3: {属性: 值}      连续 3 个月每月加
@@ -27,8 +27,8 @@ window.DATA_SHOP = {
     },
     {
       id: "sh_rehab", name: "康复中心", price: 35, icon: "body", once: false,
-      desc: "体力回满，伤病状态清空。",
-      flavor: "手腕和腰，是这行的消耗品。",
+      desc: "体力回满，伤停立刻好，伤病概率再降一点。",
+      flavor: "手腕和腰，是这行的消耗品。养一养，还能多打两年。",
       eff: { energyFull: 1, healInjury: 1 }
     },
     {
