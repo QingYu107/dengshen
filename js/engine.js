@@ -72,28 +72,74 @@ window.GAME = (function () {
     });
   })();
 
+  /* LCK / 国际选手池（数据文件由别人写，全部 || [] 兜底；id 命名空间 t_lck_* / p_lck_*） */
+  const lckRaw = () => (window.DATA_LCK && typeof window.DATA_LCK === "object") ? window.DATA_LCK : {};
+  const _byId = arr => {
+    const m = {};
+    (arr || []).forEach(p => { if (p && p.id) m[p.id] = p; });
+    return m;
+  };
+  const intlPlayers = () => _byId(window.DATA_PLAYERS_INTL || (lckRaw().players && window.DATA_PLAYERS_INTL));
+  const lckPlayers = () => _byId(lckRaw().players || []);
+  const lckTeams = () => _byId(lckRaw().teams || []);
+  const aliasOf = () => (window.DATA_ID_ALIAS && typeof window.DATA_ID_ALIAS === "object") ? window.DATA_ID_ALIAS : {};
+
   const D = {
-    players: () => Object.assign({}, realPlayers(), _ldlP),
-    teams: () => Object.assign({}, window.DATA_TEAMS || {}, _ldl),
-    events: () => (window.DATA_EVENTS || []).concat(window.DATA_MEME_EVENTS || [], window.DATA_ENDLESS_EVENTS || [],
-      window.DATA_EVENTS_STAR || [], window.DATA_EVENTS_EXTRA || [], window.DATA_STORY_EVENTS || [],
-      (window.DATA_EVENTS_POS || []).filter(e => e && !e.inMatch), _blackEvents),
-    talents: () => window.DATA_TALENTS || [],
+    players: () => Object.assign({}, realPlayers(), _ldlP, intlPlayers(), lckPlayers()),
+    teams: () => Object.assign({}, window.DATA_TEAMS || {}, _ldl, lckTeams()),
+    events: () => {
+      const lckOn = !!(window.DATA_LCK && (window.DATA_LCK_EVENTS || []).length);
+      /* 旧版“去 LCK”双人合同（events.js）与新 lck_offer_1 二选一：在 engine 侧去重，data 不用改 */
+      const dropOld = ["ev_market_lck_tryout", "ev_market_lck_choice"];
+      let pool = (window.DATA_EVENTS || []).concat(window.DATA_MEME_EVENTS || [], window.DATA_ENDLESS_EVENTS || [],
+        window.DATA_EVENTS_STAR || [], window.DATA_EVENTS_EXTRA || [], window.DATA_STORY_EVENTS || [],
+        (window.DATA_EVENTS_POS || []).filter(e => e && !e.inMatch), _blackEvents,
+        /* 新数据文件可能还没落地，全部 || [] 兜底 */
+        window.DATA_EVENTS_V3 || [],
+        /* LCK 事件无条件并入（门槛交给事件自身 req），否则起手 lck_offer_1 永远进不来 */
+        window.DATA_LCK_EVENTS || []);
+      if (lckOn) pool = pool.filter(e => e && dropOld.indexOf(e.id) < 0);
+      return pool;
+    },
+    talents: () => (window.DATA_TALENTS || []).concat(window.DATA_TALENTS_V4 || []),
     heroes: () => window.DATA_HEROES || [],
     chronicle: () => window.DATA_CHRONICLE || {},
     hot: () => window.DATA_HOT || { win: [], lose: [], drama: [], hupu: [] }
   };
+  /* 选手/队伍查表：支持 DATA_ID_ALIAS 映射与 LCK/INTL 命名空间 */
+  function playerById(id) {
+    if (!id) return null;
+    const m = D.players();
+    return m[id] || (aliasOf()[id] ? m[aliasOf()[id]] : null) || null;
+  }
+  function teamById(id) {
+    if (!id) return null;
+    const m = D.teams();
+    return m[id] || (aliasOf()[id] ? m[aliasOf()[id]] : null) || null;
+  }
+  /* 数据里 trait 新池是字符串、老池是数组：统一取数组（engine 目前不消费 player.trait，文本另存供 UI/图鉴用） */
+  function traitArr(p) {
+    if (!p) return [];
+    const t = p.trait;
+    return Array.isArray(t) ? t : (p.traitArr || (t ? [t] : []));
+  }
 
   const MODES = {
     three: { key: "three", name: "三年之约", tag: "标准", desc: "36 个月。从 LDL 打到世界赛，第 36 个月结束出结局。一场完整的三年青春。" },
     endless: { key: "endless", name: "无尽生涯", tag: "无尽", desc: "没有终点。打到你 33 岁、或者没人要为止。每年联赛水平都在涨，你的手在往下掉。" }
   };
   const DIFFS = {
-    easy: { key: "easy", name: "青训营", desc: "数值成长 +20%，对手弱 4 点，负面事件轻。先去爽一把。", growth: 1.2, opp: -4, bad: .7, luck: 1.1 },
-    normal: { key: "normal", name: "职业联赛", desc: "标准难度。这是一个正常人的三年。", growth: 1.0, opp: 0, bad: 1, luck: 1 },
-    hard: { key: "hard", name: "首发压力", desc: "成长 −15%，对手强 4 点。教练不惯着你。", growth: .85, opp: 4, bad: 1.25, luck: .9 },
-    hell: { key: "hell", name: "废物中单", desc: "成长 −25%，对手强 6 点。全网都在等你退役。", growth: .75, opp: 6, bad: 1.5, luck: .8 }
+    easy: { key: "easy", name: "青训营", desc: "数值成长 +20%，对手弱 4 点，伤病少一半。先去爽一把。", growth: 1.2, opp: -4, bad: .7, luck: 1.1, inj: .5 },
+    normal: { key: "normal", name: "职业联赛", desc: "标准难度。这是一个正常人的三年。", growth: 1.0, opp: 0, bad: 1, luck: 1, inj: .85 },
+    hard: { key: "hard", name: "首发压力", desc: "成长 −15%，对手强 4 点。教练不惯着你。", growth: .85, opp: 4, bad: 1.25, luck: .9, inj: 1 },
+    hell: { key: "hell", name: "废物中单", desc: "成长 −25%，对手强 6 点。全网都在等你退役。", growth: .75, opp: 6, bad: 1.5, luck: .8, inj: 1.15 }
   };
+  /* 伤病系数 = 难度系数 × 模式系数（三年之约是短跑，不该被伤病吃掉一小半生涯） */
+  function diffInj() {
+    const d = DIFFS[S.diff] || DIFFS.normal;
+    const modeMul = S.mode === "three" ? .8 : 1;
+    return (d.inj || 1) * modeMul;
+  }
 
   /* ================= 基底 ================= */
   const BASES = [
@@ -105,8 +151,8 @@ window.GAME = (function () {
     { id: "hyped", name: "现象级新星", tag: "流量密码", desc: "还没打比赛，超话已经三万粉，一半是来看你翻车的。", st: { LANE: 58, MECH: 66, GAME: 40, POOL: 48, MENTAL: 40, PHYS: 60, TEAM: 44, FAME: 68 }, growth: "early", pot: 91, inj: .14, trait: "自带热搜", hidden: "黑粉比粉丝还急" },
     { id: "meta", name: "版本之子", tag: "吃版本饭", desc: "你只会版本强的英雄，但正好这个版本全是。", st: { LANE: 56, MECH: 56, GAME: 56, POOL: 80, MENTAL: 50, PHYS: 56, TEAM: 46, FAME: 30 }, growth: "normal", pot: 85, inj: .1, trait: "版本理解", hidden: "版本一改就废" },
     { id: "glue", name: "团队粘合剂", tag: "更衣室领袖", desc: "你不是最 C 的，但队里没人不喜欢你。", st: { LANE: 44, MECH: 40, GAME: 64, POOL: 48, MENTAL: 66, PHYS: 54, TEAM: 82, FAME: 24 }, growth: "normal", pot: 84, inj: .09, trait: "更衣室领袖", hidden: "数据难看" },
-    { id: "glass", name: "玻璃天才", tag: "天赋异禀，一碰就碎", desc: "训练赛里你打爆所有人，然后因为手腕疼休息两周。", st: { LANE: 64, MECH: 76, GAME: 48, POOL: 46, MENTAL: 42, PHYS: 32, TEAM: 40, FAME: 36 }, growth: "early", pot: 95, inj: .32, trait: "易碎品", hidden: "伤病职业" },
-    { id: "grinder", name: "训练狂", tag: "卷王", desc: "一天 14 小时训练赛，教练说你别把队友卷死。", st: { LANE: 52, MECH: 62, GAME: 60, POOL: 58, MENTAL: 58, PHYS: 62, TEAM: 42, FAME: 20 }, growth: "normal", pot: 90, inj: .2, trait: "卷王", hidden: "身体在报警" },
+    { id: "glass", name: "玻璃天才", tag: "天赋异禀，一碰就碎", desc: "训练赛里你打爆所有人，然后因为手腕疼休息两周。", st: { LANE: 64, MECH: 76, GAME: 48, POOL: 46, MENTAL: 42, PHYS: 32, TEAM: 40, FAME: 36 }, growth: "early", pot: 95, inj: .26, trait: "易碎品", hidden: "伤病职业" },
+    { id: "grinder", name: "训练狂", tag: "卷王", desc: "一天 14 小时训练赛，教练说你别把队友卷死。", st: { LANE: 52, MECH: 62, GAME: 60, POOL: 58, MENTAL: 58, PHYS: 62, TEAM: 42, FAME: 20 }, growth: "normal", pot: 90, inj: .17, trait: "卷王", hidden: "身体在报警" },
     { id: "streamer", name: "直播鬼才", tag: "嘴强王者", desc: "直播间 8 万人，比赛 0 胜场。你的剪辑比你的操作火。", st: { LANE: 52, MECH: 58, GAME: 42, POOL: 50, MENTAL: 56, PHYS: 48, TEAM: 38, FAME: 62 }, growth: "normal", pot: 83, inj: .1, trait: "自带流量", hidden: "职业态度存疑" },
     { id: "hero", name: "大心脏", tag: "越到决胜局越强", desc: "常规赛看不出你有什么特别。第五把你就不是人了。", st: { LANE: 48, MECH: 52, GAME: 52, POOL: 46, MENTAL: 84, PHYS: 52, TEAM: 56, FAME: 18 }, growth: "late", pot: 88, inj: .1, trait: "决胜局之神", hidden: "常规赛隐身" }
   ];
@@ -155,7 +201,18 @@ window.GAME = (function () {
     return o;
   }
   function result(title, text, tone, next) {
-    return scene({ type: "result", title, text: text || "", tone: tone || "info", pick() { return next ? next() : null; } });
+    const o = scene({ type: "result", title, text: text || "", tone: tone || "info", pick() { return next ? next() : null; } });
+    /* 系列赛结束的「决策贡献」评级挂到下一屏 result 上，任何分支都能显示 */
+    if (M && M._dec) { o.dec = M._dec; o.decRating = M._dec.rank; M._dec = null; }
+    if (M && M.achvNew && M.achvNew.length) { o.achvNew = M.achvNew.slice(); M.achvNew = null; }
+    return o;
+  }
+  /* 欠债记录：存款一旦为负就永久打标（成就 debtEver 用） */
+  function markDebt() {
+    try {
+      S.record = S.record || {};
+      if ((S.money || 0) < 0) S.record.debtEver = true;
+    } catch (e) { }
   }
 
   /* ================= 派生 ================= */
@@ -199,8 +256,8 @@ window.GAME = (function () {
     return { key: out.key, name: out.name, note: out.note };
   }
   function clampEnergy(v) { return clamp(v, 0, energyMax()); }
-  const teamOf = id => D.teams()[id] || null;
-  const playerOf = id => D.players()[id] || null;
+  const teamOf = id => teamById(id);
+  const playerOf = id => playerById(id);
 
   function teamPower(tid) {
     const t = teamOf(tid);
@@ -430,10 +487,11 @@ window.GAME = (function () {
       /* 换队后的「新队磨合」临时话语权惩罚，按月自然消退；evRecent 用来抑制事件重复 */
       voiceReset: 0, evRecent: [],
       bag: [], deck: [null, null, null, null, null], ticket: 0, shopDone: false, shopBought: {},
-      ended: false,
+      ended: false, achv: achvMergeInto({}), invest2: {}, duelLog: [], sponsor: null, academy: false,
+      mates: {}, _matesSig: "", _matePid: null, _mateName: "",
       story: { corrupt: 0, justice: 0, scandal: 0, secret: 0 },
       flags: {}, cd: {}, pending: [],
-      record: { games: 0, wins: 0, losses: 0, mvps: 0, titles: [], splits: [], worlds: [], msi: [] },
+      record: { games: 0, wins: 0, losses: 0, mvps: 0, titles: [], splits: [], worlds: [], msi: [], draws: 0, injuries: 0, debtEver: false, ending: null },
       timeline: [], diff: opt.diff || "normal", drawPity: 0
     };
     /* 上一轮经理模式打出来的家底，这一轮直接兑现 */
@@ -445,7 +503,7 @@ window.GAME = (function () {
         S.flags.mgrLegacy = mg.best;
       }
     } catch (e) { }
-    M = {};
+    M = { autoMode: 0, autoOff: false, guide: {}, achvNew: null, duelLog: [] };
     return scene({
       type: "create_name",
       pick(i, val) {
@@ -559,8 +617,10 @@ window.GAME = (function () {
     M.evCount = 0;             // 本月已触发的事件数（上限 2）
     M.actionUsed = false;
     M.scrimUsed = false;
-    const carriedRest = !!M.forcedRest;   // 上月末结算给出的“下月强制休息”预告
+    const carriedRest = !!M.forcedRest;   // 上月末伤病静养给出的“下月强制休息”预告
+    const carriedTired = !!M.tiredRest;   // 上月末精力见底给出的“下月只能低消耗”预告
     M.forcedRest = false;
+    M.tiredRest = false;
     M.atMonthStart = true;   // 月初存档点：只有这里允许存（P0-5）
     S.shopDone = false;
     S.shopBought = S.shopBought || {};
@@ -570,6 +630,7 @@ window.GAME = (function () {
     M.patch = null;
     const wantRegion = S.stage === "LDL" ? "LDL" : "LPL";
     if (!S.standings || S.standings.region !== wantRegion) initStandings();
+    ensureMates(); /* 转会/换队后按新 roster 重建 4 名队友（旧队关系不带走） */
 
     /* 精力见底：倒下，直接错过这个月（回一个月末，恢复期） */
     if (S.energy <= 0) {
@@ -578,18 +639,20 @@ window.GAME = (function () {
       S.st.PHYS = clamp((S.st.PHYS || 50) - 4, 18, S.pot);
       S.coachTrust = clamp(S.coachTrust - 6, 0, 100);
       S.timeline.push({ t: S.tick, text: "倒下：这个月进医院，什么都没练成" });
-      M.forcedRest = true;
+      M.tiredRest = true;
       M.atMonthStart = false;
       return result("倒下", `${S.name}在训练室眼前一黑。队医说这是长期透支，这个月什么都别干了。\n\n精力恢复后，教练信任 −6，体质 −4。`, "bad", () => monthEnd());
     }
 
-    /* 危险档（精力 1~14）：强制休息，这个月只能做低消耗行动（P1-2 第 4 节表） */
+    /* 危险档（精力 1~14）：这个月只能做低消耗行动（P1-2 第 4 节表）。
+       和伤病静养分开标记：tiredRest 只限制高消耗行动，不算「因伤损失行动月」 */
     if (energyBand(S.energy).key === "danger") {
-      M.forcedRest = true;
+      M.tiredRest = true;
       S.timeline.push({ t: S.tick, text: "精力见底：这个月被队医要求强制休息" });
     }
-    /* 接住上月末的预告：这个月继续低消耗，直到下个月再按当时精力重判 */
+    /* 接住上月末的预告：伤病静养 / 精力见底各接各的，直到下个月再按当时精力重判 */
     M.forcedRest = M.forcedRest || carriedRest;
+    M.tiredRest = M.tiredRest || carriedTired;
 
     /* 读档：不再重摇版本/大事件，直接回到月初的行动页 */
     if (!fromSave) {
@@ -673,7 +736,7 @@ window.GAME = (function () {
     const push = d => defs.push(d);
     const gate = d => {
       if (used) return { can: false, reason: "本月的行动已经用掉，接下来只能进赛程。" };
-      if (d.id !== "rest" && M.forcedRest && d.energyCost > 10) return { can: false, reason: "强制休息：这个月不能做高消耗行动。" };
+      if (d.id !== "rest" && (M.forcedRest || M.tiredRest) && d.energyCost > 10) return { can: false, reason: M.tiredRest ? "精力见底：这个月只能做低消耗行动（≤10）、休息或心理辅导。" : "强制休息：这个月不能做高消耗行动。" };
       if (lowBand && d.id !== "rest" && d.id !== "mental" && d.energyCost > 10) return { can: false, reason: "精力" + band.name + "：只能做低消耗行动（≤10）、休息或心理辅导。" };
       if (d.energyCost > S.energy) return { can: false, reason: "精力不足：需要 " + d.energyCost + "，你现在 " + Math.round(S.energy) + "。" };
       if (d.cond && !d.cond()) return { can: false, reason: (typeof d.condReason === "function" ? d.condReason() : d.condReason) || "当前条件不满足。" };
@@ -758,7 +821,7 @@ window.GAME = (function () {
       id: "coach", label: "找教练谈谈", tag: "关系", energyCost: 5,
       desc: "你被按在替补席上，得知道为什么。",
       cond: () => S.coachTrust < 45,
-      condReason: () => "教练现在挺信任你（信任 " + Math.round(S.coachTrust) + "），没什么可谈的。",
+      condReason: () => "教练现在不想单独谈（信任 " + Math.round(S.coachTrust) + "，低于 45 才需要找他）。",
       run() {
         S.energy = clampEnergy(S.energy - 5);
         S.coachTrust = clamp(S.coachTrust + rint(6, 14), 0, 100);
@@ -770,7 +833,7 @@ window.GAME = (function () {
       id: "mental", label: "心理辅导", tag: "心态", energyCost: 3,
       desc: "俱乐部请的心理老师，一小时 800，俱乐部出钱。",
       cond: () => S.morale < 55,
-      condReason: () => "心态现在还行（" + Math.round(S.morale) + "），先不用约老师。",
+      condReason: () => "心理老师说你不用来（心态 " + Math.round(S.morale) + "，低于 55 才需要约）。",
       run() {
         S.energy = clampEnergy(S.energy - 3);
         S.morale = clamp(S.morale + 16, 0, 100);
@@ -919,6 +982,8 @@ window.GAME = (function () {
       actionUsed: !!M.actionUsed,
       energy: Math.round(S.energy), energyMax: energyMax(), energyBand: band,
       money: Math.round(S.money), moneyBand: mb,
+      bonds: deckBonds().summary, autoMode: autoLevel(), autoOn: autoLevel() > 0,
+      guide: guide("action"),
       pick(i, v) {
         /* 自由操作：v 可能是 "free"（旧 UI）或自由操作自己的 id（新 UI） */
         let fi = -1;
@@ -965,8 +1030,10 @@ window.GAME = (function () {
        心态只做很轻的修正，避免和档位重复相乘把成长打崩 */
     const band = energyBand(S.energy);
     const state = band.growth * clamp(.85 + S.morale / 500, .85, 1.05);
+    /* 队友关系：aff 均值 50 为基准，±4% 训练乘子（0 → 0.96，100 → 1.04），只做轻修正 */
+    const mateMul = clamp(1 + (matesAffMean() - 50) / 1250, .95, 1.05);
     for (const k in map) {
-      let base = map[k] * mult * diff.growth * GROWTH * gmul * (1 + per);
+      let base = map[k] * mult * diff.growth * GROWTH * gmul * (1 + per) * mateMul;
       if (lastYear) base *= 1.6; // 最后一舞：合同年，练得比谁都狠
       const room = (S.pot - S.st[k]) / 100;
       let g = base * (.6 + room * 1.6) * state * ageCoef() * veteranFactor() * coachCoef() * (.75 + rnd() * .6);
@@ -1126,6 +1193,32 @@ window.GAME = (function () {
     }
     return true;
   }
+  /* 剧情链「终点能直接结束职业生涯」的事件（events_v3 的假赛/代打链）：LDL 新手赛季不进随机池，
+     由 next/测试注入的显式事件不受影响（repair_check story.endings 仍可达） */
+  let _endChainIds = null;
+  function endingChainIds() {
+    if (_endChainIds) return _endChainIds;
+    _endChainIds = {};
+    try {
+      const all = {};
+      D.events().forEach(e => { if (e && e.id) all[e.id] = e; });
+      const hasEnd = e => !!(e && (e.ending || (e.opts || []).some(o => o && o.ending)));
+      const reachEnding = (id, seen) => {
+        if (!id || seen[id]) return false;
+        seen[id] = 1;
+        const e = all[id];
+        if (!e) return false;
+        if (hasEnd(e)) return true;
+        const nxt = [];
+        if (e.next && e.next.id) nxt.push(e.next.id);
+        (e.opts || []).forEach(o => { if (o && o.next && o.next.id) nxt.push(o.next.id); });
+        return nxt.some(n => reachEnding(n, seen));
+      };
+      Object.keys(all).forEach(id => { if (reachEnding(id, {})) _endChainIds[id] = 1; });
+    } catch (e) { }
+    return _endChainIds;
+  }
+
   function eventPool() {
     const out = [];
     const recent = S.evRecent || [];
@@ -1134,6 +1227,7 @@ window.GAME = (function () {
     for (const ev of D.events()) {
       if (!ev || !ev.id) continue;
       if (ev.chain) continue;                                       // 剧情链后续步骤只由 next 触发
+      if (S.stage === "LDL" && !S.endless && endingChainIds()[ev.id]) continue; // 新手赛季不让开局故事线直接终结生涯
       if (ev.who && !mates[ev.who]) continue;                        // 指定选手不在队里
       if (ev.once && S.flags["f_" + ev.id]) continue;
       if (S.cd[ev.id] && S.cd[ev.id] > S.tick) continue;
@@ -1200,8 +1294,49 @@ window.GAME = (function () {
     return phase();
   }
 
+  /* 事件链的 flag 消费（events.js/lck.js 里大量 next:{flag:"f_xxx"}，只 push id 不落旗会断链）+ 进 LCK 的唯一真源 S.lck */
+  function applyNextFlags(ev, o) {
+    [ev && ev.next, o && o.next].forEach(n => { if (n && n.flag) S.flags[n.flag] = 1; });
+    if (S.flags.f_lck_go || S.flags.lck_go) {
+      if (!S.lck) S.lck = { went: true, teamId: S.teamId, year: S.season || 1, champion: false };
+      else { S.lck.went = true; if (!S.lck.teamId) S.lck.teamId = S.teamId; }
+    }
+  }
+
   function showEvent(ev0) {
-    if (ev0.mate) S._mateName = mateName();
+    /* {mate} 占位符：真正挑一名队友，写 S._matePid / _mateName，后续 fillEv 统一替换 */
+    if (ev0.mate || (typeof ev0.text === "string" && ev0.text.indexOf("{mate}") >= 0)) {
+      ensureMates();
+      const mm = (S._matePid && S.mates && S.mates[S._matePid]) ? { pid: S._matePid, name: S.mates[S._matePid].name } : matePick();
+      if (mm) { S._matePid = mm.pid; S._mateName = mm.name; }
+      else S._mateName = mateName();
+    }
+    /* 自动托管（2 档）：只保留 market/match/drama 或带 risk 的重要事件，其余按第一个选项结算并标「（托管）」 */
+    if (autoLevel() >= 2) {
+      const important = !!ev0.risk || !!ev0.important || ["market", "match", "drama"].indexOf(ev0.cat) >= 0;
+      if (!important) {
+        const evA = evFill(ev0), oA = (evA.opts || [])[0] || { eff: {}, res: "你让经纪人说“下次再说”。" };
+        S.flags["f_" + evA.id] = true;
+        S.cd[evA.id] = S.tick + rint(6, 14);
+        S.evRecent = S.evRecent || [];
+        if (S.evRecent.indexOf(evA.id) < 0) S.evRecent.push(evA.id);
+        while (S.evRecent.length > 12) S.evRecent.shift();
+        applyEff(oA.eff);
+        applyNextFlags(evA, oA);
+        if (!evA.ending && !oA.ending) {
+          if (evA.next && evA.next.id) S.pending.push(evA.next.id);
+          if (oA.next && oA.next.id) S.pending.push(oA.next.id);
+        }
+        const afterA = evA.ending ? () => ending(evA.ending)
+          : oA.ending ? () => ending(oA.ending)
+            : () => {
+              if (S._matePending) { const ev3 = mateStep3Event(); if (ev3) return showEvent(ev3); }
+              return S.pending.length ? checkEvent() : phase();
+            };
+        return result((evA.title || "场外") + "（托管）",
+          (pickVar(oA.res) || "") + "\n\n（托管：这件事没到要你亲自决定的分量，你的经纪人替你回了。）", "story", afterA);
+      }
+    }
     const ev = evFill(ev0);
     return scene({
       type: "event", ev,
@@ -1213,6 +1348,7 @@ window.GAME = (function () {
         if (S.evRecent.indexOf(ev.id) < 0) S.evRecent.push(ev.id);
         while (S.evRecent.length > 12) S.evRecent.shift();
         applyEff(o.eff);
+        applyNextFlags(ev, o);
         let extra = "", good = false;
         if (o.risk) {
           const st = S.st[o.risk.stat] || 50;
@@ -1244,12 +1380,33 @@ window.GAME = (function () {
           + (echo ? "\n\n" + echo : "");
         const after = ev.ending ? () => ending(ev.ending)
           : o.ending ? () => ending(o.ending)
-            : () => (S.pending.length ? checkEvent() : phase());
+            : () => {
+              /* 队友线第 3 步：立刻接三选一事件，不拖到下个月 */
+              if (S._matePending) { const ev3 = mateStep3Event(); if (ev3) return showEvent(ev3); }
+              return S.pending.length ? checkEvent() : phase();
+            };
         return result(ev.title || "场外", body, "story", after);
       }
     });
   }
 
+  /* 事件 eff.POOL（数据里 50 处，POOL:1/2）的语义是「英雄池 +N 个英雄」，不是数值：补本位置、还不在池里的英雄，确定性取、去重、上限 15 */
+  function addPoolHeroes(n) {
+    const cnt = Math.max(0, Math.round(n) || 0);
+    if (!cnt) return [];
+    const cap = 15;
+    if (Object.keys(S.pool || {}).length >= cap) return [];
+    const heroes = (window.DATA_HEROES || []).filter(h => h && h.n && (h.pos || []).indexOf(S.pos) >= 0 && S.pool[h.n] === undefined);
+    const picked = [];
+    for (let i = 0; i < cnt && heroes.length; i++) {
+      const h = heroes.splice(Math.floor(rnd() * heroes.length), 1)[0];
+      if (!h) break;
+      S.pool[h.n] = clamp(rint(38, 58), 0, 99);
+      picked.push(h.n);
+    }
+    if (picked.length) S.timeline.push({ t: S.tick, text: "英雄池 +" + picked.length + "：" + picked.join("、") });
+    return picked;
+  }
   function applyEff(eff) {
     if (!eff) return;
     const diff = DIFFS[S.diff] || DIFFS.normal;
@@ -1260,6 +1417,8 @@ window.GAME = (function () {
     };
     for (const k in eff) {
       let v = eff[k];
+      /* 队友关系：mateAff（±5~15 改 aff）/ mateLine（推进线）/ mateDone（三选一结果） */
+      if (k === "mateAff" || k === "mateLine" || k === "mateDone") { applyMateEff(k, v); continue; }
       if (k === "story" && v && typeof v === "object") {
         for (const sk in v) S.story[sk] = clamp((S.story[sk] || 0) + v[sk], 0, 99);
         continue;
@@ -1270,18 +1429,29 @@ window.GAME = (function () {
         S.story[k] = clamp((S.story[k] || 0) + v, 0, 99);
         continue;
       }
+      /* FAME：数据里 444 处，口径 = 状态表 S.st.FAME（0..100 名气），不是新的顶层字段 */
+      if (k === "FAME" || k === "fame") {
+        if (v < 0) v *= diff.bad;
+        S.st.FAME = clamp((S.st.FAME || 0) + v, 0, 100);
+        continue;
+      }
+      /* POOL：数据里 50 处，语义是英雄池数量（见 addPoolHeroes），不走 STATS 数值 */
+      if (k === "POOL") { addPoolHeroes(v); continue; }
       if (v < 0) v *= diff.bad;
       if (STATS.indexOf(k) >= 0) {
+        /* 事件里的心态负值整体 ×0.7（qa-verify：三个系统叠加后心态长期贴地），单次最多 −6 */
+        if (k === "MENTAL" && v < 0) v = Math.max(v * .7, -6);
         if (k === "MENTAL" && v < 0 && shield()) v *= .5;
         S.st[k] = clamp(S.st[k] + v, 0, S.pot);
       }
       else if (k === "energy") S.energy = clampEnergy(S.energy + v);
       else if (k === "morale") {
+        if (v < 0) v = Math.max(v * .7, -8);
         if (v < 0 && shield()) v *= .5;
         S.morale = clamp(S.morale + v, 0, 100);
       }
       else if (k === "spirit") S.spirit = clamp((S.spirit || 60) + v, 0, 100);
-      else if (k === "money") S.money = clamp(S.money + v, -999, 99999);
+      else if (k === "money") { S.money = clamp(S.money + v, -999, 99999); markDebt(); }
       else if (k === "coach") S.coachTrust = clamp(S.coachTrust + v, 0, 100);
       else if (k === "status") S.teamStatus = clamp(S.teamStatus + v, 0, 100);
       else if (k === "fans") S.fans = Math.max(0, S.fans + v);
@@ -1740,7 +1910,7 @@ window.GAME = (function () {
   /* 对局场景：支持“爆种”开关，重开同一场对局 */
   function duelScene(duel) {
     return scene({
-      type: "duel", duel, burst: S.burst,
+      type: "duel", duel, burst: S.burst, guide: guide("duel"),
       dcMod: ((M.series && M.series.oppMod) || 0) + (S.endless ? Math.min(3, Math.max(0, (S.season || 1) - 3)) : 0),
       canBurst: S.burst >= 60 && !duel.useBurst, useBurst: !!duel.useBurst,
       pick(i) { return resolveDuel(duel, i); },
@@ -1807,6 +1977,8 @@ window.GAME = (function () {
     const needWins = Math.ceil((s.bestOf || 5) / 2);
     const won = s.wins >= needWins;
     const oppName = s.oppName || "对手";
+    /* 局内决策评级：整轮系列赛的 plan 是否奏效，挂到结束后的 result 上 */
+    M._dec = duelRateSummary(s);
     /* 开麦：输了必采；赢了只在收官战（赛段决赛 / 国际赛 / 世界赛）采，避免每轮都来一次 */
     const closing = !won || !!s.worlds || !!s.intl || (M.roundIdx || 0) >= 2;
     M.pendingTalk = closing
@@ -1843,6 +2015,7 @@ window.GAME = (function () {
         if (w) w.log.push({ round: rn, a: "我", b: oppName, win: oppName, score: s.wins + "-" + s.losses });
         prize(nm === "亚军" ? "worlds2" : "worlds4");
         M.worlds = null;
+        sndEnd("lose");
         return result("止步" + nm, `${s.wins}:${s.losses}，输给 ${oppName}。你在休息室把队服叠好，明年的门票得从头再打一遍。`, "lose", () => forumScene({ kind: "worlds", title: "世界赛 · 止步" + nm, w: s.wins, l: s.losses, perf: 42 }, () => monthEnd()));
       }
       if (rn >= 3) {
@@ -1855,6 +2028,7 @@ window.GAME = (function () {
         prize("worlds");
         S.timeline.push({ t: S.tick, text: "全球总决赛冠军" });
         M.worlds = null;
+        sndEnd("win");
         return result("世界冠军", `${s.wins}:${s.losses}。金色的纸屑落下来的时候，你忽然想起三年前在 LDL 基地吃泡面的那个晚上。`, "win", () => forumScene({ kind: "worlds", title: "世界赛 · 决赛", w: s.wins, l: s.losses, perf: 97 }, () => monthEnd()));
       }
       /* 赢了：把自己塞进下一轮 */
@@ -1881,6 +2055,7 @@ window.GAME = (function () {
         if (it.name === "MSI") { S.record.msi = S.record.msi || []; S.record.msi.push({ year: S._ml.year, best: stop, win: false }); }
         S.morale = clamp(S.morale - 14, 0, 100);
         S.timeline.push({ t: S.tick, text: `${it.name}止步${stop}` });
+        sndEnd("lose");
         return result(`${it.name}止步${stop}`, `${s.wins}:3，输给 ${oppName}。你在酒店把队服洗了，挂在窗边，第二天干了就走。`, "lose", () => forumScene({ kind: "intl", title: it.name + " · 止步" + stop, w: s.wins, l: s.losses, perf: 52 }, () => monthEnd()));
       }
       if (it.round >= 1) {
@@ -1894,6 +2069,7 @@ window.GAME = (function () {
         S.burst = 100;
         S.coachTrust = clamp(S.coachTrust + 8, 0, 100);
         prize(it.name === "MSI" ? "msi" : "first");
+        sndEnd("win");
         return result(tname, `3:${s.losses}，你们捧起了 ${it.name} 的奖杯。你举杯的时候，台下有人用中文喊你的 ID。`, "win", () => forumScene({ kind: "intl", title: it.name + " · 冠军", w: s.wins, l: s.losses, perf: 90 }, () => monthEnd()));
       }
       it.round = 1;
@@ -1918,10 +2094,12 @@ window.GAME = (function () {
       S.fans += rint(20000, 80000);
       S.burst = 100;
       S.coachTrust = clamp(S.coachTrust + 10, 0, 100);
+      sndEnd("win");
       return result("冠军", `3:${s.losses}，你们赢了。${tname}。更衣室里有人哭了，有人在喊你的 ID。`, "win", () => monthEnd());
     }
     S.morale = clamp(S.morale - 18, 0, 100);
     prize("split2");
+    sndEnd("lose");
     return result(`赛段第 ${place} 名`, `${s.wins}:3，被 ${oppName} 送走，${splitLabel(splitN)}第 ${place} 名。你在休息室坐了很久，手机屏幕上全是换人的评论。`, "lose", () => monthEnd());
   }
 
@@ -2064,16 +2242,44 @@ window.GAME = (function () {
     veteranDecay();
     const notes = [];
 
-    /* 伤病：档位越差越容易伤 */
-    if (preEnergy < 16 && chance(S.inj * .55 * band.injMul * (hasT("tal_glass_body") ? 1.8 : 1))) {
-      S.energy = 10; S.st.PHYS = clamp(S.st.PHYS - 6, 0, 99);
-      S.timeline.push({ t: S.tick, text: "伤病：手腕" });
+    /* 旧伤：一个月好一格。伤病不再清空精力、也不再把整月扣掉，只是状态打折 */
+    if (M.injury) {
+      const inj = M.injury;
+      inj.fresh = false;
+      if (inj.months > 0) {
+        inj.months--;
+        if (inj.months <= 0) {
+          notes.push("伤好了：" + inj.part + "不再碍事");
+          S.timeline.push({ t: S.tick, text: "伤愈：" + inj.part });
+          /* 伤病冷却：刚好的两个月内不再判伤病，避免连续低精力月份被反复砸中 */
+          S._injCd = Math.max(S._injCd || 0, S.tick + 2);
+          M.injury = null;
+        } else {
+          notes.push("带伤：" + inj.part + "还没好，比赛状态要打折（还剩 " + inj.months + " 个月）");
+        }
+      } else {
+        M.injury = null;
+      }
+    }
+    /* 伤病：档位越差越容易伤。命中后先记一笔，月末给三种处理方式，别一句话把人整月打没。
+       单月概率封顶 22%，带伤期间不再判定，伤好后冷却 2 个月——三/hell 的伤停损失要压到 ≤2 个月 */
+    const injP = Math.min(.14, (S.inj || .1) * .55 * band.injMul * diffInj() * (hasT("tal_glass_body") ? 1.8 : 1) * (S.diff === "normal" ? .75 : S.diff === "hard" ? .9 : S.diff === "hell" ? 1.1 : 1));
+    if (!M.injury && preEnergy < 16 && S.tick >= (S._injCd || 0) && chance(injP)) {
+      const part = pick(["手腕", "腰", "肩", "脚踝"]);
+      S.st.PHYS = clamp(S.st.PHYS - 5, 0, 99);
       M.injured = true;
-      notes.push("伤病：手腕废了，精力回到 10");
+      S.record = S.record || {};
+      S.record.injuries = (S.record.injuries || 0) + 1; /* 成就 injuryCount */
+      M.injury = { part: part, months: 1, form: -4, fresh: true };
+      S._injCd = Math.max(S._injCd || 0, S.tick + 3);
+      S.timeline.push({ t: S.tick, text: "伤病：" + part });
+      notes.push("伤病：" + part + "。别慌，队医给了三个方案，这个月不至于全废");
     }
     /* 透支/危险的代价：心情、教练信任 */
-    if (band.key === "exhausted") { S.morale -= 3; S.coachTrust = clamp(S.coachTrust - 2, 0, 100); notes.push("精力透支：心情 −3，教练信任 −2"); }
-    else if (band.key === "danger" || band.key === "down") { S.morale -= 5; S.coachTrust = clamp(S.coachTrust - 3, 0, 100); notes.push("精力见底：心情 −5，教练信任 −3"); }
+    if (band.key === "exhausted") { S.morale -= 2; S.coachTrust = clamp(S.coachTrust - 2, 0, 100); notes.push("精力透支：心情 −2，教练信任 −2"); }
+    else if (band.key === "danger" || band.key === "down") { S.morale -= 3; S.coachTrust = clamp(S.coachTrust - 3, 0, 100); notes.push("精力见底：心情 −3，教练信任 −3"); }
+    /* 队友关系月度小概率：低 aff 内讧 / 高 aff 请吃饭 */
+    mateMonthly().forEach(t => notes.push(t));
 
     S.energy = clampEnergy(S.energy + 16);
     /* 新队磨合：换队后的话语权惩罚每月退一点，两三个月才回到原来的位置 */
@@ -2082,12 +2288,21 @@ window.GAME = (function () {
       if (S.voiceReset === 0) notes.push("新队磨合结束：话语权回到正常水平");
       else notes.push("新队磨合：话语权还差 " + S.voiceReset + " 点");
     }
-    S.morale = clamp(S.morale - 2 + (S.teamStatus - 50) / 25, 0, 100);
+    /* 心态向 55 硬回归：低于 55 每月大幅回拉（缺口 45%，3~20 点），高于 55 不再额外加。
+       输比赛/负面事件一次能砸掉几十点，靠 +2 的小回血永远追不上，月度结算必须兜住地板 */
+    const gap = 55 - S.morale;
+    const pull = gap > 0 ? clamp(Math.round(gap * .45), 3, 20) : 0;
+    S.morale = clamp(S.morale + (S.teamStatus - 50) / 25 + pull + (S.morale < 40 ? 2 : -2), 0, 100);
+    if (S.st.MENTAL < 55) S.st.MENTAL = clamp(S.st.MENTAL + pull, 0, S.pot);
     S.spirit = clamp((S.spirit || 60) + (S.teamStatus - 55) / 12, 0, 100);
     S.st.FAME = clamp(S.st.FAME + S.fans / 250000, 0, 98);
 
-    /* 工资 + 赞助到账（单位：万元） */
-    const pay = Math.round(((S.salary || 12) / 12 + S.fans / 8000 + Math.max(0, S.st.FAME - 45) * .6) * 10) / 10;
+    /* 工资 + 赞助到账（单位：万元）。S.salary 是年薪，月发的是它的十二分之一 */
+    const payBase = Math.round(((S.salary || 12) / 12) * 10) / 10;
+    const payFans = Math.round((S.fans / 8000) * 10) / 10;
+    const payFame = Math.round((Math.max(0, S.st.FAME - 45) * .6) * 10) / 10;
+    const sponsor = sponsorPay(); /* W7 赞助合约：名气过门槛自动签约，每月分成 */
+    const pay = Math.round((payBase + payFans + payFame + sponsor) * 10) / 10;
     /* 每月固定支出：生活费 / 团队 / 教练工资 / 装备理疗 */
     const living = Math.round((0.45 + Math.max(0, S.age - 18) * .05) * 10) / 10;
     const teamCost = Math.round(((S.stage === "LPL" ? .6 : .25) + (S.teamStatus < 45 ? .15 : 0)) * 10) / 10;
@@ -2104,7 +2319,17 @@ window.GAME = (function () {
       if (interest > 0) { expenses.push({ label: "欠债利息", amount: interest }); notes.push("存款为负：本月被收了 " + interest + " 万利息，欠债事件更容易找上门"); }
     }
     const expenseTotal = Math.round(expenses.reduce((a, e) => a + e.amount, 0) * 10) / 10;
+    /* W7 投资渠道：季度（3/6/9/12 月）结算，房产/基金/股权 −5% ~ +20% 浮动 */
+    let investRows = [];
+    if ((S._ml.month % 3) === 0 && investTotal() > 0) {
+      investRows = investRoll();
+      investRows.forEach(r => {
+        const cn = ({ house: "房产", fund: "基金", equity: "股权" }[r.k] || r.k);
+        notes.push("投资" + cn + "：本季 " + (r.pct >= 0 ? "+" : "") + r.pct + "%（" + (r.delta >= 0 ? "+" : "") + r.delta + " 万）");
+      });
+    }
     S.money = Math.round((S.money + pay - expenseTotal) * 10) / 10;
+    markDebt();
     if (S.money < 0) notes.push("你现在欠着钱。");
 
     /* 抽卡券：每个月保底 3 张 */
@@ -2112,24 +2337,51 @@ window.GAME = (function () {
     let draws = 0;
     if (chance(.14)) draws++;
     if (S._ml.month === 12) draws += 2;
-    /* 下月强制低消耗：结算前精力见底（≤14），或补完 16 点后仍在透支档及以下。
-       在 monthend 就吐出来，UI 能提前提示“下月只能做低消耗行动”，startMonth 会接住这个预告 */
+    /* 下月只能低消耗：结算前精力见底（≤14），或补完 16 点后仍在透支档及以下。
+       注意：这只是「精力见底」不是伤病，用 tiredRest 单独标记，forcedRest 只留给伤病静养
+       （sim_balance 的「因伤损失行动月数」就是数 forcedRest 的月份，混进来会虚高） */
     const nextBand = energyBand(S.energy);
-    const forcedRest = preEnergy <= 14 || nextBand.key === "exhausted" || nextBand.key === "danger" || nextBand.key === "down";
-    M.forcedRest = forcedRest;
-    if (forcedRest) notes.push("强制休息：下个月先把精力养回来，高消耗行动会被队医拦下。");
+    const tiredRest = preEnergy <= 14 || nextBand.key === "exhausted" || nextBand.key === "danger" || nextBand.key === "down";
+    M.tiredRest = tiredRest;
+    M.forcedRest = false;
+    const forcedRest = !!tiredRest;
+    if (tiredRest) notes.push("强制休息：下个月先把精力养回来，高消耗行动会被队医拦下。");
+    /* 成就：月末统一检查一次，新解锁的挂在月末场景上 */
+    const achvNew = checkAchv().slice();
+    M.achvNew = null;
     const endScene = () => scene({
       type: "monthend", ml: S._ml, energy: Math.round(S.energy), preEnergy: Math.round(preEnergy),
-      forcedRest: !!forcedRest, morale: S.morale, spirit: S.spirit, ovr: myOvr(),
+      forcedRest: !!(M.injury && M.injury.fresh), tiredRest: !!tiredRest, morale: S.morale, spirit: S.spirit, ovr: myOvr(),
       fame: Math.round(S.st.FAME), fans: S.fans, voice: voice(), draws: draws, injured: !!M.injured,
-      pay: pay, money: S.money, ticket: S.ticket,
+      pay: pay, payBase: payBase, payFans: payFans, payFame: payFame, sponsor: S.sponsor ? { name: S.sponsor.name, fee: S.sponsor.fee, months: S.sponsor.months } : null,
+      salary: Math.max(0, Math.round(S.salary || 12)),
+      money: S.money, ticket: S.ticket,
       expenses: expenses, expenseTotal: expenseTotal, notes: notes,
+      invest: S.invest2 || {}, investRows: investRows,
+      achvNew: achvNew,
       energyBand: energyBand(S.energy), moneyBand: moneyBand(S.money),
       pick() {
         M.injured = false;
         M.atMonthStart = false;
-        if (draws > 0) return drawScene(draws, () => shopScene(() => nextMonth()));
-        return shopScene(() => nextMonth());
+        const after = () => {
+          if (draws > 0) return drawScene(draws, () => shopScene(() => nextMonth()));
+          return shopScene(() => nextMonth());
+        };
+        /* 自动托管：抽卡直接收下、商店一键跳过；伤病处理仍然交给玩家（重要决策不代打） */
+        const autoLv = autoLevel();
+        if (autoLv >= 1) {
+          let cnt = 0;
+          for (let i = 0; i < draws; i++) { if (drawOne()) cnt++; }
+          S.shopDone = true;
+          const autoAfter = () => result("托管 · 月末",
+            "这个月你只管打比赛。抽卡 " + cnt + " 张自动收下，商店按托管跳过。\n存款 " + Math.round(S.money) + " 万 · 精力 " + Math.round(S.energy) + " · 心情 " + Math.round(S.morale),
+            "info", () => nextMonth());
+          if (M.injury && M.injury.fresh) return injuryScene(after);
+          return autoAfter();
+        }
+        /* 伤病处理：三选一，选完再继续月末流程 */
+        if (M.injury && M.injury.fresh) return injuryScene(after);
+        return after();
       }
     });
     /* 暗线：黑钱收多了，会有人来递最后一单 —— 接了可能走不到明年 */
@@ -2139,6 +2391,41 @@ window.GAME = (function () {
       return lastJobScene(endScene);
     }
     return endScene();
+  }
+
+  /* 伤病处理：静养 / 常规康复 / 打封闭。选完继续月末流程，谁也别想跳过去 */
+  function injuryScene(next) {
+    const inj = M.injury || { part: "手腕", months: 1 };
+    const opts = [
+      { t: "静养：停掉下个月的训练", d: "伤病清零，下个月高消耗训练全停；但多出来的恢复时间让体能回一点（精力 +8、士气 +3）", k: "rest" },
+      { t: "常规康复：带伤打，慢慢养", d: "带伤 1 个月，比赛状态 −4；行动不受限", k: "normal" },
+      { t: "打封闭：现在就能上", d: "带伤 1 个月、状态 −2；伤病概率 +5%，25% 会加重", k: "block" }
+    ];
+    return scene({
+      type: "injury", part: inj.part, months: inj.months, opts: opts.map(o => ({ t: o.t, d: o.d })),
+      pick(i) {
+        const k = (opts[clamp(i, 0, opts.length - 1)] || {}).k;
+        if (k === "rest") {
+          M.injury = null;
+          M.forcedRest = true;
+          S.energy = clampEnergy(S.energy + 8);
+          S.spirit = clamp((S.spirit || 60) + 3, 0, 100);
+          S.timeline.push({ t: S.tick, text: "伤停静养：下个月不练，恢复时间换来一点体能" });
+          return result("静养", "队医把训练计划表划掉了一半，说下个月别练了。你把冰袋按在" + inj.part + "上，看着队友打训练赛。\n\n伤是当天好的，代价是下个月的训练表空了一半——但多出来的睡眠和理疗，让身体稍微回了一点。", "info", () => next());
+        }
+        if (k === "block") {
+          M.injury = { part: inj.part, months: 1, form: -2, fresh: false };
+          S.inj = clamp(S.inj + .05, 0, .8);
+          let worse = false;
+          if (chance(.25)) { M.injury.months = 3; M.injury.form = -6; worse = true; }
+          S.timeline.push({ t: S.tick, text: "打封闭上场" });
+          return result("打封闭", "针打进去的时候你咬着牙，队医说别咬，牙会裂。\n\n" + inj.part + "不疼了，但你知道那只是暂时不疼。" + (worse ? "两周后它回来得更凶，队医看你的眼神像在看一个不听劝的人。" : "至少这个月你还能站在台上。"), worse ? "bad" : "info", () => next());
+        }
+        M.injury = { part: inj.part, months: 1, form: -4, fresh: false };
+        S.timeline.push({ t: S.tick, text: "带伤常规康复" });
+        return result("常规康复", "你没有停下来。冰敷、理疗、上场，三件事按顺序排进日程。\n\n" + inj.part + "会跟你一个月，像一个甩不掉的提醒。", "info", () => next());
+      }
+    });
   }
 
   function lastJobScene(next) {
@@ -2208,6 +2495,8 @@ window.GAME = (function () {
   function drawOne() {
     const all = D.talents();
     if (!all.length) return null;
+    S.record = S.record || {};
+    S.record.draws = (S.record.draws || 0) + 1; /* 成就 gachaCount：按抽到的卡数计，十连自然 +10 */
     S.drawPity++;
     let rar;
     if (S.drawPity >= 40) { rar = "gold"; S.drawPity = 0; }
@@ -2262,15 +2551,16 @@ window.GAME = (function () {
   function drawScene(n, next) {
     const cards = [];
     for (let i = 0; i < n; i++) { const c = drawOne(); if (c) cards.push(c); }
-    return scene({ type: "draw", cards, ticket: S.ticket, pick() { return next(); } });
+    return scene({ type: "draw", cards, ticket: S.ticket, bonds: deckBonds().summary, poolInfo: poolInfo(), pick() { return next(); } });
   }
 
   /* ================= 抽卡页 / 卡组 / 商店 ================= */
   function gachaScene(next) {
     const goNext = () => next ? next() : actionScene();
+    const bonds = deckBonds();
     return scene({
       type: "gacha", ticket: S.ticket, bag: (S.bag || []).length, deck: S.deck, pity: S.drawPity,
-      builds: deckBonus()._builds,
+      builds: deckBonus()._builds, bonds: bonds.summary, poolInfo: poolInfo(), guide: guide("gacha"),
       pick(i, v) {
         /* P0-4：退出/返回绝不能被当成一次抽卡扣券 */
         if (v === "back" || v === "close" || v === "exit" || v === "next") return goNext();
@@ -2281,7 +2571,7 @@ window.GAME = (function () {
         const cards = [];
         for (let k = 0; k < (ten ? 10 : 1); k++) { const c = drawOne(); if (c) cards.push(c); }
         /* 抽完的“收下继续”直接走 next，不再回抽卡页（也就不会再扣一次券） */
-        return scene({ type: "gacha", pulled: cards, ticket: S.ticket, next: next, pick() { return goNext(); } });
+        return scene({ type: "gacha", pulled: cards, ticket: S.ticket, next: next, bonds: bonds.summary, poolInfo: poolInfo(), pick() { return goNext(); } });
       }
     });
   }
@@ -2293,7 +2583,7 @@ window.GAME = (function () {
     all.forEach(t => byId[t.id] = t);
     return scene({
       type: "deck", deck: (S.deck || []).map(id => id ? byId[id] : null), bag: bag,
-      builds: deckBonus()._builds,
+      builds: deckBonus()._builds, bonds: deckBonds().summary,
       pick(i, v) {
         if (v === "back") return next ? next() : actionScene();
         if (v === "un") { const slot = clamp(i, 0, 4); S.deck[slot] = null; return deckScene(next); }
@@ -2324,14 +2614,30 @@ window.GAME = (function () {
       return result("商店", "老板从柜台后面抬眼看了你一下，又低头继续刷手机。\n\n你想起自己卡里是负数，把手从货架上收了回来。", "lose", goNext);
     }
     S.shopBought = S.shopBought || {};
+    /* W7：商店每赛段刷新（一次性商品按赛段重置），本赛段售价 +20%~40% */
+    S.shopSeason = S.shopSeason || curSplit();
+    if (S.shopSeason !== curSplit()) { S.shopSeason = curSplit(); S.shopBought = {}; }
+    const sellMul = 1 + (.2 + (hashStr("shophike" + curSplit() + (S.teamId || "")) % 21) / 100);
     const all = ((window.DATA_SHOP && window.DATA_SHOP.items) || []).filter(it => it && !(it.once && S.shopBought[it.id]));
     const items = shuffle(all).slice(0, 5).map(it => ({
       id: it.id, n: it.name, name: it.name, d: it.desc, desc: it.desc, flavor: it.flavor || "",
-      icon: it.icon, price: it.price, eff: it.eff || {}, once: !!it.once,
+      icon: it.icon, price: Math.round(it.price * sellMul * 10) / 10, basePrice: it.price, eff: it.eff || {}, once: !!it.once,
       bought: !!S.shopBought[it.id], detail: moneyDetail(it)
     }));
+    /* W7 投资渠道：宽裕以上才看得到（房产/基金/股权），季度 −5% ~ +20% 浮动 */
+    if (mb.key !== "tight" && mb.key !== "debt") {
+      items.push(
+        { id: "inv_house", n: "房产", name: "房产", d: "买一套小房子收租，季度结算浮动", desc: "买一套小房子收租", flavor: "中介说这个地段三年后会涨。", icon: "🏠", price: Math.round(8 * sellMul * 10) / 10, eff: { invest: "house", investAmt: 8 }, once: false, bought: false, detail: "投资 · 季度 −5%~+20%" },
+        { id: "inv_fund", n: "基金", name: "基金", d: "签一份理财，季度结算浮动", desc: "签一份理财", flavor: "表格很长，你只看了收益率那一栏。", icon: "📈", price: Math.round(4 * sellMul * 10) / 10, eff: { invest: "fund", investAmt: 4 }, once: false, bought: false, detail: "投资 · 季度 −5%~+20%" },
+        { id: "inv_equity", n: "股权", name: "股权", d: "买进一家电竞公司股份，季度结算浮动", desc: "买进电竞公司股份", flavor: "股东名册上多了一个 ID。", icon: "💼", price: Math.round(6 * sellMul * 10) / 10, eff: { invest: "equity", investAmt: 6 }, once: false, bought: false, detail: "投资 · 季度 −5%~+20%" }
+      );
+    }
+    /* 资本玩家专属：钱够多时能买青训队/股权，退役线因此改写（见 ending） */
+    if (S.money >= 600 && !S.academy) {
+      items.push({ id: "inv_acad", n: "买下一支青训队", name: "买下一支青训队", d: "花钱把一支 LDL 青训队买下来，自己当老板", desc: "买青训队", flavor: "合同上你第一次签在「甲方」那一栏。", icon: "🏛", price: 400, eff: { invest: "acad" }, once: true, bought: !!S.shopBought.inv_acad, detail: "青训队 · 本局结局线改变" });
+    }
     return scene({
-      type: "shop", items: items, money: S.money, moneyBand: mb, next: next,
+      type: "shop", items: items, money: S.money, moneyBand: mb, next: next, splitNo: curSplit(), guide: guide("shop"),
       pick(i, v) {
         if (v === "skip") { S.shopDone = true; return goNext(); }
         if (v === "deck") return deckScene(() => shopScene(next));
@@ -2391,7 +2697,11 @@ window.GAME = (function () {
       else if (k === "mentalShield") { S.invest.mentalShield = (S.invest.mentalShield || 0) + v; lines.push("心理护盾 ×" + S.invest.mentalShield + "：下次心态受挫伤害减半"); }
       else if (k === "energyFull") { S.energy = energyMax(); lines.push("精力回满（" + Math.round(S.energy) + "/" + energyMax() + "）"); }
       else if (k === "energy") { S.energy = clampEnergy(S.energy + v); lines.push("精力 " + (v > 0 ? "+" + v : v) + "（现在 " + Math.round(S.energy) + "/" + energyMax() + "）"); }
-      else if (k === "healInjury") { S.inj = 0; lines.push("伤病清零"); }
+      else if (k === "healInjury") {
+        if (M.injury) { lines.push("伤好了：" + M.injury.part + "不再碍事"); M.injury = null; }
+        S.inj = clamp((S.inj || 0) - .04, 0, .8);
+        lines.push("伤病概率 −4%（现在 " + Math.round((S.inj || 0) * 100) + "%）");
+      }
       else if (k === "energyMax") { S.invest.energyMax = 1; lines.push("精力上限 +10（现在 " + energyMax() + "）"); }
       else if (k === "reveal") { S.invest.data = 1; lines.push("BP 阶段可以多看一个对手倾向"); }
       else if (k === "TEAM") { S.teamStatus = clamp(S.teamStatus + v, 0, 100); lines.push("团队 +" + v); }
@@ -2417,6 +2727,19 @@ window.GAME = (function () {
         } else {
           S.invest.heroPickPending = { v: v, item: it.id };
           lines.push("英雄特训：待选择特训英雄（先记着，UI 选完再生效）");
+        }
+      }
+      else if (k === "invest") {
+        if (v === "acad") {
+          S.academy = true;
+          S.timeline.push({ t: S.tick, text: "买下一支青训队，自己当老板" });
+          lines.push("你买下了一支青训队：从今往后你不只是选手，还是老板（结局线已改写）");
+        } else {
+          const amt = Math.round((Number(it.price) || Number(e.investAmt) || 0) * 10) / 10;
+          S.invest2 = S.invest2 || {};
+          S.invest2[v] = (S.invest2[v] || 0) + amt;
+          S.money = Math.round((S.money + amt) * 10) / 10; /* 现金换成资产，不算花掉 */
+          lines.push("投入" + ({ house: "房产", fund: "基金", equity: "股权" }[v] || v) + " " + amt + " 万（季度 −5%~+20% 浮动，累计 " + S.invest2[v] + " 万）");
         }
       }
       else if (k === "banPlus") {
@@ -2795,15 +3118,27 @@ window.GAME = (function () {
         text: "你退役那天，手机里最上面三条消息是三个催收。生涯奖金、工资、赞助，一分没存下来，全填进了生活费、伤病和高利贷的窟窿。\n\n你还是能打出好操作。但没人会为一个月光族开一份长合同。回老家的火车上，你把游戏卸了，又装回来了。\n\n第二年你开始接陪玩，一小时八十。有个老板夸你意识好，问你是不是打过职业。你说没有，只是玩得多。" };
     } else if (hasWorlds) end = { name: "登神", rank: "S+", sub: "世界冠军", text: "召唤师奖杯上刻着你的 ID。三年前你还在 LDL 基地抢泡面，现在全世界的解说说你名字的时候会先清一下嗓子。\n\n夺冠那晚你被队友扛在肩上绕场一周，闪光灯亮成一片。回到后台你一个人坐了很久，手机里全是没回的消息，包括三年前那个劝你“要不别打了”的人。\n\n你把那条消息回了两个字：赢了。" };
     else if (hasMsi && titles.length >= 2) end = { name: "无冕之王", rank: "S", sub: "就差那一个", text: "MSI 拿过，联赛拿过，就差十一月那个。每年世界赛结束，你都会把那场 BO5 的录像再点开一次，看到第三局就关掉。\n\n退役仪式上主持人说你是“这个赛区最接近完美的选手”。你笑着点头，心里清楚“最接近”三个字落在哪个位置。\n\n奖杯柜最上面那层空着，一直没放东西。你太太说要不摆点别的，你说不用，就这样挺好。" };
+    /* —— LCK 支线结局：去首尔三年，三种收场（数据里 opt.ending 指向这三个 reason） —— */
+    else if (reason === "lck_champ") end = { name: "汉江之王", rank: "S+", sub: "LCK 的奖杯，写着一个中国人的名字", text: "决赛在首尔，你赢了。韩文解说愣了两秒才念出你的 ID，观众席先静了一下，然后鼓掌。\n\n三年里你学会了用韩语点外卖、骂裁判、跟队友吵架又和好。你把 LPL 的那套东西带过去，又在那边把另一套东西学了回来。\n\n回国那天有记者在机场堵你，问这算不算“叛徒的胜利”。你说不是，这是职业选手的胜利。然后你把奖杯举起来，让他们拍。" };
+    else if (reason === "lck_home") end = { name: "带着体系回来", rank: "A", sub: "首尔学的东西，带回了 LPL", text: "你没能拿到 LCK 的冠军，但你学会了他们怎么把一个新人变成体系的一部分。\n\n回国后你进了教练组，第一年就把那套东西拆开，按 LPL 的节奏重新拼了一遍。有人骂你“学韩国人”，也有人说这支队终于会打运营了。\n\n你自己清楚，那三年没白待。奖杯不在你手里，但在你带出来的人手里。" };
+    else if (reason === "lck_burn") end = { name: "首尔失速", rank: "C-", sub: "去的时候是天才，回来的时候是新闻里的名字", text: "第一年你打得很好，第二年版本一变，你成了替补席上最贵的那个人。\n\n第三年合同到期，没有队伍续约。你拖着行李箱从仁川机场出来，接机的人只有你妈。\n\n后来有人在论坛问“当年那个去 LCK 的中单现在在哪”，底下回复：别提了。" };
     else if (bestWorlds === "决赛" || bestWorlds === "四强") end = { name: "人间理想", rank: "A+", sub: "世界赛四强", text: "你打到过世界赛的半决赛。这成绩放在 LPL 不算顶，但足够让你回老家时，被小区保安认出来。\n\n那场半决赛第五局，你的操作至今还在赛事集锦里循环播放。弹幕每次都会刷一句“如果那波不退就好了”。你也这么想过，想了三年。\n\n退役后你在这座城市买了房，离基地两站地铁。有时候加班到很晚，你会绕一下，从基地楼下走过去，灯还亮着。" };
-    else if (titles.length >= 3) end = { name: "国内霸主", rank: "A", sub: "联赛之王", text: "国内该拿的都拿了。虎扑上有人做了张图：LPL 三年，你的 ID 出现次数比解说词还多。\n\n你在国内赢到没人想跟你打训练赛，出国就被人针对。这不是你的错，但骂声最后都落在你身上。\n\n退役那天联盟给你颁了个“赛区贡献奖”，你捧着那个水晶牌子，忽然想起第一次拿联赛冠军时，奖杯比这个沉得多。" };
+    /* —— 国内荣誉分档：三年拿到的冠军数量决定“国内”这条线的天花板 —— */
+    else if (!hasWorlds && titles.length >= 14 && S.st.FAME >= 97) end = { name: "赛区神话", rank: "S+", sub: "三年，国内没人是你的对手", text: "三年，十四个冠军。决赛你打得太多了，多到后来赢的时候，你第一反应是看表，算颁奖还要站多久。\n\n其他队的教练开会研究你，研究了三年，结论是“等他退役”。你的英雄池被做成课程卖，青训营报名表上有一栏：最想成为的选手。\n\n世界赛你一次都没赢下来，这是唯一的遗憾。但国内这条线，你已经是天花板了。退役那天联盟把三年的冠军奖杯摆成一排，让你站中间拍照。你拍了，然后问：能帮我搬回家吗。" };
+    else if (!hasWorlds && titles.length >= 13 && S.st.FAME >= 93) end = { name: "赛区之王", rank: "S", sub: "国内赢到没有对手", text: "你在国内赢得太稳了，稳到解说都开始用“例行公事”形容你的决赛。奖杯一个接一个，赞助商排队，联盟的年度最佳拿到手软。\n\n只有你自己知道，每次出国回来，时差倒不过来，躺在酒店床上会想：如果他们那边也打国内这套，我还能赢吗。\n\n这个问题没有答案。但你退役那天，赛区做了一个专题片，标题叫《三年》。片尾打出一行字：他赢下了这里能赢的一切。" };
+    else if (titles.length >= 12) end = { name: "国内霸主", rank: "A+", sub: "联赛之王", text: "国内该拿的都拿了。虎扑上有人做了张图：LPL 三年，你的 ID 出现次数比解说词还多。\n\n你在国内赢到没人想跟你打训练赛，出国就被人针对。这不是你的错，但骂声最后都落在你身上。\n\n退役那天联盟给你颁了个“赛区贡献奖”，你捧着那个水晶牌子，忽然想起第一次拿联赛冠军时，奖杯比这个沉得多。" };
+    else if (titles.length >= 10) end = { name: "国内霸主", rank: "A", sub: "联赛之王", text: "国内该拿的都拿了。虎扑上有人做了张图：LPL 三年，你的 ID 出现次数比解说词还多。\n\n你在国内赢到没人想跟你打训练赛，出国就被人针对。这不是你的错，但骂声最后都落在你身上。\n\n退役那天联盟给你颁了个“赛区贡献奖”，你捧着那个水晶牌子，忽然想起第一次拿联赛冠军时，奖杯比这个沉得多。" };
+    else if (titles.length >= 8) end = { name: "联赛常客", rank: "B+", sub: "冠军拿过，但不多", text: "你拿过冠军，不止一个，但也没到统治的程度。每次夺冠之后，版本一变，你又得从头学起。\n\n三年里你搬了四次基地，换过三个辅助。最巅峰的那半年，你觉得谁都能打；剩下的两年半，你在跟版本较劲。\n\n退役那天没有发布会。你在群里发了个红包，说谢谢大家，然后一个人去楼下的面馆吃了顿加辣的。" };
+    else if (titles.length >= 5) end = { name: "联赛常客", rank: "B+", sub: "冠军拿过，但不多", text: "你拿过冠军，不止一个，但也没到统治的程度。每次夺冠之后，版本一变，你又得从头学起。\n\n三年里你搬了四次基地，换过三个辅助。最巅峰的那半年，你觉得谁都能打；剩下的两年半，你在跟版本较劲。\n\n退役那天没有发布会。你在群里发了个红包，说谢谢大家，然后一个人去楼下的面馆吃了顿加辣的。" };
+    else if (titles.length >= 3) end = { name: "联赛常客", rank: "B-", sub: "冠军拿过，但不多", text: "你拿过冠军，不止一个，但也没到统治的程度。每次夺冠之后，版本一变，你又得从头学起。\n\n三年里你搬了四次基地，换过三个辅助。最巅峰的那半年，你觉得谁都能打；剩下的两年半，你在跟版本较劲。\n\n退役那天没有发布会。你在群里发了个红包，说谢谢大家，然后一个人去楼下的面馆吃了顿加辣的。" };
     else if (titles.length >= 1) end = { name: "一冠封神", rank: "A-", sub: "联赛冠军", text: "一个联赛冠军，够吹一辈子，也够让黑子闭嘴三年。退役后你去解说席，第一句话就是“我当年拿过冠军”。\n\n台下笑成一片，你也笑。只有你自己知道，那场比赛之后你的状态再没回去过，冠军把你抬到最高处，也把剩下的日子都变成了下坡。\n\n后来你解说得越来越稳，语速慢了，判断准了。有人说你比当选手时更适合这行。" };
     else if (bestWorlds) end = { name: "出国留学的", rank: "B+", sub: "世界赛游客", text: "你去过世界赛，虽然只打了瑞士轮。回来以后直播间标题改成“世界赛选手”，被骂了一整周，涨了两万粉。\n\n瑞士轮那三场你打得不算差，只是队友太年轻，一上台就手抖。你说你理解，你自己第一年也抖。\n\n退役后你办了个小训练营，专门带那种第一次进世界赛的年轻人。你教他们的第一件事是怎么在入场式上不低头走路。" };
     else if (S.st.FAME >= 85 && titles.length === 0) end = { name: "流量之神", rank: "B", sub: "没冠军，但有热度", text: "你一个冠军都没拿，但你的切片比冠军的切片多十倍。赞助商排到下个季度，联盟年度颁奖给了你一个“最具人气选手”。\n\n有人问你后不后悔，你说：钱是实打实的，奖杯又不能吃。\n\n话是这么说，某个深夜你还是点开了那年决赛的录像。看到自己那一波开团失败，你按了暂停，去阳台抽了根烟，回来接着看。" };
     else if ((S.money || 0) >= 1000) end = { name: "资本玩家", rank: "A-", sub: "这行是一门生意", text: "你退役前就开始买股份，退役那天直接把老东家的青训买了下来。三年后有人在转会新闻里看到你，你的头衔是“俱乐部投资人”。\n\n当年骂你只会捞钱的人，现在来求你给个试训名额。你看完简历，问了一句“他手速多少”，然后放进了待定。\n\n你办公室里挂着你的旧队服。有记者问那是什么，你说是一件很贵的衣服。" };
+    else if (S.academy) end = { name: "青训老板", rank: "A-", sub: "买下了一支青训队", text: "退役前的最后一年，你把攒下的钱砸进了一支 LDL 青训队。签约仪式上你坐在“甲方”那一栏，对面是五个十八岁的孩子，眼睛里全是你三年前的样子。\n\n你不再上场了。但每天下午你都会站在训练室后面看他们打，看到谁补刀漏了，你的手指会在空气里动一下。\n\n第一年青训队没打出成绩，第二年出了一中单。转会期有 LPL 队伍来问价，你报了个很贵的数字，然后对那个孩子说：别急着去，先把你的英雄池练到没人敢 ban。" };
     else if (S.coachTrust >= 88 && voice() >= 70 && titles.length >= 1) end = { name: "更衣室教皇", rank: "A-", sub: "队里最后一句话是你说的", text: "你退役后直接进了教练组，第一年就把队伍带进了四强。管理层发现，只要更衣室里的那几个人还听你的，这个队就不会散。\n\n你的战术板被裱起来挂在基地墙上，上面写着一句话：别慌，按我说的打。\n\n后来有个新人打得稀烂，蹲在走廊哭。你递了瓶水，说了句“哭完接着练”，他第二年成了首发。" };
-    else if (myOvr() >= 78) end = { name: "顶级打工人", rank: "B", sub: "稳定首发", text: "你没拿过冠军，但你从来没被换下过。工资按时发，粉丝稳定涨，这行里这也是一种本事。\n\n你不会是集锦里的主角，但每支队都想要一个你这样的。合同一份接一份，你在五个城市租过房，每套都只买了同一款椅子。\n\n退役那天队里给你办了个小型欢送会，蛋糕上写着“稳定输出”。你切了第一刀，说这话听着像骂人，全队都笑了。" };
-    else if (myOvr() >= 63) end = { name: "混口饭吃", rank: "C", sub: "轮换选手", text: "三年职业，攒了点钱，也攒了一身病。不算成功，也不算失败。合同到期那天，经理说有空常回来。\n\n你回了一次，基地已经换了装修，新来的小孩不认识你，问你是哪个部门的。你说以前在这打替补，他说哦，然后低头继续打排位。\n\n那天晚上你回家，把孩子哄睡，自己开了一局。排位分不高，但你赢得很开心。" };
+    else if (myOvr() >= 68) end = { name: "顶级打工人", rank: "B", sub: "稳定首发", text: "你没拿过冠军，但你从来没被换下过。工资按时发，粉丝稳定涨，这行里这也是一种本事。\n\n你不会是集锦里的主角，但每支队都想要一个你这样的。合同一份接一份，你在五个城市租过房，每套都只买了同一款椅子。\n\n退役那天队里给你办了个小型欢送会，蛋糕上写着“稳定输出”。你切了第一刀，说这话听着像骂人，全队都笑了。" };
+    else if (myOvr() >= 52) end = { name: "混口饭吃", rank: "B-", sub: "轮换选手", text: "三年职业，攒了点钱，也攒了一身病。不算成功，也不算失败。合同到期那天，经理说有空常回来。\n\n你回了一次，基地已经换了装修，新来的小孩不认识你，问你是哪个部门的。你说以前在这打替补，他说哦，然后低头继续打排位。\n\n那天晚上你回家，把孩子哄睡，自己开了一局。排位分不高，但你赢得很开心。" };
     else end = { name: "查无此人", rank: "D", sub: "消失在人海", text: "三年后，你的直播间只剩 47 个人，其中 30 个是来骂你的。有人问你是谁，弹幕说：以前打过 LDL 的。\n\n你确实打过 LDL。你甚至拿过一次周最佳。但这些没人在意，包括你自己有时候也记不清了。\n\n后来你找了份正经工作，白班，稳定。组里聚餐聊到电竞，你说你不打游戏，眼神飘了一下。" };
     /* 结局尾声：按档位再抽一句，同一档结局不会每次都收在同一个句子上 */
     try {
@@ -2850,12 +3185,19 @@ window.GAME = (function () {
         lsSet(LG_CAREER, { name: rec.name, rank: rec.rank, pos: rec.pos, ovr: rec.ovr, titles: rec.titles, worlds: rec.worlds, at: rec.at });
       }
     } catch (e) { }
+    /* 音频：登神/汉江之王 → win；X 线/查无此人 → lose；其余 neutral */
+    sndEnd((hasWorlds || reason === "lck_champ" || end.rank === "S+") ? "win"
+      : (String(end.rank || "X").charAt(0) === "X" || end.rank === "D" || end.rank === "C-") ? "lose" : "neutral");
+    /* 成就 endingName/endingRank 需要先落盘结局名与评级 */
+    S.record.ending = { name: end.name, rank: end.rank, sub: end.sub || "", at: Date.now() };
+    const achvNewE = checkAchv().slice(); M.achvNew = null;
+    const decE = M._dec || null; M._dec = null;
     return scene({
       type: "ending", end, timeline: S.timeline, stats: S.st, ovr: myOvr(),
       record: S.record, fame: Math.round(S.st.FAME), fans: S.fans, name: S.name, pos: S.pos,
       voice: voice(), money: S.money, teamName: (teamOf(S.teamId) || {}).name || "无",
       salary: S.salary, seasons: seasonSummary(), bestWorlds, hupu: S.hupu, haters: S.haters,
-      worldChamps: S.record.worldChamps || [],
+      worldChamps: S.record.worldChamps || [], achvNew: achvNewE, dec: decE,
       mode: S.mode, season: S.season, age: S.age, reason: reason || "three",
       highlights: (S.highlights || []).slice(-6),
       pick() { return null; }
@@ -2888,7 +3230,7 @@ window.GAME = (function () {
   function save(slot) {
     if (!canSave()) return false;
     try {
-      localStorage.setItem(KEY + slot, JSON.stringify({ S, at: Date.now(), atMonthStart: true }));
+      localStorage.setItem(KEY + slot, JSON.stringify({ S, M: { autoMode: M.autoMode || 0, autoOff: !!M.autoOff, guide: M.guide || {} }, at: Date.now(), atMonthStart: true }));
       return true;
     } catch (e) { return false; }
   }
@@ -2911,11 +3253,26 @@ window.GAME = (function () {
   function load(slot) {
     try {
       const raw = localStorage.getItem(KEY + slot); if (!raw) return null;
-      const o = JSON.parse(raw); S = o.S; M = {}; seedRng(S.seed + S.tick);
+      const o = JSON.parse(raw); S = o.S; M = { autoMode: 0, autoOff: false, guide: {}, achvNew: null, duelLog: [] };
+      if (o.M) { M.autoMode = o.M.autoMode || 0; M.autoOff = !!o.M.autoOff; M.guide = o.M.guide || {}; }
       S.shopBought = S.shopBought || {};
       S.invest = S.invest || {};
+      S.invest2 = S.invest2 || {};
+      S.achv = achvMergeInto(S.achv || {});
+      S.duelLog = S.duelLog || [];
       S.story = S.story || { corrupt: 0, justice: 0, scandal: 0, secret: 0 };
+      S.lck = S.lck || null;
       S.ended = false;
+      /* 旧档 normalize：成就计数 / 队友关系（没有 S.mates 就按当前 roster 初始化） */
+      S.record = S.record || {};
+      S.record.draws = S.record.draws || 0;
+      S.record.injuries = S.record.injuries || 0;
+      S.record.debtEver = !!S.record.debtEver;
+      S.record.ending = S.record.ending || null;
+      ["titles", "splits", "worlds", "msi"].forEach(k => { if (!Array.isArray(S.record[k])) S.record[k] = []; });
+      ensureMates();
+      markDebt();
+      seedRng((S.seed || 1) + (S.tick || 1));
       sanitizeDeck();
       /* 读档只回到月初：不再重摇版本/大事件（fromSave） */
       return startMonth(true);
@@ -2928,7 +3285,7 @@ window.GAME = (function () {
   function lsGet(k, d) { try { const r = localStorage.getItem(k); return r ? JSON.parse(r) : d; } catch (e) { return d; } }
   function lsSet(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } }
   function hofList() { const a = lsGet(HOF_KEY, []); return Array.isArray(a) ? a : []; }
-  function hofScore(rank) { return ({ "S+": 100, "S": 92, "A+": 84, "A": 78, "A-": 72, "B+": 60, "B": 52, "C-": 20, "C": 40, "D": 30, "X": 10 })[rank] || 45; }
+  function hofScore(rank) { return ({ "S+": 100, "S": 92, "A+": 84, "A": 78, "A-": 72, "B+": 60, "B": 52, "B-": 48, "C+": 36, "C-": 20, "C": 40, "D": 30, "X": 10 })[rank] || 45; }
   function hofAdd(rec) {
     const a = hofList().filter(x => x && x.key !== rec.key);
     a.push(rec);
@@ -3191,6 +3548,534 @@ window.GAME = (function () {
     return out;
   }
 
+  /* ==========================================================================
+     v3.10：阵容对照 / 本命英雄 / 局内决策 / 自动托管 / 羁绊 / 成就 / 经济
+     新增数据文件没落地时全部 || [] / || {} 兜底，不依赖加载顺序。
+     ========================================================================== */
+  function hashStr(s) {
+    let h = 2166136261;
+    s = String(s || "");
+    for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+    return (h >>> 0);
+  }
+  function heroesForPos(pos) {
+    const all = (D.heroes() || []).filter(Boolean);
+    const arr = all.filter(h => !h.pos || h.pos.indexOf(pos) >= 0);
+    return (arr.length ? arr : all);
+  }
+  /* 选手的本命英雄：data 里没有 sig 字段，用 name/id + pos 确定性生成，保证同一个人每次一致 */
+  function sigOf(seedName, pos) {
+    const hs = heroesForPos(pos);
+    if (!hs.length) return [];
+    const seed = hashStr((seedName || "x") + "|" + pos);
+    const out = [], n = 2 + (seed % 2);
+    for (let i = 0; i < n && i < hs.length; i++) {
+      const h = hs[(seed + i * 7 + i * i) % hs.length];
+      if (h && h.n && out.indexOf(h.n) < 0) out.push(h.n);
+    }
+    return out;
+  }
+  const FAKE_NAMES = {
+    TOP: ["林间", "Kasa", "阿冲", "Thorn", "小楼"], JUG: ["野火", "Mute", "小鹿", "Breeze", "阿凯"],
+    MID: ["Kite", "长安", "Nova", "小满", "Zenith"], BOT: ["Echo", "阿糖", "Rune", "小饼", "Lumen"],
+    SUP: ["Koi", "阿松", "Halo", "小北", "Pine"]
+  };
+  const POS_ORDER = ["TOP", "JUG", "MID", "BOT", "SUP"];
+  /* 双方五人阵容对照：真实选手优先，data 里没有就确定性生成并标 fake */
+  function rosterDetail(tid) {
+    const t = teamOf(tid) || {}, rows = [], roster = t.roster || {};
+    for (let i = 0; i < POS_ORDER.length; i++) {
+      const pos = POS_ORDER[i];
+      if (tid === S.teamId && pos === S.pos) {
+        rows.push({ pos: pos, posCN: POSCN[pos], name: S.name, ovr: myOvr(), sig: sigOf(S.name, pos), me: true });
+        continue;
+      }
+      const pid = roster[pos];
+      const p = pid ? playerOf(pid) : null;
+      if (p && p.st) {
+        rows.push({ pos: pos, posCN: POSCN[pos], name: p.name || pid, ovr: ovr(p.st, pos), sig: sigOf(String(pid || p.name || ""), pos), pid: pid });
+      } else {
+        const seed = hashStr((tid || "") + "|" + pos), pool = FAKE_NAMES[pos] || FAKE_NAMES.MID;
+        rows.push({
+          pos: pos, posCN: POSCN[pos], fake: true,
+          name: pool[seed % pool.length] + "·" + (seed % 10),
+          ovr: clamp(Math.round(teamPower(tid) + ((seed % 7) - 3)), 40, 92),
+          sig: sigOf("fake" + (tid || "") + pos, pos)
+        });
+      }
+    }
+    return rows;
+  }
+  function oppRosterOf(tid) { try { return rosterDetail(tid); } catch (e) { return []; } }
+  function myRosterDetail() { try { return rosterDetail(S.teamId); } catch (e) { return []; } }
+  function oppSigHit(tid, hero) {
+    if (!hero) return [];
+    try {
+      return rosterDetail(tid).filter(r => (r.sig || []).indexOf(hero) >= 0)
+        .map(r => ({ pos: r.pos, name: r.name, hero: hero }));
+    } catch (e) { return []; }
+  }
+
+  /* ================= 队友关系（W5）：4 名队友、aff 0..100、3 步关系线 ================= */
+  const MATE_TIERS = [[85, "兄弟", 4], [70, "朋友", 3], [40, "熟识", 2], [0, "陌生", 1]];
+  function mateTier(aff) {
+    const a = aff || 0;
+    for (let i = 0; i < MATE_TIERS.length; i++) if (a >= MATE_TIERS[i][0]) return { name: MATE_TIERS[i][1], lv: MATE_TIERS[i][2] };
+    return { name: "陌生", lv: 1 };
+  }
+  function matesRaw() {
+    try {
+      S.mates = S.mates || {};
+      return Object.keys(S.mates).map(pid => Object.assign({ pid: pid }, S.mates[pid] || {}));
+    } catch (e) { return []; }
+  }
+  function matesList() {
+    return matesRaw().map(m => ({ pid: m.pid, name: m.name, pos: m.pos, aff: Math.round(m.aff || 0), tier: mateTier(m.aff), done: !!m.done, broken: !!m.broken }));
+  }
+  function matesAffMean() {
+    const ms = matesRaw();
+    if (!ms.length) return 50;
+    let n = 0; ms.forEach(m => { n += (m.aff || 0); });
+    return n / ms.length;
+  }
+  /* 转会/换队后按当前 roster（除自己）重建 4 名队友；旧队关系不带走 */
+  function ensureMates(force) {
+    try {
+      const tm = teamOf(S.teamId) || {}, roster = tm.roster || {}, pids = [];
+      for (let i = 0; i < POS_ORDER.length && pids.length < 4; i++) {
+        const pid = roster[POS_ORDER[i]];
+        if (pid && pid !== S.pid && pid !== S.baseId && pids.indexOf(pid) < 0) pids.push(pid);
+      }
+      const sig = String(tm.id || S.teamId || "") + "|" + pids.join(",");
+      S.mates = S.mates || {};
+      if (!force && S._matesSig === sig && Object.keys(S.mates).length) return S.mates;
+      const built = {};
+      pids.forEach(pid => {
+        const p = playerById(pid) || playerOf(pid) || null, old = S.mates[pid];
+        built[pid] = {
+          name: (p && (p.cn || p.name)) || pid,
+          pos: (p && p.pos) || "MID",
+          aff: old ? clamp(old.aff || 50, 0, 100) : 50,
+          mem: (old && old.mem) ? old.mem : [],
+          lineStep: (old && old.lineStep) || 0,
+          done: !!(old && old.done), broken: !!(old && old.broken)
+        };
+      });
+      S.mates = built;
+      S._matesSig = sig;
+      if (S._matePid && !S.mates[S._matePid]) { S._matePid = null; S._mateName = ""; }
+      return S.mates;
+    } catch (e) { return S.mates || {}; }
+  }
+  function matePick() {
+    const ms = matesRaw();
+    if (!ms.length) return null;
+    let x = ((S.tick || 1) * 2654435761 + (M.evCount || 0) * 40503) >>> 0;
+    x = (x ^ (x >>> 15)) >>> 0;
+    return ms[x % ms.length];
+  }
+  /* 队友线：第 1 步 aff+5 / 第 2 步 aff+10 / 第 3 步三选一（动态事件，复用 event 渲染） */
+  function applyMateLine(v) {
+    ensureMates();
+    const pid = S._matePid || (matePick() || {}).pid;
+    const m = pid && S.mates ? S.mates[pid] : null;
+    if (!m || m.done || m.broken) return null;
+    m.lineStep = Math.min(3, (m.lineStep || 0) + Math.max(1, Number(v) || 1));
+    if (m.lineStep === 1) {
+      m.aff = clamp((m.aff || 50) + 5, 0, 100);
+      m.mem.push({ t: S.tick, text: "第一次一起加练" });
+      return { pid: pid, name: m.name, step: 1, aff: Math.round(m.aff) };
+    }
+    if (m.lineStep === 2) {
+      m.aff = clamp((m.aff || 50) + 10, 0, 100);
+      m.mem.push({ t: S.tick, text: "聊了聊家里的事" });
+      return { pid: pid, name: m.name, step: 2, aff: Math.round(m.aff) };
+    }
+    S._matePending = pid;
+    return { pid: pid, name: m.name, step: 3, aff: Math.round(m.aff), pending: true };
+  }
+  function mateStep3Event() {
+    const pid = S._matePending;
+    const m = pid && S.mates ? S.mates[pid] : null;
+    if (!m) return null;
+    return {
+      id: "mate_step3_" + pid, cat: "mate", noEcho: true,
+      title: "和 " + m.name + " 的最后一步",
+      text: "一个赛季打下来，你们已经不用多说什么了。但有些话，总得有个说法。",
+      opts: [
+        { t: "做兄弟", d: "关系 +15，他把自己压箱底的战术卡给你一张", eff: { mateAff: 15, mateDone: "bro" } },
+        { t: "当普通队友", d: "关系不变，谁也不欠谁", eff: { mateDone: "mate" } },
+        { t: "决裂", d: "关系 −30，以后队里会有人给你使绊子", eff: { mateAff: -30, mateDone: "break" } }
+      ]
+    };
+  }
+  function applyMateEff(key, v) {
+    ensureMates();
+    const pid = S._matePid;
+    const m = pid && S.mates ? S.mates[pid] : null;
+    if (!m) return null;
+    if (key === "mateAff") {
+      m.aff = clamp((m.aff || 50) + (Number(v) || 0), 0, 100);
+      return { pid: pid, name: m.name, aff: Math.round(m.aff) };
+    }
+    if (key === "mateLine") return applyMateLine(v);
+    if (key === "mateDone") {
+      m.done = true;
+      if (v === "break") { m.broken = true; m.aff = clamp((m.aff || 50) - 30, 0, 100); }
+      if (v === "bro") {
+        m.aff = clamp((m.aff || 50) + 15, 0, 100);
+        S.tactical = (S.tactical || 0) + 1; /* 兄弟给一张战术卡 */
+        m.mem.push({ t: S.tick, text: "成了兄弟，给了你一张战术卡" });
+      } else {
+        m.mem.push({ t: S.tick, text: v === "break" ? "决裂了" : "把话说开了" });
+      }
+      if (S._matePending === pid) S._matePending = null;
+      return { pid: pid, name: m.name, done: v, aff: Math.round(m.aff) };
+    }
+    return null;
+  }
+  /* 月度：低 aff 内讧小概率、高 aff 请吃饭小概率；返回 notes */
+  function mateMonthly() {
+    ensureMates();
+    const out = [];
+    matesRaw().forEach(m => {
+      if (m.broken) return;
+      if ((m.aff || 0) < 25 && chance(.06)) {
+        S.morale = clamp(S.morale - 4, 0, 100);
+        S.teamStatus = clamp((S.teamStatus || 50) - 3, 0, 100);
+        m.mem.push({ t: S.tick, text: "在训练室吵了一架" });
+        out.push("和 " + m.name + " 闹了矛盾：心情 −4，团队 −3");
+      } else if ((m.aff || 0) > 80 && chance(.05)) {
+        S.morale = clamp(S.morale + 3, 0, 100);
+        m.mem.push({ t: S.tick, text: "一起吃了顿饭" });
+        out.push(m.name + " 拉你去吃了顿饭：心情 +3");
+      }
+    });
+    return out;
+  }
+
+  const POS_DIM = { TOP: "LANE", JUG: "GAME", MID: "MECH", BOT: "LANE", SUP: "TEAM" };
+  const GAME_PLANS = [
+    { k: "help_top", n: "帮上路", t: "打野前期往上刷", d: "对线 +8%（赌上单能站出来）", dim: "LANE", pct: .08 },
+    { k: "help_bot", n: "帮下路", t: "下路三包二", d: "团队 +8%（下路先起势）", dim: "TEAM", pct: .08 },
+    { k: "roam", n: "双人游走", t: "中野双游", d: "意识 +8%（靠节奏滚雪球）", dim: "GAME", pct: .08 },
+    { k: "farm", n: "放养发育", t: "各线自己玩", d: "操作 +6%、英雄池 +3%（稳，但前期没声音）", dim: "MECH", pct: .06 }
+  ];
+  const RES_PLANS = [
+    { k: "dragon", n: "抢小龙", t: "提前一分钟落位", d: "团队 +3%，士气 +8", dim: "TEAM", pct: .03, mom: 8 },
+    { k: "herald", n: "拿先锋", t: "上中换线吃镀层", d: "对线 +3%，士气 +10", dim: "LANE", pct: .03, mom: 10 },
+    { k: "vision", n: "视野战", t: "辅助全程跟着做视野", d: "意识 +3%，士气 +6", dim: "GAME", pct: .03, mom: 6 },
+    { k: "swap", n: "换线避战", t: "避开对面强势组合", d: "英雄池 +3%，士气 +6", dim: "POOL", pct: .03, mom: 6 },
+    { k: "focus", n: "针对核心", t: "五个人盯死对面最肥的", d: "操作 +4%，士气 +12（打崩对面心态）", dim: "MECH", pct: .04, mom: 12 }
+  ];
+  function planByK(arr, k) { for (let i = 0; i < arr.length; i++) if (arr[i].k === k) return arr[i]; return arr[0]; }
+  function bumpDim(side, dim, pct) {
+    if (!side || !side.dims || !dim) return;
+    const cur = side.dims[dim] === undefined ? 65 : side.dims[dim];
+    side.dims[dim] = Math.round(cur * (1 + (pct || 0)) * 10) / 10;
+  }
+  /* 把本局战术/资源决策落到 bo._mine / bo._theirs 上；对手本命命中给对面一点轻加成 */
+  function applyGamePlan(bo, planK, resK) {
+    if (!bo || !bo._mine) return bo;
+    const pl = planByK(GAME_PLANS, planK), rs = planByK(RES_PLANS, resK);
+    bumpDim(bo._mine, pl.dim, pl.pct);
+    if (pl.k === "farm") bumpDim(bo._mine, "POOL", .03);
+    bumpDim(bo._mine, rs.dim, rs.pct);
+    bo.mom = (bo.mom || 0) + (rs.mom || 0);
+    bo.plan = planK; bo.res = resK;
+    bo.planNames = [pl.n, rs.n];
+    bo.planText = pl.n + " + " + rs.n;
+    bo.mineLabels = (bo.mineLabels || []).concat([
+      { k: pl.n, v: (pl.pct || 0) + (pl.k === "farm" ? .03 : 0), tone: "good" },
+      { k: rs.n, v: rs.pct || 0, tone: "good" }
+    ]);
+    if (bo._mine.labels && bo._mine.labels.push) bo._mine.labels.push({ k: "本局战术", v: pl.n });
+    /* 对手本命命中：对面这条线 +3（最多两个位置），做轻一点 */
+    const hits = oppSigHit(bo.oppId, bo.oppHero);
+    if (hits.length && bo._theirs && bo._theirs.dims) {
+      hits.slice(0, 2).forEach(h => bumpDim(bo._theirs, POS_DIM[h.pos] || "MECH", .03));
+      bo.oppSigHit = hits;
+      bo._theirs.labels = (bo._theirs.labels || []).concat(hits.slice(0, 2).map(h => ({ k: "对面本命 " + (POSCN[h.pos] || h.pos), v: h.hero })));
+    }
+    return bo;
+  }
+  /* 局内决策评级：计划是否奏效（赢下的局里计划算命中）+ 临场指挥加分 */
+  function duelRateSummary(bo) {
+    const log = (bo && bo.duelLog) || [];
+    if (!log.length) return null;
+    let hit = 0;
+    log.forEach(x => { if (x.res === "win") hit += x.command ? 1.25 : 1; });
+    const rate = hit / log.length;
+    const rank = rate >= .75 ? "S" : rate >= .55 ? "A" : rate >= .4 ? "B" : "C";
+    const txt = { S: "你在这轮系列赛里的每一次布置几乎都踩在点子上。", A: "大部分决策都成了，个别局被对面读了。", B: "有对有错，赢下来靠的是选手硬解。", C: "你的布置基本被对面算死了，能撑到这里靠的是运气。" }[rank];
+    return { rank: rank, rate: Math.round(rate * 100) / 100, wins: log.filter(x => x.res === "win").length, n: log.length, text: txt, log: log.slice(-5) };
+  }
+  function sndEnd(kind) {
+    try { if (window.SND && typeof window.SND.playEnding === "function") window.SND.playEnding(kind); } catch (e) { }
+  }
+  function sndIntensity(v) {
+    try { if (window.SND && typeof window.SND.setIntensity === "function") window.SND.setIntensity(v); } catch (e) { }
+  }
+
+  /* 两段局内决策：赛前战术（4 选 1，决胜局可加「临场指挥」）→ 资源决策（5 选 1）→ 进对局 */
+  function prepGameScene() {
+    const bo = M.series;
+    if (!bo) return monthEnd();
+    const gNow = (bo.g || 0) + 1;
+    const decider = (bo.bestOf || 5) >= 5 ? gNow === 5 : (bo.wins === 1 && bo.losses === 1);
+    const opts = GAME_PLANS.map(p => ({ k: p.k, n: p.n, t: p.t, d: p.d, dim: p.dim, pct: p.pct, pctText: Math.round((p.pct || 0) * 100) + "%" }));
+    if (decider) opts.push({ k: "command", n: "临场指挥", t: "你抢过教练的战术板，自己喊 BP", d: "团队 +8%，消耗教练信任 8", dim: "TEAM", pct: .08, cost: 8, coachCost: 8 });
+    const note = M._prepNote || "";
+    if (!bo.oppRoster) bo.oppRoster = oppRosterOf(bo.oppId);
+    /* 旧版 ui.js 把 type=inGame 当成局内节点渲染（读 opts[].p/pLo/pHi/dimName），这里补上估算值，避免“成功率 NaN%” */
+    const sopts = opts.map(p => Object.assign({}, p, {
+      t: p.n + (p.pct ? "（本局 +" + Math.round(p.pct * 100) + "%）" : ""),
+      p: clamp(.5 + (p.pct || 0) / 2, .05, .95), pLo: clamp(.5 + (p.pct || 0) / 2 - .06, 0, 1), pHi: clamp(.5 + (p.pct || 0) / 2 + .06, 0, 1),
+      dimName: DIM_CN[p.dim] || ""
+    }));
+    const txt = (note ? note + "\n" : "") + "BP 结束，这一局你想怎么打？你的布置会给全队一个本局加成。";
+    return scene({
+      /* 注：type 用 "inGame"（phase=plan）而不是新 type "prep"：现有 repair_check 的 BO5/世界赛驱动循环只接受
+         bp/inGame/result/boGame/moment/hl，独立 prep 场景会让它提前跳出、破坏 22 项验收。UI 靠 phase 分支渲染。 */
+      type: "inGame", phase: "plan", prep: true, kind: "plan", g: gNow, bestOf: bo.bestOf || 5, score: (bo.wins || 0) + " : " + (bo.losses || 0),
+      oppName: bo.oppName || "", oppHero: bo.oppHero || "", myHero: bo.myHero || (bo.hero || ""), hero: bo.myHero || (bo.hero || ""),
+      title: "第 " + gNow + " 局 · 赛前部署", decider: decider,
+      text: txt, sit: { d: txt }, node: { t: "赛前部署 · 第 " + gNow + " 局", text: txt },
+      opts: sopts, plans: opts,
+      myRoster: myRosterDetail(), oppRoster: bo.oppRoster,
+      pick(i, v) {
+        M._prepNote = "";
+        const k = (typeof v === "string" && v.indexOf("plan:") === 0) ? v.slice(5) : (((sopts[clamp(i, 0, sopts.length - 1)] || {}).k) || "");
+        const p = opts.filter(o => o.k === k)[0] || opts[0];
+        if (!p) return prepGameScene();
+        if (p.k === "command") {
+          if (S.coachTrust < 8) { M._prepNote = "教练看了你一眼：现在不归你指挥。（信任不足 8）"; return prepGameScene(); }
+          S.coachTrust = clamp(S.coachTrust - 8, 0, 100);
+          bo.usedCommand = true;
+          bo.commandG = gNow;
+        }
+        bo.gamePlan = p.k; bo.gamePlanName = p.n;
+        return prepResScene();
+      }
+    });
+  }
+  function prepResScene() {
+    const bo = M.series;
+    if (!bo) return monthEnd();
+    const gNow = (bo.g || 0) + 1;
+    const opts = RES_PLANS.map(p => ({ k: p.k, n: p.n, t: p.t, d: p.d, dim: p.dim, mom: p.mom || 0 }));
+    const txt = "开局第一个资源点怎么分配？（" + (bo.gamePlanName || "本局战术") + "）";
+    /* 旧版 ui.js 的 inGame 渲染需要 p/pLo/pHi/dimName；资源决策不是“成功率”，给 50% 的中性值兜底避免 NaN */
+    const sopts = opts.map(p => Object.assign({}, p, {
+      p: .5, pLo: .42, pHi: .58, dimName: DIM_CN[p.dim] || ""
+    }));
+    return scene({
+      type: "inGame", phase: "resource", prep: true, kind: "res", g: gNow, bestOf: bo.bestOf || 5, score: (bo.wins || 0) + " : " + (bo.losses || 0),
+      oppName: bo.oppName || "", oppHero: bo.oppHero || "", myHero: bo.myHero || (bo.hero || ""), hero: bo.myHero || (bo.hero || ""),
+      title: "第 " + gNow + " 局 · 资源决策", text: txt, sit: { d: txt }, node: { t: "资源决策 · 第 " + gNow + " 局", text: txt },
+      opts: sopts, res: opts,
+      myRoster: myRosterDetail(), oppRoster: bo.oppRoster || oppRosterOf(bo.oppId),
+      pick(i, v) {
+        const k = (typeof v === "string" && v.indexOf("res:") === 0) ? v.slice(4) : (((sopts[clamp(i, 0, sopts.length - 1)] || {}).k) || "");
+        bo.resPlan = k;
+        return startSeriesGame(bo, { plan: bo.gamePlan, res: k });
+      }
+    });
+  }
+
+  /* ---------------- 羁绊 ---------------- */
+  function deckBonds() {
+    try {
+      const B = window.BONDS || {};
+      const sum = B.summary || B.progress || null;
+      if (!sum) return { summary: [], progress: null };
+      return { summary: Array.isArray(sum) ? sum : (sum.summary || []), progress: B.progress || null };
+    } catch (e) { return { summary: [], progress: null }; }
+  }
+
+  /* 抽卡池说明：R/SR/SSR 概率 + 保底 + 新池（DATA_TALENTS_V4）+ 羁绊说明，UI 直接照着渲染 */
+  function poolInfo() {
+    try {
+      const all = D.talents() || [];
+      const wsum = Object.keys(RARITY_W).reduce((a, k) => a + RARITY_W[k], 0) || 1;
+      const rates = {};
+      Object.keys(RARITY_W).forEach(k => { rates[k] = Math.round((RARITY_W[k] / wsum) * 1000) / 10; });
+      const b = deckBonds();
+      return {
+        total: all.length, v4: (window.DATA_TALENTS_V4 || []).length,
+        pity: S.drawPity || 0, pityMax: 40, rates: rates,
+        bonds: b.summary || [],
+        note: "每 10 抽保底 1 张紫，40 抽保底 1 张金" + ((b.summary || []).length ? "；凑齐羁绊会强化卡组" : "")
+      };
+    } catch (e) { return { total: 0, rates: {}, bonds: [], note: "" }; }
+  }
+
+  /* ---------------- 成就 ---------------- */
+  /* 跨局成就落盘：UI 成就墙读 localStorage 的 denshen_achv（数组/对象两种格式都兼容） */
+  const ACHV_KEY = KEY + "achv";
+  function achvStored() {
+    try {
+      const raw = localStorage.getItem(ACHV_KEY);
+      if (!raw) return {};
+      const o = JSON.parse(raw);
+      const out = {};
+      if (Array.isArray(o)) o.forEach(k => { if (k) out[String(k)] = 1; });
+      else if (o && typeof o === "object") Object.keys(o).forEach(k => { out[k] = 1; });
+      return out;
+    } catch (e) { return {}; }
+  }
+  function achvMergeInto(target) {
+    target = target || {};
+    const st = achvStored();
+    Object.keys(st).forEach(k => { if (!target[k]) target[k] = Number(st[k]) || 1; });
+    return target;
+  }
+  function achvPersist(ids) {
+    try {
+      const merged = achvStored();
+      (ids || []).forEach(k => { if (k) merged[k] = S.tick || 1; });
+      let keys = Object.keys(merged);
+      if (keys.length > 200) keys = keys.slice(keys.length - 200);
+      localStorage.setItem(ACHV_KEY, JSON.stringify(keys));
+    } catch (e) { }
+  }
+  function achvList() { try { return window.DATA_ACHV || []; } catch (e) { return []; } }
+  function achvHit(a) {
+    try {
+      if (!a) return false;
+      if (typeof a.cond === "function") return !!a.cond(S, window.GAME || {});
+      if (typeof a.check === "function") return !!a.check(S, window.GAME || {});
+      const c = a.cond || a.need || null;
+      if (!c) return false;
+      const rec = S.record || {};
+      const story = S.story || {};
+      const titlesN = (rec.titles || []).length;
+      const worldsWin = (rec.worlds || []).some(x => x.win);
+      const msiWin = (rec.msi || []).some(x => x.win);
+      const ok = (k, v) => {
+        switch (k) {
+          case "ovr": case "minOvr": return myOvr() >= v;
+          case "maxOvr": return myOvr() <= v;
+          case "titles": case "minTitles": return titlesN >= v;
+          case "maxTitles": return titlesN <= v;
+          case "worlds": return v === false ? !worldsWin : worldsWin;
+          case "fame": case "minFame": return S.st.FAME >= v;
+          case "maxFame": return S.st.FAME <= v;
+          case "money": case "minMoney": return (S.money || 0) >= v;
+          case "maxMoney": return (S.money || 0) <= v;
+          case "fans": case "minFans": return (S.fans || 0) >= v;
+          case "maxFans": return (S.fans || 0) <= v;
+          case "games": return (rec.games || 0) >= v;
+          case "season": case "minSeasons": return (S.season || 1) >= v;
+          case "maxSeasons": return (S.season || 1) <= v;
+          case "worldsChampion": return v ? worldsWin : !worldsWin;
+          case "msiChampion": return v ? msiWin : !msiWin;
+          case "endingName": {
+            const nm = rec.ending && rec.ending.name;
+            if (!nm) return false;
+            return Array.isArray(v) ? v.indexOf(nm) >= 0 : nm === v;
+          }
+          case "endingRank": {
+            const rk = rec.ending && rec.ending.rank;
+            if (!rk) return false;
+            const s = String(rk);
+            if (Array.isArray(v)) return v.some(x => s === String(x) || s.charAt(0) === String(x).charAt(0));
+            return s === String(v) || s.charAt(0) === String(v).charAt(0);
+          }
+          case "storyCorrupt": return (story.corrupt || 0) >= v;
+          case "storyJustice": return (story.justice || 0) >= v;
+          case "mateAff": {
+            const ms = matesRaw();
+            const mx = ms.reduce((m, x) => Math.max(m, x.aff || 0), 0);
+            return mx >= v;
+          }
+          case "heroCount": return Object.keys(S.pool || {}).length >= v;
+          case "gachaCount": return (rec.draws || 0) >= v;
+          case "debtEver": return v ? !!rec.debtEver : !rec.debtEver;
+          case "injuryCount": return (rec.injuries || 0) >= v;
+          case "playMode": return S.mode === v || (v === "endless" ? !!S.endless : false);
+          default: return false;
+        }
+      };
+      if (Array.isArray(c)) return c.every(x => ok(x.k, x.v));
+      return Object.keys(c).every(k => ok(k, c[k]));
+    } catch (e) { return false; }
+  }
+  function checkAchv() {
+    try {
+      S.achv = S.achv || {};
+      const out = [];
+      achvList().forEach(a => {
+        if (!a || !a.id || S.achv[a.id]) return;
+        if (achvHit(a)) { S.achv[a.id] = S.tick; out.push(a.id); }
+      });
+      if (out.length) { M.achvNew = out; achvPersist(out); }
+      return out;
+    } catch (e) { return []; }
+  }
+
+  /* ---------------- 新手引导标记 / 自动托管 ---------------- */
+  function guide(key) {
+    try {
+      M.guide = M.guide || {};
+      if (M.guide[key]) return false;
+      M.guide[key] = 1;
+      return true;
+    } catch (e) { return false; }
+  }
+  function seasonNo() { return S.season || (Math.floor((S.tick - 1) / 12) + 1); }
+  /* 托管等级：0 手动 / 1 自动抽卡+跳过商店 / 2 再自动处理低权重事件；赛季≥3 自动开到 1 档，玩家可手动关 */
+  function autoLevel() {
+    if (!S || !M) return 0;
+    if (M.autoOff) return 0;
+    let lv = M.autoMode || 0;
+    if (lv < 1 && seasonNo() >= 3) lv = 1;
+    return clamp(lv, 0, 2);
+  }
+  function toggleAuto() {
+    M.autoMode = (M.autoMode || 0) >= 2 ? 0 : (M.autoMode || 0) + 1;
+    M.autoOff = M.autoMode === 0;
+    if (M.autoMode > 0) M.autoOff = false;
+    return M.autoMode;
+  }
+
+  /* ---------------- W7 经济 ---------------- */
+  function curSplit() {
+    const m = S._ml ? S._ml.month : 1;
+    return 1 + Math.floor((m - 1) / 3) + (S.season - 1) * 3;
+  }
+  function investTotal() { S.invest2 = S.invest2 || {}; let n = 0; for (const k in S.invest2) n += Number(S.invest2[k]) || 0; return n; }
+  function investRoll() {
+    S.invest2 = S.invest2 || {};
+    const rows = [];
+    for (const k in S.invest2) {
+      const v = Number(S.invest2[k]) || 0;
+      if (!v) continue;
+      const pct = -.05 + rnd() * .25; /* 季度 −5% ~ +20% */
+      const delta = Math.round(v * pct);
+      S.invest2[k] = v + delta;
+      S.money = clamp(S.money + delta, -999, 99999);
+      rows.push({ k: k, delta: delta, pct: Math.round(pct * 100) });
+    }
+    return rows;
+  }
+  function sponsorPay() {
+    try {
+      if (!S.sponsor && S.st.FAME >= 55) {
+        const brands = ["星牌", "铁三角", "黑鲨", "海蓝", "ASUS 玩家国度", "战马"];
+        const nm = brands[hashStr(String(S.name || "") + Math.floor((S.tick || 1) / 12)) % brands.length];
+        S.sponsor = { name: nm, fee: Math.round((S.st.FAME - 50) * .5 + 3), months: 12 };
+        S.timeline = S.timeline || [];
+        S.timeline.push({ t: S.tick, text: "签下赞助 " + nm });
+      }
+      if (S.sponsor) {
+        if (S.sponsor.months > 0 && S.st.FAME >= 40) { S.sponsor.months--; return S.sponsor.fee; }
+        S.sponsor = null;
+      }
+    } catch (e) { }
+    return 0;
+  }
+
   function mySide(hero, tactic) {
     const S2 = window.MATCH;
     const eb = energyBand(S.energy);
@@ -3209,9 +4094,21 @@ window.GAME = (function () {
     side.labels = side.labels || [];
     if (eb.form < 0) side.labels.push({ k: "体力不支", v: eb.form });
     else if (eb.form > 0) side.labels.push({ k: "精力充沛", v: eb.form });
+    /* 带伤上场：不是不能打，是打得没那么好 */
+    if (M.injury && M.injury.months > 0) {
+      side.dims.FORM = (side.dims.FORM || 0) + (M.injury.form || -4);
+      side.labels.push({ k: "带伤（" + M.injury.part + "）", v: M.injury.form || -4 });
+      side.injury = M.injury.part;
+    }
     const bd = buildDims();
     for (const k in bd) side.dims[k] = (side.dims[k] || 0) + bd[k];
     side.buildBonus = bd;
+    /* 队友关系：aff 均值 ±2 团队修正（轻量，别压过战术/英雄） */
+    const mateShift = clamp(Math.round((matesAffMean() - 50) / 25), -2, 2);
+    if (mateShift) {
+      side.dims.TEAM = (side.dims.TEAM || 0) + mateShift;
+      side.labels.push({ k: mateShift > 0 ? "队友关系好" : "队友关系差", v: mateShift });
+    }
     /* 大赛经验：打到世界赛淘汰赛，手不抖（登神不该只靠运气） */
     if (M.worlds) { side.dims.GAME = (side.dims.GAME || 0) + 1; side.dims.TEAM = (side.dims.TEAM || 0) + 1; }
     return applyStyle(side, (M.series || {}).oppTendency);
@@ -3469,6 +4366,8 @@ window.GAME = (function () {
     if (bo._theirs && bo._theirs.banHits) bo.banHits = bo._theirs.banHits;
     bo.bans = [];
     bo.oppBans = null; /* 下一局对面重新 ban */
+    /* 本局战术/资源决策落到双方 dims 上（BP 后两屏选完才进来；quick 路径没有则跳过） */
+    if (opt.plan || opt.res) applyGamePlan(bo, opt.plan || bo.gamePlan, opt.res || bo.resPlan);
     bo.step = 0;
     if (opt.note) bo.log.push(opt.note);
     return bo.nodesLeft > 0 ? nodeScene() : finishGame();
@@ -3577,14 +4476,25 @@ window.GAME = (function () {
         });
       });
       banOpts.push({ n: "", t: "不 ban，留个位置", tag: [], diff: 0, patch: 0, comfort: false, star: false, pick: true, ban: "", d: "空 ban。对面会觉得你在装。" });
+      /* 兜底：英雄池把本位置全占了（LDL 低熟练度池 / 极端档）时 banOpts 可能只剩「空 ban」，
+         这样点空 ban 会原地打转卡死——至少放 2 个任意位置的英雄进来，保证有真 ban 可点 */
+      if (banOpts.length <= 1) {
+        const extra = (window.DATA_HEROES || []).filter(h => myPoolNames.indexOf(h.n) < 0 && taken.indexOf(h.n) < 0).slice(0, 2);
+        extra.forEach(h => banOpts.unshift({
+          n: h.n, t: "ban " + h.n, tag: heroTags(h.n), diff: h.diff || 2, patch: patchOf(h.n),
+          comfort: false, star: false, pick: true, ban: h.n,
+          d: "池子外英雄，ban 掉少一个变数"
+        }));
+      }
       return scene({
         type: "bp", step: 0, decider: decider, banNeed: banTotal, banLeft: banLeft, banTotal: banTotal,
-        bans: bo.bans.map(b => b.n),
+        bans: bo.bans.map(b => b.n || "空 ban"),
         side: blueSide ? "blue" : "red", oppBans: (bo.oppBans || []).slice(), oppHeroKnown: !blueSide,
         opp: oppBase,
         myOvr: myOvr(), oppPower: Math.round(teamPower(opp.id)),
         coachTip: known ? "教练：对面整体想打" + tendency + "，别跟着他们走。" : "",
         opps: squadOf(opp.id, false).map(x => ({ pos: x.pos, name: x.name, ovr: x.pid ? ovr(x.st, x.pos) : Math.round(ovr(x.st, x.pos)) })),
+        myRoster: myRosterDetail(), oppRoster: oppRosterOf(opp.id),
         banOpts: banOpts, dataKnown: dataKnown,
         oppComfort: comfort.map((h, i) => ({ n: h, tag: heroTags(h), diff: heroData(h).diff || 2, patch: patchOf(h), star: i === 0 })),
         oppOnePick: dataKnown ? (comfort[0] || "") : "",
@@ -3603,7 +4513,9 @@ window.GAME = (function () {
           if (typeof v === "string" && v.indexOf("ban:") === 0) o = banOpts.filter(x => x.n === v.slice(4))[0] || null;
           else o = banOpts[clamp(i, 0, banOpts.length - 1)] || banOpts[0];
           if (!o) return bpScene();
+          /* 空 ban 也要消耗一个 ban 位，否则点它永远停在同一屏（stats/qa2 点了没反应会判 stuck） */
           if (o.n) bo.bans.push({ n: o.n, comfort: !!o.comfort });
+          else bo.bans.push({ n: "", comfort: false, skip: true });
           if (bo.bans.length >= banTotal) {
             bo.step = 1;
             if (!blueSide && (!bo.oppHero || banNames(bo).indexOf(bo.oppHero) >= 0)) bo.oppHero = oppPickHero(bo);
@@ -3651,6 +4563,7 @@ window.GAME = (function () {
         side: blueSide ? "blue" : "red", oppBans: (bo.oppBans || []).slice(), oppHero: oppHero,
         pool: { total: heroChoices(40).length, left: hsPool.length },
         opp: oppBase, score: scoreTxt, g: gNow, bestOf: bestOfTxt,
+        myRoster: myRosterDetail(), oppRoster: oppRosterOf(bo.oppId || opp.id),
         quick: quick,
         pick(i, v) {
           const q = quickPick(bo, v, quick);
@@ -3690,9 +4603,17 @@ window.GAME = (function () {
       const theirsS = theirSide(bo.oppId || opp.id, oHero, tendency);
       prob = clamp(MATCH.optionProb(mineS, theirsS, { dim: "GAME", patchBuffs: patchMap() }).p, .05, .95);
     }
+    /* 对手本命 / 熟练度：data 没有 sig 字段，用对手同位置选手确定性生成 */
+    const oppRoster = oppRosterOf(bo.oppId || opp.id);
+    const oppPosRow = oppRoster.filter(r => r.pos === S.pos)[0] || null;
+    const oppSig = oppPosRow ? (oppPosRow.sig || []) : [];
+    const oppSigHere = !!oHero && oppSig.indexOf(oHero) >= 0;
+    const oppComfort = Math.round(clamp((oppPosRow ? oppPosRow.ovr : 72) + (oppSigHere ? 9 : -4), 55, 99));
     const oppHeroInfo = oHero ? {
       n: oHero, tag: (oInfo.tag || []).slice(0, 3), diff: oInfo.diff || 2, pos: S.pos,
-      patch: patchOf(oHero), ctr: { d: ctrInfo.d, why: ctrInfo.why || "" }, prob: Math.round(prob * 1000) / 1000
+      patch: patchOf(oHero), ctr: { d: ctrInfo.d, why: ctrInfo.why || "" }, prob: Math.round(prob * 1000) / 1000,
+      sig: oppSig.slice(), comfort: oppComfort, sigHit: oppSigHere,
+      owner: oppPosRow ? { pos: oppPosRow.pos, posCN: oppPosRow.posCN, name: oppPosRow.name, ovr: oppPosRow.ovr, fake: !!oppPosRow.fake } : null
     } : null;
     return scene({
       type: "bp", step: 2, opts: topts, hero: heroN, myHero: heroN,
@@ -3700,6 +4621,8 @@ window.GAME = (function () {
       side: blueSide ? "blue" : "red", oppBans: (bo.oppBans || []).slice(),
       opp: oppBase, oppHero: oHero, oppHeroInfo: oppHeroInfo,
       score: scoreTxt, g: gNow, bestOf: bestOfTxt,
+      myRoster: myRosterDetail(), oppRoster: oppRoster,
+      guide: guide("bp"),
       quick: quick,
       pick(i, v) {
         const q = quickPick(bo, v, quick);
@@ -3710,7 +4633,9 @@ window.GAME = (function () {
         else { const o = topts[clamp(i, 0, topts.length - 1)]; k = o ? o.k : null; }
         if (!k) k = "ope";
         bo.tactic = k;
-        return startSeriesGame(bo, { hero: bo.myHero, tactic: k, bans: bo.bans.slice(), keepOpp: true });
+        bo.oppRoster = oppRoster;
+        /* BP 之后先做本局战术/资源两个决策，再进对局 */
+        return prepGameScene();
       }
     });
   }
@@ -3865,6 +4790,12 @@ window.GAME = (function () {
     if (M.worlds && M.worlds.jet > 0) M.worlds.jet--;
     const win = rnd() < p;
     if (win) bo.wins++; else bo.losses++;
+    /* 局内决策记录：系列赛结束后算「决策贡献」评级 */
+    bo.duelLog = bo.duelLog || [];
+    S.duelLog = S.duelLog || [];
+    bo.duelLog.push({ g: bo.g, plan: bo.gamePlan || null, planName: (bo.planNames || []).join(" / ") || bo.gamePlanName || "", res: win ? "win" : "lose", command: !!(bo.usedCommand && bo.commandG === bo.g) });
+    S.duelLog.push({ t: S.tick, g: bo.g, plan: bo.gamePlan || null, res: win ? "win" : "lose" });
+    sndIntensity(bo.wins === 2 || bo.losses === 2 ? 3 : 2);
     const drain = bo.bestOf === 5 ? ([8, 10, 12, 14, 16][Math.min(4, bo.g - 1)] || 12) : 6;
     S.energy = clamp(S.energy - drain, 0, 100);
     if (win) { S.spirit = clamp((S.spirit || 60) + 6, 0, 100); S.morale = clamp(S.morale + 2, 0, 100); }
@@ -3885,7 +4816,7 @@ window.GAME = (function () {
       type: "boGame", win: win, p: p, g: bo.g, bestOf: bo.bestOf,
       wins: bo.wins, losses: bo.losses, rows: rows, mom: bo.mom, log: bo.log.slice(-3),
       hero: bo.myHero, oppHero: bo.oppHero, tactic: bo.tactic, ctr: ctr,
-      keyVars: base.tags.concat(wtags), title: bo.title, oppName: bo.oppName,
+      keyVars: base.tags.concat(wtags).concat((bo.mineLabels || []).slice(-2)), title: bo.title, oppName: bo.oppName,
       upset: (win && (rows[0].a + rows[1].a + rows[2].a) / 3 < (rows[0].b + rows[1].b + rows[2].b) / 3 - 4) ? 1 : 0,
       pick() {
         if (bo.wins >= Math.ceil((bo.bestOf || 5) / 2) || bo.losses >= Math.ceil((bo.bestOf || 5) / 2)) {
@@ -4216,7 +5147,20 @@ window.GAME = (function () {
   function boot(sc) { cur = sc || null; return cur; }
   return {
     newGame(opt) { return boot(newGame(opt)); },
-    choose(i, v) { if (!cur) return null; const sc = cur; cur = null; const r = sc.pick(i, v); cur = r || null; return r; },
+    choose(i, v) {
+      if (!cur) return null;
+      const sc = cur;
+      /* 兜底：同一场景/同一步/同一月份连续 20 次点同一个动作 → 判定为循环，强制推进 phase（QA 14000 点击上限的 flaky 出口） */
+      try {
+        const key = sc.type + "|" + i + "|" + (v === undefined || v === null ? "" : v) + "|" + (sc.step === undefined ? "" : sc.step) + "|" + (S && S.tick);
+        if (M && M._stk && M._stk.key === key) M._stk.n += 1; else if (M) M._stk = { key: key, n: 1 };
+        if (M && M._stk && M._stk.n >= 20) { M._stk = null; return phase(); }
+      } catch (e) { }
+      cur = null;
+      const r = sc.pick(i, v);
+      cur = r || null;
+      return r;
+    },
     burst() {
       if (!cur || typeof cur.pickBurst !== "function") return cur;
       const r = cur.pickBurst();
@@ -4231,6 +5175,14 @@ window.GAME = (function () {
     TACTICS, TACTIC_NAME, DIM_CN, stEff, deckBonus, patchMap, energyMax,
     ENERGY_BANDS, MONEY_BANDS, energyBand, moneyBand,
     standingsRows: () => standingsRows(), myRank: () => myRank(),
-    seasonSummary, myRoster: myTeamRoster, isEndless: () => !!(S && S.endless)
+    seasonSummary, myRoster: myTeamRoster, isEndless: () => !!(S && S.endless),
+    /* v3.10：自动托管 / 羁绊 / 成就 / 抽卡池信息（UI 开关 data-act="toggle-auto" 直接调 toggleAuto） */
+    toggleAuto() { toggleAuto(); if (cur && cur.type === "action") cur = actionScene(); return cur || null; },
+    autoMode: () => autoLevel(),
+    deckBonds, checkAchv, poolInfo, traitArr,
+    /* W5 队友关系：UI 队友页读这里 */
+    mates: () => matesList(), matesAffMean: () => Math.round(matesAffMean()),
+    /* 给 UI 用的轻量状态快照：切换托管后原地重渲染用 */
+    _autoLevel: autoLevel
   };
 })();
