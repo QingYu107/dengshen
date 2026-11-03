@@ -143,6 +143,7 @@
   function toast(msg) {
     toastEl.textContent = msg; toastEl.classList.add("show");
     clearTimeout(toast._t); toast._t = setTimeout(() => toastEl.classList.remove("show"), 1700);
+    try { if (window.FX && /成就|解锁/.test(String(msg))) window.FX.cue("award", { el: toastEl }); } catch (e) {}
   }
   const POSCN = { TOP: "上单", JUG: "打野", MID: "中单", BOT: "ADC", SUP: "辅助" };
   const DIMCN = { LANE: "对线", MECH: "操作", GAME: "意识", POOL: "英雄池", TEAM: "团队", FORM: "状态", PHYS: "身体", MENTAL: "心态", HYPE: "气势", FAME: "名气", ALL: "全局" };
@@ -3106,6 +3107,15 @@ ${(s.oppBans || []).length ? `<div class="row wrap" style="gap:6px;margin-top:8p
     } catch (e) { }
   }
 
+  /* 特效：场景切换 + 场景专属粒子（js/fx.js 提供 window.FX；没有就静默） */
+  function fxScene(type, s) {
+    try {
+      if (!window.FX) return;
+      if (window.FX.scene) window.FX.scene(type, s || (G.getState ? G.getState() : null));
+      if (s && Array.isArray(s.achvNew) && s.achvNew.length) window.FX.cue("award");
+    } catch (e) {}
+  }
+
   function render() {
     if (mgrMode && window.UIMGR && window.MGR && window.MGR.scene()) {
       const ms = window.MGR.scene();
@@ -3115,6 +3125,7 @@ ${(s.oppBans || []).length ? `<div class="row wrap" style="gap:6px;margin-top:8p
       try { A.sceneBg(app.dataset.scene, { S: (window.MGR && window.MGR.state ? window.MGR.state() : null) }); } catch (e) {}
       if (!audTheme("menu")) bgmFor("menu");
       audIntensity(1);
+      fxScene(app.dataset.scene, null);
       return;
     }
     if (view === "cockfight") {
@@ -3125,6 +3136,7 @@ ${(s.oppBans || []).length ? `<div class="row wrap" style="gap:6px;margin-top:8p
       try { dock.classList.add("hidden"); } catch (e) {}
       if (!audTheme("cockfight")) bgmFor("menu");
       audIntensity(1);
+      fxScene("cockfight", null);
       return;
     }
     const creating = view === "game" && sc && /^create_/.test(sc.type);
@@ -3167,6 +3179,7 @@ ${(s.oppBans || []).length ? `<div class="row wrap" style="gap:6px;margin-top:8p
     }
     const ni = document.getElementById("nameInput");
     if (ni) { ni.focus(); ni.addEventListener("keydown", e => { if (e.key === "Enter") doName(); }); }
+    fxScene(app.dataset.scene, sc);
   }
 
   /* ---------- 行为 ---------- */
