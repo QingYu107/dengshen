@@ -26,7 +26,10 @@ window.DATA_TERMS = {
     matchBonus: "比赛全属性", regularWin: "常规赛胜率",
     drawBonus: "抽卡运势", keyBonus: "关键局", energyMax: "体力上限",
     poolTrain: "英雄熟练度", tickets: "抽卡券", banPlus: "ban 位",
-    mentalShield: "心态护盾", decode: "版本解读"
+    mentalShield: "心态护盾", decode: "版本解读",
+    status: "队内地位", haters: "黑粉", burst: "爆气", injury: "伤病概率",
+    hupu: "论坛评分", ticket: "抽卡券", banPlusSplit: "赛段 ban 位",
+    voiceDebt: "话语权欠账", voiceReset: "话语权临时下调"
   },
   /* 天赋卡流派 */
   build: {
