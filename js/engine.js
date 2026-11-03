@@ -76,6 +76,7 @@ window.GAME = (function () {
     players: () => Object.assign({}, realPlayers(), _ldlP),
     teams: () => Object.assign({}, window.DATA_TEAMS || {}, _ldl),
     events: () => (window.DATA_EVENTS || []).concat(window.DATA_MEME_EVENTS || [], window.DATA_ENDLESS_EVENTS || [],
+      window.DATA_EVENTS_STAR || [], window.DATA_EVENTS_EXTRA || [], window.DATA_STORY_EVENTS || [],
       (window.DATA_EVENTS_POS || []).filter(e => e && !e.inMatch), _blackEvents),
     talents: () => window.DATA_TALENTS || [],
     heroes: () => window.DATA_HEROES || [],
@@ -229,7 +230,7 @@ window.GAME = (function () {
       + (S.coachTrust - 50) / 4
       + (S.teamStatus - 50) / 6
       + (S.spirit - 60) / 8;
-    return clamp(Math.round(v - (S.voiceDebt || 0)), 0, 100);
+    return clamp(Math.round(v - (S.voiceDebt || 0) - (S.voiceReset || 0)), 0, 100);
   }
   function freeAgents() {
     const P = D.players(), out = [];
@@ -426,6 +427,8 @@ window.GAME = (function () {
       champs: [], pool: {}, mainHero: "", patch: null, patchNo: 0,
       talents: [], traits: [], roster: {}, tactical: 0,
       burst: 0, spirit: 60, voiceDebt: 0, gearBonus: 0, invest: {},
+      /* 换队后的「新队磨合」临时话语权惩罚，按月自然消退；evRecent 用来抑制事件重复 */
+      voiceReset: 0, evRecent: [],
       bag: [], deck: [null, null, null, null, null], ticket: 0, shopDone: false, shopBought: {},
       ended: false,
       story: { corrupt: 0, justice: 0, scandal: 0, secret: 0 },
@@ -552,7 +555,8 @@ window.GAME = (function () {
     const _t = teamOf(S.teamId);
     S.stage = _t && _t.region === "LDL" ? "LDL" : "LPL";
     S.season = Math.floor((S.tick - 1) / 12) + 1;
-    M.evDone = false;
+    M.evDone = false;          // 兼容旧档/旧逻辑，保留
+    M.evCount = 0;             // 本月已触发的事件数（上限 2）
     M.actionUsed = false;
     M.scrimUsed = false;
     const carriedRest = !!M.forcedRest;   // 上月末结算给出的“下月强制休息”预告
@@ -1050,11 +1054,87 @@ window.GAME = (function () {
   }
 
   /* ================= 事件 ================= */
+  /* 队友互动事件：把 {mate} 换成队里随机一人的名字（不含自己） */
+  function mateName() {
+    try {
+      const rows = myTeamRoster().filter(r => r && !r.mine && r.name);
+      return rows.length ? pick(rows).name : "";
+    } catch (e) { return ""; }
+  }
+  function fillEv(t) {
+    if (typeof t !== "string") return t;
+    const tm = teamOf(S.teamId) || {};
+    return t.replace(/\{mate\}/g, S._mateName || "队友")
+      .replace(/\{team\}/g, tm.name || "队伍")
+      .replace(/\{pos\}/g, POSCN[S.pos] || S.pos || "")
+      .replace(/\{coach\}/g, "教练")
+      .replace(/\{opp\}/g, S.lastOpp || "对面");
+  }
+  function evFill(ev) {
+    const out = Object.assign({}, ev);
+    out.text = fillEv(ev.text);
+    out.sub = ev.sub ? fillEv(ev.sub) : ev.sub;
+    out.opts = (ev.opts || []).map(o => Object.assign({}, o, {
+      t: fillEv(o.t), res: fillEv(o.res || ""),
+      risk: o.risk ? Object.assign({}, o.risk, { ok: fillEv(o.risk.ok || ""), fail: fillEv(o.risk.fail || "") }) : null
+    }));
+    return out;
+  }
+  /* 事件门槛：除了老的 req，还支持黑粉/粉丝/话语权/心情/教练/地位/赛季/年龄/模式/队伍档位/剧情计数 */
+  function reqOk(ev) {
+    const r = ev.req || {};
+    const story = S.story || {};
+    for (const k in r) {
+      const v = r[k];
+      if (k === "pos") { if (v.indexOf(S.pos) < 0) return false; continue; }
+      if (k === "stage") { if (v.indexOf(S.stage) < 0) return false; continue; }
+      if (k === "minStat" || k === "maxStat") {
+        let ok = true;
+        for (const sk in v) if (k === "minStat" ? S.st[sk] < v[sk] : S.st[sk] > v[sk]) ok = false;
+        if (!ok) return false;
+        continue;
+      }
+      if (k === "minEnergy" && S.energy < v) return false;
+      if (k === "maxEnergy" && S.energy > v) return false;
+      if (k === "minMoney" && S.money < v) return false;
+      if (k === "maxMoney" && S.money > v) return false;
+      if (k === "minFans" && S.fans < v) return false;
+      if (k === "maxFans" && S.fans > v) return false;
+      if (k === "minHaters" && (S.haters || 0) < v) return false;
+      if (k === "maxHaters" && (S.haters || 0) > v) return false;
+      if (k === "minVoice" && voice() < v) return false;
+      if (k === "maxVoice" && voice() > v) return false;
+      if (k === "minMorale" && S.morale < v) return false;
+      if (k === "maxMorale" && S.morale > v) return false;
+      if (k === "minCoachTrust" && S.coachTrust < v) return false;
+      if (k === "maxCoachTrust" && S.coachTrust > v) return false;
+      if (k === "minTeamStatus" && S.teamStatus < v) return false;
+      if (k === "maxTeamStatus" && S.teamStatus > v) return false;
+      if (k === "minSeason" && S.season < v) return false;
+      if (k === "maxSeason" && S.season > v) return false;
+      if (k === "minAge" && S.age < v) return false;
+      if (k === "maxAge" && S.age > v) return false;
+      if (k === "mode" && v !== (S.endless ? "endless" : "three")) return false;
+      if (k === "teamTier") { const tt = (teamOf(S.teamId) || {}).tier; if (!v || v.indexOf(tt) < 0) return false; }
+      if (k === "notFlag" && S.flags[v]) return false;
+      if (k === "flag" && !S.flags[v]) return false;
+      if (k === "storyMin") { for (const sk in v) if ((story[sk] || 0) < v[sk]) return false; }
+      if (k === "storyMax") { for (const sk in v) if ((story[sk] || 0) > v[sk]) return false; }
+    }
+    if (ev.mate) {
+      try { if (!myTeamRoster().some(p => p && !p.mine)) return false; } catch (e) { return false; }
+    }
+    return true;
+  }
   function eventPool() {
-    const stageTag = S.stage;
     const out = [];
+    const recent = S.evRecent || [];
+    const mates = {};
+    try { myTeamRoster().forEach(r => { if (r && r.id) mates[r.id] = 1; }); } catch (e) { }
     for (const ev of D.events()) {
       if (!ev || !ev.id) continue;
+      if (ev.chain) continue;                                       // 剧情链后续步骤只由 next 触发
+      if (ev.who && !mates[ev.who]) continue;                        // 指定选手不在队里
       if (ev.once && S.flags["f_" + ev.id]) continue;
       if (S.cd[ev.id] && S.cd[ev.id] > S.tick) continue;
       if (ev.yearMin && S.season < ev.yearMin) continue;
@@ -1063,33 +1143,44 @@ window.GAME = (function () {
         if (S.endless) { if (S.season < ev.year) continue; }
         else if (ev.year !== S.season) continue;
       }
-      if (ev.months && ev.months.indexOf(S._ml.month) < 0) continue;
-      const r = ev.req || {};
-      if (r.pos && r.pos.indexOf(S.pos) < 0) continue;
-      if (r.stage && r.stage.indexOf(stageTag) < 0) continue;
-      if (r.minStat) { let ok = true; for (const k in r.minStat) if (S.st[k] < r.minStat[k]) ok = false; if (!ok) continue; }
-      if (r.maxStat) { let ok = true; for (const k in r.maxStat) if (S.st[k] > r.maxStat[k]) ok = false; if (!ok) continue; }
-      if (r.minEnergy !== undefined && S.energy < r.minEnergy) continue;
-      if (r.maxEnergy !== undefined && S.energy > r.maxEnergy) continue;
-      if (r.minMoney !== undefined && S.money < r.minMoney) continue;
-      if (r.maxMoney !== undefined && S.money > r.maxMoney) continue;
+      if (ev.months && ev.months.length && ev.months[0] !== 0 && ev.months.indexOf(S._ml.month) < 0) continue;
+      if (!ev.once && recent.indexOf(ev.id) >= 0) continue;          // 最近 12 条不再抽
+      if (!reqOk(ev)) continue;
       out.push(ev);
     }
     /* 阈值事件：随精力/金钱档位出现 */
     for (const tev of thresholdEvents()) out.push(tev);
-    /* 选手专属事件：只有这个人在你队里时才出现 */
-    const mates = {};
-    try { myTeamRoster().forEach(r => { if (r && r.id) mates[r.id] = 1; }); } catch (e) { }
-    for (const ev of (window.DATA_EVENTS_STAR || [])) {
-      if (!ev || !ev.id || !ev.who || !mates[ev.who]) continue;
-      if (ev.once && S.flags["f_" + ev.id]) continue;
-      if (S.cd[ev.id] && S.cd[ev.id] > S.tick) continue;
-      if (ev.year) { if (S.endless ? S.season < ev.year : ev.year !== S.season) continue; }
-      if (ev.months && ev.months.length && ev.months[0] !== 0 && ev.months.indexOf(S._ml.month) < 0) continue;
-      out.push(ev);
-    }
     return out;
   }
+
+  /* 文案变体：res 可以是字符串，也可以是字符串数组，选中哪句看运气 */
+  function pickVar(v) {
+    if (Array.isArray(v)) return v.length ? pick(v) : "";
+    return v || "";
+  }
+  /* 这组选项总体上赚了还是亏了：赚→回声走好话池，亏→走坏话池 */
+  function effSign(eff) {
+    if (!eff || typeof eff !== "object") return 0;
+    let s = 0;
+    for (const k in eff) {
+      const v = eff[k];
+      if (typeof v === "number" && isFinite(v)) {
+        const w = k === "energy" ? .35 : k === "money" ? .06 : k === "ticket" ? .3 : 1;
+        s += v * w;
+      } else if (k === "story" && v && typeof v === "object") {
+        for (const sk in v) if (BAD_STORY.indexOf(sk) >= 0) s -= (v[sk] || 0) * 2;
+      }
+    }
+    return s > 1.5 ? 1 : s < -1.5 ? -1 : 0;
+  }
+  function flavorLine(cat, sign) {
+    const F = window.DATA_FLAVOR || {};
+    const bag = sign > 0 ? F.good : sign < 0 ? F.bad : F.flat;
+    if (!bag) return "";
+    const arr = (cat && bag[cat] && bag[cat].length) ? bag[cat] : (bag.general || []);
+    return arr.length ? pick(arr) : "";
+  }
+  const BAD_STORY = ["corrupt", "scandal", "secret", "banned", "blood", "stalker", "injury"];
 
   function checkEvent() {
     if (S.pending.length) {
@@ -1098,34 +1189,63 @@ window.GAME = (function () {
       if (ev) return showEvent(ev);
     }
     const pool = eventPool();
-    if (M.evDone || !pool.length || !chance(.7)) return phase();
-    M.evDone = true;
-    return showEvent(wpick(pool, e => e.w || 10));
+    if (pool.length) {
+      /* 一个月最多两件事：第一件 72%，第二件 34%。事件多了，肉鸽味才出得来 */
+      const n = M.evCount || 0;
+      if (n < 2 && chance(n === 0 ? .72 : .34)) {
+        M.evCount = n + 1;
+        return showEvent(wpick(pool, e => e.w || 10));
+      }
+    }
+    return phase();
   }
 
-  function showEvent(ev) {
+  function showEvent(ev0) {
+    if (ev0.mate) S._mateName = mateName();
+    const ev = evFill(ev0);
     return scene({
       type: "event", ev,
       pick(i) {
         const o = ev.opts[i];
         S.flags["f_" + ev.id] = true;
-        S.cd[ev.id] = S.tick + rint(4, 10);
+        S.cd[ev.id] = S.tick + rint(6, 14);
+        S.evRecent = S.evRecent || [];
+        if (S.evRecent.indexOf(ev.id) < 0) S.evRecent.push(ev.id);
+        while (S.evRecent.length > 12) S.evRecent.shift();
         applyEff(o.eff);
-        let extra = "";
+        let extra = "", good = false;
         if (o.risk) {
           const st = S.st[o.risk.stat] || 50;
           const roll = rint(1, 20) + Math.floor((st - 50) / 5) + Math.floor((S.morale - 50) / 12);
           if (roll >= (o.risk.dc || 12)) {
-            extra = "【判定成功】" + (o.risk.ok || "你赌对了。");
+            good = true;
+            extra = "【判定成功】" + (pickVar(o.risk.ok) || "你赌对了。");
             applyEff(o.risk.bonus || {});
             S.morale = clamp(S.morale + 6, 0, 100); S.burst = clamp(S.burst + 10, 0, 100);
           } else {
-            extra = "【判定失败】" + (o.risk.fail || "事与愿违。");
+            extra = "【判定失败】" + (pickVar(o.risk.fail) || "事与愿违。");
             S.morale = clamp(S.morale - 8, 0, 100);
           }
         }
-        if (ev.next && ev.next.id) S.pending.push(ev.next.id);
-        return result(ev.title || "场外", (o.res || "") + (extra ? "\n\n" + extra : ""), "story", () => (S.pending.length ? checkEvent() : phase()));
+        /* 剧情链：下一步立刻接上，中间不插别的事件，避免前因后果断掉 */
+        if (!ev.ending && !o.ending) {
+          if (ev.next && ev.next.id) S.pending.push(ev.next.id);
+          if (o.next && o.next.id) S.pending.push(o.next.id);
+        }
+        /* 选项后的回声：同一选择不总是同一句话 */
+        let echo = "";
+        if (!ev.chain && !ev.noEcho) {
+          let sign = effSign(o.eff);
+          if (o.risk) sign = good ? Math.max(sign, 1) : Math.min(sign, -1);
+          echo = flavorLine(ev.cat, sign);
+        }
+        const body = [pickVar(o.res)].filter(Boolean).join("\n\n")
+          + (extra ? "\n\n" + extra : "")
+          + (echo ? "\n\n" + echo : "");
+        const after = ev.ending ? () => ending(ev.ending)
+          : o.ending ? () => ending(o.ending)
+            : () => (S.pending.length ? checkEvent() : phase());
+        return result(ev.title || "场外", body, "story", after);
       }
     });
   }
@@ -1665,8 +1785,15 @@ window.GAME = (function () {
       }
     }
     if (g.win) sc.wins++; else sc.losses++;
+    const echo = (function () {
+      try {
+        const F = (window.DATA_FLAVOR || {}).duel || {};
+        const bag = F[success ? "good" : "bad"] || [];
+        return bag.length ? pick(bag) : "";
+      } catch (e) { return ""; }
+    })();
     return scene({
-      type: "duelResult", success, crit, text: success ? (o.ok || duel.sit.ok || "你做到了。") : (o.fail || duel.sit.fail || "你搞砸了。"),
+      type: "duelResult", success, crit, echo, text: success ? (o.ok || duel.sit.ok || "你做到了。") : (o.fail || duel.sit.fail || "你搞砸了。"),
       notes, flipNote,
       game: g, wins: sc.wins, losses: sc.losses, title: sc.title, burst: S.burst,
       pick() { return seriesGame(duel.opp); }
@@ -1949,6 +2076,12 @@ window.GAME = (function () {
     else if (band.key === "danger" || band.key === "down") { S.morale -= 5; S.coachTrust = clamp(S.coachTrust - 3, 0, 100); notes.push("精力见底：心情 −5，教练信任 −3"); }
 
     S.energy = clampEnergy(S.energy + 16);
+    /* 新队磨合：换队后的话语权惩罚每月退一点，两三个月才回到原来的位置 */
+    if (S.voiceReset > 0) {
+      S.voiceReset = Math.max(0, (S.voiceReset || 0) - 2);
+      if (S.voiceReset === 0) notes.push("新队磨合结束：话语权回到正常水平");
+      else notes.push("新队磨合：话语权还差 " + S.voiceReset + " 点");
+    }
     S.morale = clamp(S.morale - 2 + (S.teamStatus - 50) / 25, 0, 100);
     S.spirit = clamp((S.spirit || 60) + (S.teamStatus - 55) / 12, 0, 100);
     S.st.FAME = clamp(S.st.FAME + S.fans / 250000, 0, 98);
@@ -2355,16 +2488,29 @@ window.GAME = (function () {
       canRetire: S.endless && S.season >= 4,
       pick(i, act) {
         if (act === "retire") return retireScene();
-        if (act === "stay" || i < 0) return result("留下", ldl ? "你决定再打一年 LDL。工资没涨，心气还在。" : "你留在原队。经理拍了拍你的肩，说这才是职业态度。", "info", () => nextMonth());
+        if (act === "stay" || i < 0) {
+          /* 留下：原地不动，更衣室的话语权反而更稳 */
+          S.voiceReset = clamp((S.voiceReset || 0) - 6, 0, 60);
+          S.teamStatus = clamp((S.teamStatus || 55) + 3, 0, 100);
+          return result("留下", ldl ? "你决定再打一年 LDL。工资没涨，心气还在。队友知道你不会走，说话的分量比去年重一点。" : "你留在原队。经理拍了拍你的肩，说这才是职业态度。更衣室里你的位置还是那个，没人来抢。", "info", () => nextMonth());
+        }
         const o = offers[i];
         if (!o) return nextMonth();
         const from = (teamOf(S.teamId) || {}).name || "LDL";
+        const fromT = teamOf(S.teamId) || {};
         S.teamId = o.id; S.salary = o.salary; S.contractLeft = rint(1, 2);
         if (ldl) { S.stage = "LPL"; S.st.FAME = clamp(S.st.FAME + 6, 0, 98); S.fans += rint(20000, 60000); }
-        S.timeline.push({ t: S.tick, text: `${ldl ? "登陆 LPL" : "转会"}：${from} → ${o.name}` });
-        return result(ldl ? "登陆 LPL" : "转会", ldl
+        /* 换队 = 更衣室重新排座次：话语权临时下调，新教练不认识你，队里也没有你的位置 */
+        const tierJump = (o.tier || "B") < (fromT.tier || "C") ? 6 : 0;   // 往上跳一档，说话更没人听
+        const vLoss = (ldl ? 26 : 18) + tierJump;
+        S.voiceReset = clamp((S.voiceReset || 0) + vLoss, 0, 60);
+        S.coachTrust = clamp((S.coachTrust || 55) - (ldl ? 12 : 8), 5, 100);
+        S.teamStatus = clamp((S.teamStatus || 55) - 10, 5, 100);
+        S.timeline.push({ t: S.tick, text: `${ldl ? "登陆 LPL" : "转会"}：${from} → ${o.name}（话语权临时 −${vLoss}）` });
+        return result(ldl ? "登陆 LPL" : "转会", (ldl
           ? `你签了 ${o.name}，年薪 ${o.salary} 万。签字的时候手有点抖，不是紧张，是笔太便宜。`
-          : `你从 ${from} 转到 ${o.name}，年薪 ${o.salary} 万。新队服还没做，先穿着旧队服拍了定妆照。`, ldl ? "win" : "info", () => nextMonth());
+          : `你从 ${from} 转到 ${o.name}，年薪 ${o.salary} 万。新队服还没做，先穿着旧队服拍了定妆照。`)
+          + `\n\n新队没人听你的：话语权临时 −${vLoss}，教练组要重新认识你，队里也没有你说话的份。磨合两三个月，攒回来靠自己。`, ldl ? "win" : "info", () => nextMonth());
       }
     });
   }
@@ -2629,27 +2775,43 @@ window.GAME = (function () {
     if (reason === "dead" || story.corrupt >= 60) {
       end = { name: "人间蒸发", rank: "X", sub: "查无此人，也查无此案",
         text: "公告只有一句话：因个人原因，即日起不再参与任何相关活动。没有记者会，没有告别。你退掉了基地的房间，退掉了所有群，手机号换了。有人在论坛发帖问你去哪了，帖子活了三分钟。\n\n你确实拿过钱。你也确实赢了那几场不该赢的。这几年攒下的每一分，最后都换成了一个没人敢提的名字。" };
+    } else if (reason === "banned" || (story.banned || 0) >= 1) {
+      end = { name: "终身禁赛", rank: "X-", sub: "联盟公告第 114 号",
+        text: "处罚公告在周五下午五点发出，全文八百字，你的名字出现十四次。俱乐部十分钟后转发，配文“坚决拥护”。赞助商的动作更快，你的海报在半小时内从所有商场撤了下来。\n\n禁赛期是永久。你二十三岁，职业生涯到此为止，连退役仪式都没有资格办。\n\n之后的几年你在老家开过一家网吧，店名叫得很随便。偶尔有客人认出你，会问一句“你是不是那个……”，你说不是，认错人了。电视里放到联赛，你会把声音关掉。" };
+    } else if (reason === "blood" || (story.blood || 0) >= 1) {
+      end = { name: "刀口余生", rank: "C+", sub: "有人在门口等你",
+        text: "那天你从基地出来，路灯坏了一路。后来警察调监控，画面里只有两个人影，一个站着，一个走了。\n\n你在医院躺了三周，俱乐部发了声明，说这是“个别极端粉丝的行为”，联盟承诺加强安保。第二个月你就解约了，不是被赶走的，是你自己待不下去了。\n\n手上的伤可以好，但你再也无法在开镜的瞬间不去看身后。复出试训那天，你在基地门口站了很久，最后没进去。" };
+    } else if (reason === "stalker" || (story.stalker || 0) >= 2) {
+      end = { name: "被追着跑的人", rank: "B-", sub: "你没做错什么",
+        text: "先是私信，然后是酒店大堂，然后是凌晨三点的敲门。你换了三个手机号，搬了两次家，基地的保安被嘱咐记住那张脸。\n\n舆论最热的时候，你打得最好。但你发现自己开始躲镜头，赛后采访能推就推，赢了也不想笑。\n\n退役那天你没办仪式，直接从侧门走的。后来有人在别的城市见过你，说你看起来很普通，普通到没人会认出来——这正是你想要的。" };
     } else if (story.scandal >= 34 && story.justice < 14) {
       end = { name: "塌房", rank: "C-", sub: "黑料比成绩长",
-        text: "你的最后一次上热搜不是因为比赛。赞助商半夜撤了物料，俱乐部发了六十字声明，评论区的第一条是“早看出来了”。\n\n你确实打得好过。但人们记住的是那些截图。" };
+        text: "你的最后一次上热搜不是因为比赛。赞助商半夜撤了物料，俱乐部发了六十字声明，评论区的第一条是“早看出来了”。\n\n你确实打得好过。但人们记住的是那些截图。\n\n三个月后你开了个直播间，标题写着“聊聊当年”。在线人数冲到五万，弹幕一半在骂，一半在刷同一个梗。你笑着把梗接了下去，那一下比退役还难受。" };
     } else if (story.justice >= 20 && story.corrupt <= 8 && !hasWorlds) {
       end = { name: "干净的人", rank: "B+", sub: "没拿过冠军，也没脏过手",
-        text: "这行里最难的不是夺冠，是三年下来还能抬头看人。有人劝过你，有人给过你机会，你都推了。\n\n退役那天，老队友在评论里写了一句：这人傻，但他干净。" };
+        text: "这行里最难的不是夺冠，是三年下来还能抬头看人。有人劝过你，有人给过你机会，你都推了。\n\n退役那天，老队友在评论里写了一句：这人傻，但他干净。\n\n后来你去做青训教练，第一堂课讲的是合同和底线，不是补刀。有孩子问你后不后悔没拿过冠军，你说：我睡得着。" };
     } else if ((S.money || 0) <= -40 && !hasWorlds) {
       end = { name: "债务缠身", rank: "C", sub: "打职业三年，欠了一屁股债",
-        text: "你退役那天，手机里最上面三条消息是三个催收。生涯奖金、工资、赞助，一分没存下来，全填进了生活费、伤病和高利贷的窟窿。\n\n你还是能打出好操作。但没人会为一个月光族开一份长合同。回老家的火车上，你把游戏卸了，又装回来了。" };
-    } else if (hasWorlds) end = { name: "登神", rank: "S+", sub: "世界冠军", text: "召唤师奖杯上刻着你的 ID。三年前你还在 LDL 基地抢泡面，现在全世界的解说说你名字的时候会先清一下嗓子。" };
-    else if (hasMsi && titles.length >= 2) end = { name: "无冕之王", rank: "S", sub: "就差那一个", text: "MSI 拿过，联赛拿过，就差十一月那个。每年世界赛结束，你都会把那场 BO5 的录像再点开一次，看到第三局就关掉。" };
-    else if (bestWorlds === "决赛" || bestWorlds === "四强") end = { name: "人间理想", rank: "A+", sub: "世界赛四强", text: "你打到过世界赛的半决赛。这成绩放在 LPL 不算顶，但足够让你回老家时，被小区保安认出来。" };
-    else if (titles.length >= 3) end = { name: "国内霸主", rank: "A", sub: "联赛之王", text: "国内该拿的都拿了。虎扑上有人做了张图：LPL 三年，你的 ID 出现次数比解说词还多。" };
-    else if (titles.length >= 1) end = { name: "一冠封神", rank: "A-", sub: "联赛冠军", text: "一个联赛冠军，够吹一辈子，也够让黑子闭嘴三年。退役后你去解说席，第一句话就是“我当年拿过冠军”。" };
-    else if (bestWorlds) end = { name: "出国留学的", rank: "B+", sub: "世界赛游客", text: "你去过世界赛，虽然只打了瑞士轮。回来以后直播间标题改成“世界赛选手”，被骂了一整周，涨了两万粉。" };
-    else if (S.st.FAME >= 85 && titles.length === 0) end = { name: "流量之神", rank: "B", sub: "没冠军，但有热度", text: "你一个冠军都没拿，但你的切片比冠军的切片多十倍。赞助商排到下个季度，联盟年度颁奖给了你一个“最具人气选手”。\n\n有人问你后不后悔，你说：钱是实打实的，奖杯又不能吃。" };
-    else if ((S.money || 0) >= 1000) end = { name: "资本玩家", rank: "A-", sub: "这行是一门生意", text: "你退役前就开始买股份，退役那天直接把老东家的青训买了下来。三年后有人在转会新闻里看到你，你的头衔是“俱乐部投资人”。\n\n当年骂你只会捞钱的人，现在来求你给个试训名额。" };
-    else if (S.coachTrust >= 88 && voice() >= 70 && titles.length >= 1) end = { name: "更衣室教皇", rank: "A-", sub: "队里最后一句话是你说的", text: "你退役后直接进了教练组，第一年就把队伍带进了四强。管理层发现，只要更衣室里的那几个人还听你的，这个队就不会散。\n\n你的战术板被裱起来挂在基地墙上，上面写着一句话：别慌，按我说的打。" };
-    else if (myOvr() >= 78) end = { name: "顶级打工人", rank: "B", sub: "稳定首发", text: "你没拿过冠军，但你从来没被换下过。工资按时发，粉丝稳定涨，这行里这也是一种本事。" };
-    else if (myOvr() >= 63) end = { name: "混口饭吃", rank: "C", sub: "轮换选手", text: "三年职业，攒了点钱，也攒了一身病。不算成功，也不算失败。合同到期那天，经理说有空常回来。" };
-    else end = { name: "查无此人", rank: "D", sub: "消失在人海", text: "三年后，你的直播间只剩 47 个人，其中 30 个是来骂你的。有人问你是谁，弹幕说：以前打过 LDL 的。" };
+        text: "你退役那天，手机里最上面三条消息是三个催收。生涯奖金、工资、赞助，一分没存下来，全填进了生活费、伤病和高利贷的窟窿。\n\n你还是能打出好操作。但没人会为一个月光族开一份长合同。回老家的火车上，你把游戏卸了，又装回来了。\n\n第二年你开始接陪玩，一小时八十。有个老板夸你意识好，问你是不是打过职业。你说没有，只是玩得多。" };
+    } else if (hasWorlds) end = { name: "登神", rank: "S+", sub: "世界冠军", text: "召唤师奖杯上刻着你的 ID。三年前你还在 LDL 基地抢泡面，现在全世界的解说说你名字的时候会先清一下嗓子。\n\n夺冠那晚你被队友扛在肩上绕场一周，闪光灯亮成一片。回到后台你一个人坐了很久，手机里全是没回的消息，包括三年前那个劝你“要不别打了”的人。\n\n你把那条消息回了两个字：赢了。" };
+    else if (hasMsi && titles.length >= 2) end = { name: "无冕之王", rank: "S", sub: "就差那一个", text: "MSI 拿过，联赛拿过，就差十一月那个。每年世界赛结束，你都会把那场 BO5 的录像再点开一次，看到第三局就关掉。\n\n退役仪式上主持人说你是“这个赛区最接近完美的选手”。你笑着点头，心里清楚“最接近”三个字落在哪个位置。\n\n奖杯柜最上面那层空着，一直没放东西。你太太说要不摆点别的，你说不用，就这样挺好。" };
+    else if (bestWorlds === "决赛" || bestWorlds === "四强") end = { name: "人间理想", rank: "A+", sub: "世界赛四强", text: "你打到过世界赛的半决赛。这成绩放在 LPL 不算顶，但足够让你回老家时，被小区保安认出来。\n\n那场半决赛第五局，你的操作至今还在赛事集锦里循环播放。弹幕每次都会刷一句“如果那波不退就好了”。你也这么想过，想了三年。\n\n退役后你在这座城市买了房，离基地两站地铁。有时候加班到很晚，你会绕一下，从基地楼下走过去，灯还亮着。" };
+    else if (titles.length >= 3) end = { name: "国内霸主", rank: "A", sub: "联赛之王", text: "国内该拿的都拿了。虎扑上有人做了张图：LPL 三年，你的 ID 出现次数比解说词还多。\n\n你在国内赢到没人想跟你打训练赛，出国就被人针对。这不是你的错，但骂声最后都落在你身上。\n\n退役那天联盟给你颁了个“赛区贡献奖”，你捧着那个水晶牌子，忽然想起第一次拿联赛冠军时，奖杯比这个沉得多。" };
+    else if (titles.length >= 1) end = { name: "一冠封神", rank: "A-", sub: "联赛冠军", text: "一个联赛冠军，够吹一辈子，也够让黑子闭嘴三年。退役后你去解说席，第一句话就是“我当年拿过冠军”。\n\n台下笑成一片，你也笑。只有你自己知道，那场比赛之后你的状态再没回去过，冠军把你抬到最高处，也把剩下的日子都变成了下坡。\n\n后来你解说得越来越稳，语速慢了，判断准了。有人说你比当选手时更适合这行。" };
+    else if (bestWorlds) end = { name: "出国留学的", rank: "B+", sub: "世界赛游客", text: "你去过世界赛，虽然只打了瑞士轮。回来以后直播间标题改成“世界赛选手”，被骂了一整周，涨了两万粉。\n\n瑞士轮那三场你打得不算差，只是队友太年轻，一上台就手抖。你说你理解，你自己第一年也抖。\n\n退役后你办了个小训练营，专门带那种第一次进世界赛的年轻人。你教他们的第一件事是怎么在入场式上不低头走路。" };
+    else if (S.st.FAME >= 85 && titles.length === 0) end = { name: "流量之神", rank: "B", sub: "没冠军，但有热度", text: "你一个冠军都没拿，但你的切片比冠军的切片多十倍。赞助商排到下个季度，联盟年度颁奖给了你一个“最具人气选手”。\n\n有人问你后不后悔，你说：钱是实打实的，奖杯又不能吃。\n\n话是这么说，某个深夜你还是点开了那年决赛的录像。看到自己那一波开团失败，你按了暂停，去阳台抽了根烟，回来接着看。" };
+    else if ((S.money || 0) >= 1000) end = { name: "资本玩家", rank: "A-", sub: "这行是一门生意", text: "你退役前就开始买股份，退役那天直接把老东家的青训买了下来。三年后有人在转会新闻里看到你，你的头衔是“俱乐部投资人”。\n\n当年骂你只会捞钱的人，现在来求你给个试训名额。你看完简历，问了一句“他手速多少”，然后放进了待定。\n\n你办公室里挂着你的旧队服。有记者问那是什么，你说是一件很贵的衣服。" };
+    else if (S.coachTrust >= 88 && voice() >= 70 && titles.length >= 1) end = { name: "更衣室教皇", rank: "A-", sub: "队里最后一句话是你说的", text: "你退役后直接进了教练组，第一年就把队伍带进了四强。管理层发现，只要更衣室里的那几个人还听你的，这个队就不会散。\n\n你的战术板被裱起来挂在基地墙上，上面写着一句话：别慌，按我说的打。\n\n后来有个新人打得稀烂，蹲在走廊哭。你递了瓶水，说了句“哭完接着练”，他第二年成了首发。" };
+    else if (myOvr() >= 78) end = { name: "顶级打工人", rank: "B", sub: "稳定首发", text: "你没拿过冠军，但你从来没被换下过。工资按时发，粉丝稳定涨，这行里这也是一种本事。\n\n你不会是集锦里的主角，但每支队都想要一个你这样的。合同一份接一份，你在五个城市租过房，每套都只买了同一款椅子。\n\n退役那天队里给你办了个小型欢送会，蛋糕上写着“稳定输出”。你切了第一刀，说这话听着像骂人，全队都笑了。" };
+    else if (myOvr() >= 63) end = { name: "混口饭吃", rank: "C", sub: "轮换选手", text: "三年职业，攒了点钱，也攒了一身病。不算成功，也不算失败。合同到期那天，经理说有空常回来。\n\n你回了一次，基地已经换了装修，新来的小孩不认识你，问你是哪个部门的。你说以前在这打替补，他说哦，然后低头继续打排位。\n\n那天晚上你回家，把孩子哄睡，自己开了一局。排位分不高，但你赢得很开心。" };
+    else end = { name: "查无此人", rank: "D", sub: "消失在人海", text: "三年后，你的直播间只剩 47 个人，其中 30 个是来骂你的。有人问你是谁，弹幕说：以前打过 LDL 的。\n\n你确实打过 LDL。你甚至拿过一次周最佳。但这些没人在意，包括你自己有时候也记不清了。\n\n后来你找了份正经工作，白班，稳定。组里聚餐聊到电竞，你说你不打游戏，眼神飘了一下。" };
+    /* 结局尾声：按档位再抽一句，同一档结局不会每次都收在同一个句子上 */
+    try {
+      const F = (window.DATA_FLAVOR || {}).ending || {};
+      const rk = String(end.rank || "").charAt(0);
+      const bag = (F[rk] && F[rk].length) ? F[rk] : (F.general || []);
+      if (bag.length) end.echo = pick(bag);
+    } catch (e) { }
     if (hasT("fa_last_dance")) {
       end = Object.assign({}, end);
       end.sub = end.sub + " · 最后一舞";
@@ -2776,6 +2938,7 @@ window.GAME = (function () {
 
   /* ================= 对局情境 ================= */
   const DUELS = [
+    /* ---------- 通用：每个位置都会碰到的局内决策 ---------- */
     { t: "对线期", d: "对面三级就上来压你补刀，兵线卡在塔前。", opts: [
       { t: "叫打野越塔", stat: "TEAM", dc: 12, ok: "打野从三角草绕后，一血。对面在公屏打了三个点。", fail: "打野没跟上，你被反蹲，交闪还送了一血。" },
       { t: "塔下补刀稳住", stat: "LANE", dc: 11, ok: "塔刀一个不漏，对面越塔被塔打死。", fail: "漏了三波兵，经济差 800。" },
@@ -2796,16 +2959,6 @@ window.GAME = (function () {
       { t: "等对面失误", stat: "MENTAL", dc: 12, ok: "对面先动了，你们反打，赢了。", fail: "你等了三十秒，对面直接推平了基地。" },
       { t: "点塔偷家", stat: "GAME", dc: 13, ok: "你带着兵线偷家，解说喊到破音。", fail: "家没偷成，基地被推了。" }
     ]},
-    { t: "赛点局", when: "matchpoint", d: "2:2，第五把。你手心里全是汗，耳机里是队友的呼吸声。", opts: [
-      { t: "拿绝活", stat: "POOL", dc: 12, ok: "你锁下那个英雄，全场欢呼。这把你 C 了。", fail: "绝活被针对，你 0-5 开局。" },
-      { t: "稳住运营", stat: "GAME", dc: 13, ok: "你们把节奏拖到自己最强的时间点，一波带走。", fail: "运营了四十分钟，被对面一波团灭。" },
-      { t: "赌一把", stat: "MENTAL", dc: 15, ok: "你赌对面不敢打，结果他们真不敢。", fail: "你赌错了，对面直接开团。" }
-    ]},
-    { t: "逆风局", when: "behind", d: "经济落后 8000，三路兵线压进高地。", opts: [
-      { t: "找机会单抓", stat: "LANE", dc: 14, ok: "你抓到对面落单的 C 位，一波翻盘。", fail: "你去抓人，家被拆了。" },
-      { t: "守家等机会", stat: "MENTAL", dc: 12, ok: "你们守了二十分钟，对面终于失误了。", fail: "守到最后，基地还是爆了。" },
-      { t: "强开搏命", stat: "MECH", dc: 15, ok: "一波完美团战，你打出了职业生涯最秀的操作。", fail: "强开失败，游戏结束。" }
-    ]},
     { t: "BP 博弈", d: "教练把平板推给你：对面中野是版本答案，你要不要抢？", opts: [
       { t: "抢版本英雄", stat: "GAME", dc: 12, ok: "你锁下版本答案，对面教练当场把笔摔了。", fail: "版本英雄被对面三 ban 针对，你整局没打出伤害。" },
       { t: "留绝活", stat: "POOL", dc: 11, ok: "你把绝活留到第五手，对面脸上写满了“完了”。", fail: "你留的绝活，对面早就准备好了 counter。" },
@@ -2816,40 +2969,154 @@ window.GAME = (function () {
       { t: "插眼撤退", stat: "GAME", dc: 10, ok: "你们插好视野退回线上，对面白蹲了三分钟。", fail: "眼被排掉，你们还是被抓了。" },
       { t: "打字嘲讽", stat: "MENTAL", dc: 14, ok: "你在公屏打了句“就这”，对面心态炸了。", fail: "对面教练把这句话打印出来贴在了基地墙上。" }
     ]},
-    { t: "野区入侵", pos: ["JUG"], d: "对面打野在下路露头，他的红 buff 还有 20 秒刷新。", opts: [
-      { t: "反红", stat: "GAME", dc: 12, ok: "你反掉红 buff，对面打野整局没节奏。", fail: "你反野被中单夹了，交闪还送 buff。" },
-      { t: "抓上路", stat: "LANE", dc: 13, ok: "你越塔抓死对上单，上路直接断开连接。", fail: "越塔被换，上单开始打字问你在干嘛。" },
-      { t: "回城刷野", stat: "MECH", dc: 10, ok: "你稳稳刷完两组野，等级领先一级。", fail: "你回城的时候，队友被四包二了。" }
+    { t: "换线博弈", d: "对面下路双人组走上，你们的对线优势瞬间没了。", opts: [
+      { t: "跟着换", stat: "GAME", dc: 11, ok: "你们跟着换线，把对面的算计原样还了回去。", fail: "换线换乱了，两边都没吃到线。" },
+      { t: "强压对线", stat: "LANE", dc: 13, ok: "你硬吃对线，把对面的换线打成送人头。", fail: "你被越塔，换线换出了个 0-3。" },
+      { t: "叫打野越塔", stat: "TEAM", dc: 12, ok: "打野越塔，对面换线的算盘碎了。", fail: "越塔失败，你们上野一起送。" }
     ]},
-    { t: "中路线权", pos: ["MID"], d: "兵线推到塔下，下路正在被越，你还有 8 秒决定游不游。", opts: [
-      { t: "游下支援", stat: "GAME", dc: 12, ok: "你赶到下路，反打三杀，解说喊你名字。", fail: "你游下没抓到，中路塔被推了。" },
-      { t: "吃塔皮", stat: "LANE", dc: 11, ok: "你吃了三层塔皮，经济领先 700。", fail: "塔皮没吃完，下路已经炸了。" },
-      { t: "蹲草丛", stat: "MECH", dc: 14, ok: "你在草丛蹲到对面中单，直接单杀。", fail: "蹲了三分钟，对面中单在下路拿了双杀。" }
+    { t: "峡谷先锋", d: "八分钟先锋刷新，你们打野在上半区，下路兵线压得很深。", opts: [
+      { t: "打先锋", stat: "TEAM", dc: 12, ok: "先锋到手，一头撞掉中一塔，节奏全开。", fail: "打先锋打太久，下路被越，塔也丢了。" },
+      { t: "先包下路", stat: "LANE", dc: 13, ok: "你们先抓死对面下路，再回去拿先锋，白赚两个人头。", fail: "你们去下路扑空，先锋被对面白拿。" },
+      { t: "放弃先锋", stat: "GAME", dc: 10, ok: "你们放了先锋，换掉对面一条小龙，不亏。", fail: "先锋被对面拿下，直接撞掉两座塔。" }
     ]},
+    { t: "视野黑洞", d: "大龙区一片黑，辅助刚回城，你身上还剩一个真眼。", opts: [
+      { t: "自己去插", stat: "MENTAL", dc: 14, ok: "你把真眼插进龙坑草丛，对面四人的动向全在屏幕上。", fail: "你走进黑暗里，被人从后面抱住，交闪还被留。" },
+      { t: "等辅助回来", stat: "TEAM", dc: 11, ok: "你等辅助一起做视野，两个人摸黑也不慌。", fail: "辅助回来的路上被抓，你干等着，大龙没了。" },
+      { t: "用技能探草", stat: "MECH", dc: 12, ok: "你的技能进草炸出三个红点，全队立刻缩回塔下。", fail: "技能空了，你反而暴露了自己的位置。" }
+    ]},
+    { t: "越塔决策", d: "对面残血缩在塔下，兵线进塔，你们打野在后面等着。", opts: [
+      { t: "抗塔强杀", stat: "MECH", dc: 14, ok: "你抗两下塔完成一换一，兵线还推进去了。", fail: "抗塔数错，你先倒下，打野也跟着送。" },
+      { t: "让打野先手", stat: "TEAM", dc: 12, ok: "打野先顶塔，你收人头，配合得像排练过。", fail: "打野犹豫了半秒，塔的仇恨全在你身上。" },
+      { t: "推线走人", stat: "GAME", dc: 10, ok: "你们推掉塔皮就走，对面交了闪现还是没补到刀。", fail: "你们推完线不走，被赶来的中野收了两个。" }
+    ]},
+    { t: "二塔攻坚", d: "中路二塔剩三分之一血，对面五个人守在里面不出。", opts: [
+      { t: "强拆", stat: "LANE", dc: 13, ok: "你们硬拆掉二塔，兵线直接压到高地。", fail: "拆到一半对面开团，你们阵型散得像路人局。" },
+      { t: "逼对方出来", stat: "GAME", dc: 12, ok: "你们转去打龙，对面被迫出塔，阵型全乱。", fail: "龙没打成，塔也没拆，两头空。" },
+      { t: "分推牵扯", stat: "TEAM", dc: 11, ok: "一路分推，一路逼中，对面顾不过来，高地掉了一层。", fail: "分推的人被抓，正面四个人打不过五个。" }
+    ]},
+    { t: "龙魂之争", d: "双方都是两条小龙，下一条是听牌龙，龙坑已经摆好阵。", opts: [
+      { t: "提前卡位", stat: "GAME", dc: 12, ok: "你们提前 40 秒占住龙坑，对面来了也只能干看。", fail: "卡位卡太早，被对面从侧面绕后团灭。" },
+      { t: "放龙打团", stat: "TEAM", dc: 14, ok: "你们假装打龙，实则开团，一波 0 换 4 拿下龙魂。", fail: "开团被反打，龙和团一起输。" },
+      { t: "换资源", stat: "LANE", dc: 11, ok: "你们换掉一座高地塔，龙魂给他们不亏。", fail: "高地没换到，龙魂也没了，节奏彻底丢。" }
+    ]},
+    { t: "语音吵架", d: "打野和上单在语音里互相甩锅，声音越来越大。", opts: [
+      { t: "劝一句", stat: "MENTAL", dc: 13, ok: "你说了句“打完再说”，语音里安静了，节奏回来了。", fail: "你劝偏了，两个人一起把矛头对准你。" },
+      { t: "装没听见", stat: "GAME", dc: 11, ok: "你戴上耳机只听游戏音，把节奏拉回自己手里。", fail: "没人指挥，你们连续两波团战开成送。" },
+      { t: "站队打野", stat: "TEAM", dc: 14, ok: "你明确站打野，全队思路统一，接下来三波团全赢。", fail: "你站错边了，上单直接挂机。" }
+    ]},
+    { t: "高地防守", d: "对面带着大龙 buff 上高地，你们的水晶只剩半血。", opts: [
+      { t: "清线等机会", stat: "GAME", dc: 12, ok: "你们把兵线清干净，对面 buff 掉了，攻势自然散了。", fail: "清线被开，水晶直接爆了。" },
+      { t: "开团搏命", stat: "MECH", dc: 15, ok: "你找到对面后排站位失误，一波反打推回去。", fail: "开团没开好，水晶在他们笑声里爆炸。" },
+      { t: "换家", stat: "LANE", dc: 16, ok: "你带线偷家成功，对面回防不及，赢了。", fail: "你走到一半被留，队友四打五守不住。" }
+    ]},
+    { t: "抢大龙", d: "对面在打大龙，血量掉到 4000，你们还在赶路。", opts: [
+      { t: "闪现抢", stat: "MECH", dc: 17, ok: "你闪现进龙坑，惩戒抢下大龙，全场炸了。", fail: "你闪现进去，龙没抢到，人也没出来。" },
+      { t: "等他们打完再打团", stat: "GAME", dc: 13, ok: "对面拿龙时开团，你们把残血全收了。", fail: "对面拿龙后直接推塔，你们追出去被反打。" },
+      { t: "回去守塔", stat: "TEAM", dc: 11, ok: "你们放弃大龙，守住了高地，把时间拖到对面 buff 过期。", fail: "塔没守住，大龙也白送。" }
+    ]},
+
+    /* ---------- 分位置：只有这个位置会抽到 ---------- */
     { t: "上路单带", pos: ["TOP"], d: "你带线到二塔，对面五个人从小地图上消失了。", opts: [
       { t: "继续带", stat: "MENTAL", dc: 14, ok: "你带穿一路，对面回防晚了一步，家没了。", fail: "你被抓，队友在大龙坑四打五。" },
       { t: "传送开团", stat: "TEAM", dc: 12, ok: "你 TP 绕后，一波开团打崩对面。", fail: "你 TP 的位置太正，落地就被秒。" },
       { t: "撤退", stat: "GAME", dc: 10, ok: "你安全撤退，兵线压力还在。", fail: "撤退路上被留，白给一个头。" }
+    ]},
+    { t: "上路对拼", pos: ["TOP"], d: "对面先手交技能推线，你的血线比他高，兵线在中间。", opts: [
+      { t: "贴身硬拼", stat: "MECH", dc: 13, ok: "一套换血把对面打回城，多吃了两波线。", fail: "技能被躲，你被追到塔下补刀都补不了。" },
+      { t: "拉兵线", stat: "LANE", dc: 11, ok: "你把兵线拉到塔前，对面站在中间连经验都不敢吃。", fail: "兵线拉崩了，你反而被卡在自家塔下。" },
+      { t: "叫打野", stat: "TEAM", dc: 12, ok: "打野从三角草进来，一血到手，上路彻底自由。", fail: "打野来了但被反蹲，你们两个一起躺。" }
+    ]},
+    { t: "TP 时机", pos: ["TOP"], d: "下路打起来了，你的传送还在，兵线刚推进对面塔。", opts: [
+      { t: "立刻 TP", stat: "TEAM", dc: 13, ok: "你 TP 落地打出一换三，下路直接打开。", fail: "TP 落地被集火，人没救到，线也丢了。" },
+      { t: "先推线", stat: "LANE", dc: 11, ok: "你把线推到二塔再 TP，回来时经济领先 800。", fail: "下路打完你才 TP，队友已经骂上了。" },
+      { t: "留着不走", stat: "GAME", dc: 12, ok: "你知道下路打不过，果断放弃，换掉上路一座塔。", fail: "下路崩了，你也没换来任何东西。" }
+    ]},
+    { t: "野区入侵", pos: ["JUG"], d: "对面打野在下路露头，他的红 buff 还有 20 秒刷新。", opts: [
+      { t: "反红", stat: "GAME", dc: 12, ok: "你反掉红 buff，对面打野整局没节奏。", fail: "你反野被中单夹了，交闪还送 buff。" },
+      { t: "抓上路", stat: "LANE", dc: 13, ok: "你越塔抓死对面，上路直接断开连接。", fail: "越塔被换，上单开始打字问你在干嘛。" },
+      { t: "回城刷野", stat: "MECH", dc: 10, ok: "你稳稳刷完两组野，等级领先一级。", fail: "你回城的时候，队友被四包二了。" }
+    ]},
+    { t: "三级节奏", pos: ["JUG"], d: "三级，中路兵线压过半场，上单在喊你，下路也在喊。", opts: [
+      { t: "抓中", stat: "GAME", dc: 12, ok: "你从侧翼绕出来，中单交出闪现也死了。", fail: "你走进草丛，对面中野二打一，你先倒下。" },
+      { t: "抓上", stat: "LANE", dc: 13, ok: "你抓上拿一血，上单彻底压不住对面了。", fail: "你抓上扑空，自家红被偷，节奏全无。" },
+      { t: "先刷到四", stat: "MECH", dc: 10, ok: "你稳稳刷到四，等级压对面打野一级。", fail: "你刷野的时候，三条线全被压，队友开始点你的名字。" }
+    ]},
+    { t: "先锋团开不开", pos: ["JUG"], d: "先锋刷新，你们下路被压，正面五五开。", opts: [
+      { t: "开先锋", stat: "TEAM", dc: 13, ok: "你们拿下先锋，一头撞掉中一塔，节奏起飞。", fail: "打先锋时下路被抓，先锋还丢了。" },
+      { t: "先做视野反蹲", stat: "GAME", dc: 12, ok: "你预判对面开先锋，反蹲打出 0 换 3。", fail: "蹲了半分钟，对面根本没来，你白蹲。" },
+      { t: "往下路打", stat: "LANE", dc: 11, ok: "你们先下路抓人，回头再拿先锋，双边都赚。", fail: "下路没抓到，回来时先锋已经没了。" }
+    ]},
+    { t: "蓝 buff 归属", pos: ["MID"], d: "打野把蓝 buff 打剩一丝，问你要不要。", opts: [
+      { t: "要", stat: "LANE", dc: 11, ok: "你拿到蓝 buff，推线游走，节奏全在自己手里。", fail: "拿了蓝却被打野记恨，之后你再也没被 gank 过。" },
+      { t: "让给打野", stat: "TEAM", dc: 12, ok: "打野拿到蓝，效率翻倍，下路被连抓两波。", fail: "打野拿了蓝去刷野，你的中路被压得喘不过气。" },
+      { t: "推了线再说", stat: "GAME", dc: 13, ok: "你先把线推进去，再和打野一起收蓝，两个人都舒服。", fail: "线没推好，蓝被对面中野抢了。" }
+    ]},
+    { t: "中路单杀机会", pos: ["MID"], d: "对面中单交了闪现，血量一半，站在塔前想吃这波线。", opts: [
+      { t: "直接 all in", stat: "MECH", dc: 14, ok: "你闪过塔完成单杀，全场欢呼。", fail: "伤害差一点，你被塔打死，评论区开始刷“上高”。" },
+      { t: "压刀不杀", stat: "LANE", dc: 11, ok: "你把对面压出经验区，两波线全收，经济领先 600。", fail: "你压得太靠前，被对面打野绕后抓死。" },
+      { t: "叫打野越塔", stat: "TEAM", dc: 13, ok: "你和打野配合越塔，人头加助攻，中路彻底打开。", fail: "越塔配合失误，塔下双亡。" }
+    ]},
+    { t: "游走还是推线", pos: ["MID"], d: "下路打起来了，你的兵线刚到塔前，中单已经在往下走了。", opts: [
+      { t: "跟着游", stat: "GAME", dc: 13, ok: "你比对面中单早到两秒，反打三杀。", fail: "你游下扑空，中路塔被推掉一半。" },
+      { t: "吃线推塔", stat: "LANE", dc: 11, ok: "你吃掉两波线还蹭了塔皮，经济反超对面中单。", fail: "下路输了，你吃线也没吃出优势。" },
+      { t: "发信号让撤", stat: "MENTAL", dc: 12, ok: "你连点三个信号，下路及时撤退，对面白跑一趟。", fail: "下路没听，硬打，你只能看着他们团灭。" }
     ]},
     { t: "下路四包二", pos: ["BOT"], d: "对面中野往下走了，你们辅助的眼刚好黑了。", opts: [
       { t: "塔下反打", stat: "MECH", dc: 14, ok: "你们二打四换掉三个，全场起立。", fail: "你们被四包二，下路直接崩盘。" },
       { t: "放塔后撤", stat: "GAME", dc: 10, ok: "你们撤得干净，对面只拿到一层塔皮。", fail: "后撤太慢，被追死两个。" },
       { t: "叫打野反蹲", stat: "TEAM", dc: 12, ok: "打野准时到位，反打一波 0 换 4。", fail: "打野在刷石头人，你们二打四。" }
     ]},
-    { t: "视野争夺", pos: ["SUP"], d: "大龙还有一分钟，河道一片黑，你要不要去做眼？", opts: [
-      { t: "独自做眼", stat: "MENTAL", dc: 14, ok: "你摸黑插下关键眼，抓住了对面的开团路线。", fail: "你被对面蹲到，交了闪现还送了眼。" },
-      { t: "叫队友一起", stat: "TEAM", dc: 11, ok: "你们一起做视野，顺便抓到了对面的辅助。", fail: "你们一起去，被对面反蹲团灭。" },
-      { t: "放弃视野", stat: "GAME", dc: 10, ok: "你们放弃视野，稳住了经济差。", fail: "没视野被偷大龙，游戏结束。" }
+    { t: "抢二抢三", pos: ["BOT"], d: "双方下路同时到线上，第一波兵刚到，辅助在问要不要抢二。", opts: [
+      { t: "抢二", stat: "MECH", dc: 12, ok: "你们抢到二级，一套消耗打掉对面一半血，压了两波线。", fail: "抢二慢了一步，你们被压回塔下。" },
+      { t: "稳补刀", stat: "LANE", dc: 10, ok: "你稳稳补刀，经济一点没落下，等打野来抓。", fail: "补刀被压，兵线推到塔下，你们连经验都难受。" },
+      { t: "假装抢二", stat: "GAME", dc: 14, ok: "你们假装压线，引对面开，反手一波打出双杀。", fail: "演得太假，对面直接回城，你们白费表情。" }
+    ]},
+    { t: "辅助游走", pos: ["BOT"], d: "辅助想跟你商量去中路游一波，你一个人在下路待着。", opts: [
+      { t: "让他去", stat: "GAME", dc: 11, ok: "辅助游中拿到助攻，你下路稳稳补刀，双线开花。", fail: "辅助游走没成，你下路被越，塔也没了。" },
+      { t: "留下保线", stat: "TEAM", dc: 12, ok: "辅助留下，你们压住下路，对面被迫叫中野回防。", fail: "两个人在下路待着，中路被越塔。" },
+      { t: "一起动", stat: "LANE", dc: 14, ok: "你们双人组一起游中，三包一拿下、还顺了塔。", fail: "你们一起走，下路兵线全给对面吃了。" }
+    ]},
+    { t: "开团视野", pos: ["SUP"], d: "对面阵型散了，你的视野里只有一个落单的后排。", opts: [
+      { t: "先手开", stat: "MENTAL", dc: 14, ok: "你的开团定住后排，一波团战结束比赛。", fail: "你开得太早，队友还没到，你被集火。" },
+      { t: "插眼等机会", stat: "GAME", dc: 12, ok: "你插下真眼，看清对面五人的站位，再开团完美。", fail: "做视野被排，你交了闪现还被留。" },
+      { t: "跟队形打反手", stat: "TEAM", dc: 11, ok: "你们打反手，等对面先开，被你们一波反杀。", fail: "对面一直不开，你们被耗到没状态。" }
+    ]},
+    { t: "游走时机", pos: ["SUP"], d: "下路兵线进塔，你身上有鞋和眼，中路看起来有机会。", opts: [
+      { t: "游中", stat: "GAME", dc: 12, ok: "你游中三包一，拿到一血，节奏打开。", fail: "你走了以后，AD 被越塔，你在中路的图也被排。" },
+      { t: "留下保 AD", stat: "TEAM", dc: 11, ok: "你留下保线，下路压得很舒服，经济领先两千。", fail: "你在下路耗着，中路被对面野辅连抓两波。" },
+      { t: "带 AD 一起走", stat: "LANE", dc: 14, ok: "你们双人组转线，一路推到二塔，对面全程跟着你们跑。", fail: "转线转丢了，两边兵线都亏。" }
+    ]},
+    { t: "保排还是开团", pos: ["SUP"], d: "你们的 ADC 发育很好，但对面刺客一直绕后。", opts: [
+      { t: "贴身保 AD", stat: "TEAM", dc: 12, ok: "你挡下关键技能，ADC 输出全场最高，一波团赢。", fail: "你保得太死，开团没人，节奏全丢。" },
+      { t: "主动开团", stat: "MENTAL", dc: 15, ok: "你先手开死对面刺客，顺手把团战赢了。", fail: "你离开 AD 的瞬间，他就被刺客切了。" },
+      { t: "做眼预警", stat: "GAME", dc: 13, ok: "你在侧翼插满眼，刺客一露头就被发现，节奏稳住。", fail: "眼位被排，刺客还是摸到了后排。" }
+    ]},
+
+    /* ---------- 局势相关：只在对局状态吻合时出现 ---------- */
+    { t: "赛点局", when: "matchpoint", d: "2:2，第五把。你手心里全是汗，耳机里是队友的呼吸声。", opts: [
+      { t: "拿绝活", stat: "POOL", dc: 12, ok: "你锁下那个英雄，全场欢呼。这把你 C 了。", fail: "绝活被针对，你 0-5 开局。" },
+      { t: "稳住运营", stat: "GAME", dc: 13, ok: "你们把节奏拖到自己最强的时间点，一波带走。", fail: "运营了四十分钟，被对面一波团灭。" },
+      { t: "赌一把", stat: "MENTAL", dc: 15, ok: "你赌对面不敢打，结果他们真不敢。", fail: "你赌错了，对面直接开团。" }
+    ]},
+    { t: "逆风局", when: "behind", d: "经济落后 8000，三路兵线压进高地。", opts: [
+      { t: "找机会单抓", stat: "LANE", dc: 14, ok: "你抓到对面落单的 C 位，一波翻盘。", fail: "你去抓人，家被拆了。" },
+      { t: "守家等机会", stat: "MENTAL", dc: 12, ok: "你们守了二十分钟，对面终于失误了。", fail: "守到最后，基地还是爆了。" },
+      { t: "强开搏命", stat: "MECH", dc: 15, ok: "一波完美团战，你打出了职业生涯最秀的操作。", fail: "强开失败，游戏结束。" }
+    ]},
+    { t: "顺风局", when: "leading", d: "你们领先八千经济，队友已经开始在公屏打字了。", opts: [
+      { t: "稳住推塔", stat: "GAME", dc: 10, ok: "你们不贪，一路推塔，二十五分钟结束游戏。", fail: "推进节奏太慢，对面拖到后期翻盘。" },
+      { t: "浪一波", stat: "MECH", dc: 16, ok: "你越塔单杀，士气爆棚，全队跟着你一路推平。", fail: "你越塔送头，经济差瞬间缩到三千。" },
+      { t: "收缩发育", stat: "TEAM", dc: 11, ok: "你们把线权抓回来，再打一波团，赢得干净。", fail: "收缩太久，对面找到机会做视野，节奏被拖住。" }
+    ]},
+    { t: "天王山", when: "late", d: "第四把，双方都打满了，你的手已经开始发麻。", opts: [
+      { t: "换套打法", stat: "GAME", dc: 13, ok: "你换了一套前中期节奏，对面完全没准备，二十分钟结束。", fail: "新打法磨合不够，前两波就打崩。" },
+      { t: "照老套路", stat: "POOL", dc: 11, ok: "熟悉的阵容，熟悉的节奏，你们稳得像机器。", fail: "老套路被对面研究透了，每一步都被预判。" },
+      { t: "靠意志力", stat: "MENTAL", dc: 15, ok: "你咬着牙把每个细节做到位，最后五分钟的操作全是对的。", fail: "体力先泄了，关键团手一抖，技能空了。" }
     ]},
     { t: "世界赛舞台", when: "worlds", d: "场馆里两万人在喊，导播的镜头停在你脸上，你听见自己的心跳。", opts: [
       { t: "享受它", stat: "MENTAL", dc: 13, ok: "你把压力变成了兴奋，这把你打出了生涯最佳。", fail: "你手抖了，第一波团就空了大招。" },
       { t: "只看屏幕", stat: "MECH", dc: 12, ok: "你把外界全部屏蔽，操作干净得像训练赛。", fail: "你越想专注，越听见观众的笑声。" },
       { t: "带动队友", stat: "TEAM", dc: 11, ok: "你在语音里喊了一句，四个队友全活了。", fail: "你喊完之后，语音里更安静了。" }
-    ]},
-    { t: "换线博弈", d: "对面下路双人组走上，你们的对线优势瞬间没了。", opts: [
-      { t: "跟着换", stat: "GAME", dc: 11, ok: "你们跟着换线，把对面的算计原样还了回去。", fail: "换线换乱了，两边都没吃到线。" },
-      { t: "强压对线", stat: "LANE", dc: 13, ok: "你硬吃对线，把对面的换线打成送人头。", fail: "你被越塔，换线换出了个 0-3。" },
-      { t: "叫打野越塔", stat: "TEAM", dc: 12, ok: "打野越塔，对面换线的算盘碎了。", fail: "越塔失败，你们上野一起送。" }
     ]}
   ];
 
@@ -2857,12 +3124,15 @@ window.GAME = (function () {
     const ctxPool = DUELS.filter(d => {
       if (d.pos && d.pos.indexOf(S.pos) < 0) return false;
       if (d.when === "behind" && !(s.losses > s.wins)) return false;
+      if (d.when === "leading" && !(s.wins > s.losses)) return false;
       if (d.when === "matchpoint" && s.wins !== 2) return false;
+      if (d.when === "late" && (s.g || 1) < 4) return false;
       if (d.when === "worlds" && !M.knock) return false;
       return !!d.when || !!d.pos;
     });
     const base = DUELS.filter(d => !d.when && !d.pos);
-    const useCtx = ctxPool.length && (chance(.5) || s.losses > s.wins);
+    /* 局势/位置专属的决策优先出：一半概率走专属池，逆风时更高 */
+    const useCtx = ctxPool.length && (chance(.55) || s.losses > s.wins);
     const sit = pick(useCtx ? ctxPool : base);
     return { sit, opp, game: s.g, wins: s.wins, losses: s.losses, round: 1, useBurst: false };
   }
