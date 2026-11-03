@@ -1,4 +1,4 @@
-/* 《登神》界面层 —— 场景渲染 + 交互绑定 */
+﻿/* 《登神》界面层 —— 场景渲染 + 交互绑定 */
 (function () {
   "use strict";
   const A = window.ART, G = window.GAME;
@@ -21,6 +21,113 @@
   const fan = n => !n ? "0" : n >= 1e8 ? (n / 1e8).toFixed(2) + " 亿" : n >= 1e4 ? (n / 1e4).toFixed(1) + " 万" : String(Math.round(n));
   const pct = v => Math.max(0, Math.min(100, Math.round(v)));
   const barHTML = (v, cls) => `<span class="bar ${cls || ""}"><i style="width:${pct(v)}%"></i></span>`;
+
+  /* ---------- 精力 / 存款档位 ----------
+     优先吃 engine 导出的 GAME.energyBand()/moneyBand()/ENERGY_BANDS/MONEY_BANDS；
+     engine 还没落地时按需求文档的档位表回退，保证旧场景照常渲染。 */
+  const EB_FALLBACK = [
+    { min: 80, key: "peak", name: "充沛", color: "#3fc1c9", note: "手感最好，别拿来干杂活。" },
+    { min: 50, key: "normal", name: "正常", color: "#59c26a", note: "够打一场硬仗。" },
+    { min: 30, key: "tired", name: "疲劳", color: "#e8b923", note: "训练效果打折，失误变多。" },
+    { min: 15, key: "drain", name: "透支", color: "#f07a1f", note: "在借下个月的点打这个月。" },
+    { min: 1, key: "danger", name: "危险", color: "#e0423f", note: "再掉一点就要进医院。" },
+    { min: -1, key: "collapse", name: "倒下", color: "#8f1414", note: "这个月什么都做不了。" }
+  ];
+  const MB_FALLBACK = [
+    { min: 1000, key: "capital", name: "资本玩家", color: "#b07bff", note: "你已经不是选手了，你是资本。" },
+    { min: 200, key: "rich", name: "有钱", color: "#3fc1c9", note: "在圈里算有钱人。" },
+    { min: 50, key: "easy", name: "宽裕", color: "#59c26a", note: "偶尔能请全队吃饭。" },
+    { min: 10, key: "steady", name: "稳定", color: "#e8b923", note: "够花，别乱花。" },
+    { min: 0, key: "tight", name: "紧巴", color: "#f07a1f", note: "一分钱掰两半花。" },
+    { min: -1e9, key: "debt", name: "欠债", color: "#e0423f", note: "兜里比脸还干净。" }
+  ];
+  function normBands(raw) {
+    if (!raw) return null;
+    const arr = Array.isArray(raw) ? raw.slice() : Object.keys(raw).map(k => Object.assign({ key: k }, raw[k] || {}));
+    const out = arr.filter(b => b && typeof b === "object" && (b.min != null || b.from != null)).map(b => ({
+      min: b.min != null ? b.min : b.from,
+      key: b.key || "", name: b.name || b.label || b.key || "",
+      color: b.color || "", note: b.note || b.desc || ""
+    })).sort((a, b) => a.min - b.min);
+    return out.length ? out : null;
+  }
+  function energyBands() {
+    const b = normBands(window.GAME && window.GAME.ENERGY_BANDS);
+    return b || EB_FALLBACK.slice().sort((a, c) => a.min - c.min);
+  }
+  function moneyBands() {
+    const b = normBands(window.GAME && window.GAME.MONEY_BANDS);
+    return b || MB_FALLBACK.slice().sort((a, c) => a.min - c.min);
+  }
+  function pickBand(list, x) {
+    let out = list[0];
+    list.forEach(b => { if (x >= b.min) out = b; });
+    return out;
+  }
+  function energyBandOf(e) {
+    const x = e == null ? 0 : e;
+    if (window.GAME && typeof window.GAME.energyBand === "function") {
+      try {
+        const r = window.GAME.energyBand(x);
+        if (r && r.name) return { min: null, key: r.key || "", name: r.name, color: r.color || "", note: r.note || "" };
+      } catch (err) {}
+    }
+    return pickBand(energyBands(), x);
+  }
+  function moneyBandOf(m) {
+    const x = m == null ? 0 : m;
+    if (window.GAME && typeof window.GAME.moneyBand === "function") {
+      try {
+        const r = window.GAME.moneyBand(x);
+        if (r && r.name) return { min: null, key: r.key || "", name: r.name, color: r.color || "", note: r.note || "" };
+      } catch (err) {}
+    }
+    return pickBand(moneyBands(), x);
+  }
+  function nextBandHint(list, x) {
+    for (let i = 0; i < list.length; i++) {
+      if (list[i].min > x) {
+        const d = Math.ceil(list[i].min - x);
+        return d > 0 ? `离「${list[i].name}」还差 ${d} 点` : `快进「${list[i].name}」了`;
+      }
+    }
+    return null;
+  }
+  function bandTip(b, list, x, up) {
+    const n = nextBandHint(list, x);
+    const t = (b.note ? b.note : b.name) + (n ? "｜" + n : "");
+    return esc(t);
+  }
+  function energyMaxOf() {
+    if (window.GAME && typeof window.GAME.energyMax === "function") {
+      try {
+        const m = window.GAME.energyMax();
+        if (typeof m === "number" && m > 0) return m;
+      } catch (err) {}
+    }
+    const S = window.GAME && window.GAME.getState ? window.GAME.getState() : null;
+    return (S && S.invest && S.invest.energyMax) ? 110 : 100;
+  }
+  /* 行动按钮上的一行精力预告：当前 42 → 行动后 20（进入疲劳） */
+  function energyPreview(cost) {
+    const S = window.GAME.getState ? window.GAME.getState() : null;
+    if (!S || cost == null || typeof cost !== "number") return "";
+    const cur = Math.round(S.energy == null ? 0 : S.energy);
+    const emax = energyMaxOf();
+    const after = Math.max(0, Math.min(emax, Math.round(cur - cost)));
+    const b0 = energyBandOf(cur), b1 = energyBandOf(after);
+    const move = b1.name !== b0.name ? `进入${b1.name}` : `还是${b1.name}`;
+    return `当前 ${cur} → 行动后 ${after}（${move}）`;
+  }
+  function dedupeByLabel(list) {
+    const seen = {};
+    return (list || []).filter(x => {
+      const k = x && x.label != null ? String(x.label) : "";
+      if (!k) return true;
+      if (seen[k]) return false;
+      seen[k] = 1; return true;
+    });
+  }
   function toast(msg) {
     toastEl.textContent = msg; toastEl.classList.add("show");
     clearTimeout(toast._t); toast._t = setTimeout(() => toastEl.classList.remove("show"), 1700);
@@ -88,6 +195,9 @@
     const ml = G.monthLabel(S.tick);
     const ovr = G.myOvr(), v = G.voice();
     const S2 = S.endless ? `<span class="chip purple">无尽 · 第 ${S.season} 季</span>` : `<span class="chip">第 ${S.season} 年</span>`;
+    const e0 = Math.round(S.energy == null ? 0 : S.energy), m0 = Math.round(S.money == null ? 0 : S.money);
+    const eb = energyBandOf(e0), mb = moneyBandOf(m0);
+    const ec = eb.color || "#3fc1c9", mc = mb.color || "#e8b923";
     return `<div id="topbar">
       <div class="between">
         <div class="who">
@@ -99,11 +209,12 @@
         </div>
         <div class="hud-meters">
           <div class="ovr-badge"><b>${ovr}</b><span>评分</span></div>
-          <div class="hud-item"><span class="lb">${A.glyph("energy", 12)}精力</span>${barHTML(S.energy, "en")}</div>
+          <div class="hud-item" title="${bandTip(mb, moneyBands(), m0)}"><span class="lb">${A.glyph("money", 12)}存款</span><span class="vl" style="color:${mc};font-weight:600">${m0}<span class="unit">万</span></span></div>
+          <div class="hud-item" title="${bandTip(eb, energyBands(), e0)}"><span class="lb">${A.glyph("energy", 12)}精力</span><span class="bar bnd"><i style="width:${pct(e0)}%;background:linear-gradient(90deg,${ec}99,${ec})"></i></span><span class="vl" style="color:${ec}">${e0}</span></div>
           <div class="hud-item"><span class="lb">${A.glyph("mental", 12)}心态</span>${barHTML(S.morale, "mo")}</div>
           <div class="hud-item"><span class="lb">${A.glyph("flag", 12)}士气</span>${barHTML(S.spirit == null ? 60 : S.spirit, "hi")}</div>
           <div class="hud-item"><span class="lb">${A.glyph("fire", 12)}气势</span>${barHTML(S.burst, "hp")}</div>
-          <div class="hud-item"><span class="lb">${A.glyph("voice", 12)}话语权</span><span class="vl">${v}</span></div>
+          <div class="hud-item" title="话语权：队里说话的分量，语音里喊得动人才有用"><span class="lb">${A.glyph("voice", 12)}话语权</span><span class="vl">${v}</span></div>
         </div>
       </div>
     </div>`;
@@ -141,7 +252,7 @@
         <h4>生涯</h4>
         <div class="side-kv"><span>战绩</span><b>${S.record.wins} 胜 ${S.record.losses} 负</b></div>
         <div class="side-kv"><span>冠军</span><b>${titles.length}</b></div>
-        <div class="side-kv"><span>存款</span><b>${Math.round(S.money)} 万</b></div>
+        <div class="side-kv" title="${bandTip(moneyBandOf(S.money), moneyBands(), Math.round(S.money || 0))}"><span>存款</span><b style="color:${(moneyBandOf(S.money) || {}).color || "inherit"}">${Math.round(S.money)} 万</b></div>
         <div class="side-kv"><span>抽卡券</span><b>${S.ticket || 0}</b></div>
         <div class="side-kv"><span>卡槽</span><b>${(S.deck || []).filter(Boolean).length}/5</b></div>
         ${titles.length ? `<div class="row wrap" style="gap:5px;margin-top:8px">${titles.slice(-3).map(x => `<span class="chip gold">${esc(x)}</span>`).join("")}</div>` : ""}
@@ -160,6 +271,7 @@
   /* ---------- 主菜单 ---------- */
   function renderMenu() {
     if (tab === "diff") return renderDiff();
+    if (tab === "mgrpick") return renderMgrPick();
     if (tab === "slots") return renderSlots();
     if (tab === "codex") return renderCodex();
     if (tab === "hall") return renderHall();
@@ -177,7 +289,7 @@
           ${has ? `<button class="btn" data-act="continue">继续上次 <span class="tagline">读取自动存档</span></button>` : ""}
           <button class="btn" data-act="tab" data-v="slots">存档 / 读档 <span class="tagline">三个手动档 + 一个自动档</span></button>
           <button class="btn" data-act="tab" data-v="codex">档案室 <span class="tagline">赛制、数值、编年史、冷知识、黑料</span></button>
-          <button class="btn gold" data-act="mgr-start">电竞经理模式 <span class="tagline">不当选手了 · 选队或自建 · 抽卡组队 · BP 打比赛</span></button>
+          <button class="btn gold" data-act="tab" data-v="mgrpick">电竞经理模式 <span class="tagline">不当选手了 · 选难度 · 选队或自建 · 抽卡组队 · BP 打比赛</span></button>
         <button class="btn" data-act="tab" data-v="hall">名人堂 <span class="tagline">你打出来过的角色 · 结局与战绩留档</span></button>
         </div>
       </div>
@@ -223,6 +335,30 @@
     </div>`;
   }
 
+  /* ---------- 经理模式：先选难度 ---------- */
+  function renderMgrPick() {
+    const M = window.MGR || {};
+    const ds = M.DIFFS || {};
+    let order = Array.isArray(M.DIFF_ORDER) && M.DIFF_ORDER.length ? M.DIFF_ORDER : Object.keys(ds);
+    const list = order.map(k => ds[k]).filter(Boolean);
+    return `<div class="fade-in">
+      <div class="between" style="margin-bottom:16px">
+        <div><div class="kicker">MANAGER MODE</div><h2>当经理，不当选手</h2>
+        <p class="dim" style="margin:4px 0 0">你坐在办公室里，工资帽、转会、上场名单都是你的事。先选个难度。</p></div>
+        <button class="btn small ghost" data-act="tab" data-v="main">返回</button>
+      </div>
+      <div class="kicker" style="margin-bottom:8px">DIFFICULTY · 多难打</div>
+      <div class="base-grid">
+        ${list.map(d => `<div class="base-card" data-act="mgr-diff" data-v="${esc(d.key)}" style="cursor:pointer">
+          <div class="tag">${esc(String(d.key || "").toUpperCase())}${d.tag ? " · " + esc(d.tag) : ""}</div>
+          <h3>${esc(d.name || d.key)}</h3>
+          <p>${esc(d.desc || "")}</p>
+        </div>`).join("")}
+      </div>
+      <div class="panel flat" style="margin-top:16px"><div class="small-note">细的不说：轻松是给你熟悉流程的，正常是这游戏该有的样子，困难是给已经打过几遍的人准备的。选错了也能重开。</div></div>
+    </div>`;
+  }
+
   function renderHall() {
     let list = [];
     try { list = JSON.parse(localStorage.getItem("denshen_hof") || "[]") || []; } catch (e) { list = []; }
@@ -240,6 +376,7 @@
   }
 
   function renderSlots() {
+    const canSave = !!(G.canSave && G.canSave());
     const rows = ["auto", 1, 2, 3].map(s => {
       const has = G.hasSave(s);
       const label = s === "auto" ? "自动存档" : "手动档 " + s;
@@ -248,7 +385,7 @@
           <div><b>${label}</b> <span class="chip ${has ? "green" : ""}">${has ? "有档" : "空"}</span></div>
           <div class="row">
             ${has ? `<button class="btn small" data-act="load" data-v="${s}">读档</button>` : ""}
-            ${s !== "auto" ? `<button class="btn small ghost" data-act="save" data-v="${s}" ${started ? "" : "disabled"}>存档</button>` : ""}
+            ${s !== "auto" ? `<button class="btn small ghost" data-act="save" data-v="${s}" ${(started && canSave) ? "" : "disabled"} title="${started ? (canSave ? "本周刚开月，能存" : "只能月初存档") : "先开一局"}">${canSave ? "存档" : "只能月初存档"}</button>` : ""}
           </div>
         </div>
       </div>`;
@@ -258,17 +395,235 @@
         <div><div class="kicker">SAVES</div><h2>存档</h2></div>
         <button class="btn small ghost" data-act="tab" data-v="main">返回</button>
       </div>
+      ${started && !canSave ? `<div class="panel flat" style="border-color:rgba(232,185,35,.4)"><span class="chip gold">只能月初存档</span> <span class="small-note">这个月的进度已经动了。下个月开头再存，不然读回来对不上。</span></div>` : ""}
       ${rows}
     </div>`;
   }
 
   let codexTab = "worlds", codexQ = "";
+  let bfCat = "all", bfSeason = "all", bfTag = "all", bPage = 0;
+  let memeSub = "memes", cardSub = "talents", cardPage = 0;
+  const CATCN = { attitude: "嘴脸", betray: "背刺", cope: "嘴硬", food: "食堂", girl: "女粉", lazy: "摆烂", match: "比赛", money: "钱", rank: "排位", trash: "垃圾话" };
+  const MGR_EFFCN = { lanes: "对线", team: "团战", mental: "心态", GAME: "意识", MECH: "操作", MENTAL: "心态", TEAM: "团队" };
   function codexHit(o) {
     if (!codexQ) return true;
     try { return JSON.stringify(o).toLowerCase().indexOf(codexQ.toLowerCase()) >= 0; } catch (e) { return false; }
   }
-  function codexRow(a, b, c, d) {
-    return `<div class="chron-row"><span class="yr">${esc(a)}</span><span class="ch">${esc(b)}</span><span class="dim">${esc(c || "")}</span><span class="nt">${esc(d || "")}</span></div>`;
+  /* 第 5 个参数 art：给了（哪怕是空串）就给所有行留出缩略图列，保证年份对齐 */
+  function codexRow(a, b, c, d, art) {
+    const withArt = art !== undefined;
+    const pic = withArt ? `<span class="chron-art-wrap">${art ? `<img class="chron-art" src="${art}" alt="" width="46" height="32">` : ""}</span>` : "";
+    return `<div class="chron-row${withArt ? " has-art" : ""}">${pic}<span class="yr">${esc(a)}</span><span class="ch">${esc(b)}</span><span class="dim">${esc(c || "")}</span><span class="nt">${esc(d || "")}</span></div>`;
+  }
+  /* 显示名：gossip/编年史 里存的是 id，按 DATA_PLAYERS / DATA_TEAMS join 成真名 */
+  function displayName(who) {
+    if (!who) return "";
+    const P = window.DATA_PLAYERS || {}, T = window.DATA_TEAMS || {};
+    const g = x => (x && (x.displayName || x.name || x.cn)) || "";
+    if (P[who]) return g(P[who]) || who;
+    if (T[who]) return g(T[who]) || who;
+    return who;
+  }
+  /* 行内名字：编年史里有些对象只有 id 没 name，先 join 真名，再退 name，最后才用 id */
+  function rowName(o) {
+    if (!o) return "";
+    const id = o.id || o.name || "";
+    const nm = displayName(id);
+    if (nm && nm !== id) return nm;
+    if (o.name && o.name !== id) return o.name;
+    return id;
+  }
+  function guestName(b) {
+    if (!b) return "";
+    const nm = displayName(b.who);
+    if (nm && nm !== b.who) return nm;
+    return b.whoLabel || b.who || "";
+  }
+  function gossipAll() { return ((window.DATA_GOSSIP || {}).black || []); }
+  function gossipFiltered() {
+    const q = codexQ.toLowerCase();
+    return gossipAll().filter(b => {
+      if (bfCat !== "all" && b.cat !== bfCat) return false;
+      if (bfSeason !== "all" && String(b.season) !== String(bfSeason)) return false;
+      if (bfTag !== "all" && !(b.tag || []).some(t => String(t) === bfTag)) return false;
+      if (!q) return true;
+      const hay = [guestName(b), b.who, b.year, b.season, b.cat, (b.tag || []).join(" "), b.text].join(" ").toLowerCase();
+      return hay.indexOf(q) >= 0;
+    });
+  }
+  function pagerHTML(total, page, size, act) {
+    const pages = Math.max(1, Math.ceil(total / size));
+    let p = Number(page) || 0;
+    if (p >= pages) p = pages - 1;
+    if (p < 0) p = 0;
+    return {
+      page: p, pages,
+      html: `<div class="row between pager" style="margin-top:10px;align-items:center">
+        <span class="small-note">共 ${total} 条 · 第 ${p + 1}/${pages} 页</span>
+        <div class="row" style="gap:6px">
+          <button class="btn small ghost" data-act="${act}" data-v="-1"${p <= 0 ? " disabled" : ""}>上一页</button>
+          <button class="btn small ghost" data-act="${act}" data-v="1"${p >= pages - 1 ? " disabled" : ""}>下一页</button>
+        </div>
+      </div>`
+    };
+  }
+  function gossipCard(b) {
+    const chips = (b.tag || []).map(t => `<span class="chip">${esc(t)}</span>`).join("");
+    const risk = b.risk ? `<span class="chip ${b.risk === "high" ? "red" : b.risk === "mid" ? "gold" : ""}">风险 ${esc(b.risk)}</span>` : "";
+    const cat = b.cat ? `<span class="chip blue">${esc(CATCN[b.cat] || b.cat)}</span>` : "";
+    return `<div class="panel flat gossip-card">
+      <div class="between" style="align-items:flex-start;gap:10px">
+        <div class="row wrap" style="gap:6px">
+          <span class="chip gold">${esc(guestName(b))}</span>
+          <span class="chip">${esc(b.season || (b.year ? "第 " + b.year + " 年" : ""))}</span>${cat}${chips}
+        </div>
+        ${risk}
+      </div>
+      <div style="font-size:13px;line-height:1.7;margin-top:5px">${esc(b.text || "")}</div>
+    </div>`;
+  }
+  /* 黑料档案：20 条一页，可按人/队/年/标签筛，懒得筛也能翻 */
+  function gossipHTML() {
+    const all = gossipAll(), list = gossipFiltered();
+    const pg = pagerHTML(list.length, bPage, 20, "codex-bpage");
+    bPage = pg.page;
+    const rows = list.slice(bPage * 20, bPage * 20 + 20);
+    const seasons = Array.from(new Set(all.map(b => b.season).filter(Boolean))).sort((a, b) => String(b).localeCompare(String(a)));
+    const tags = Array.from(new Set(all.reduce((a, b) => a.concat(b.tag || []), []))).filter(Boolean);
+    const opt = (sel, v, label) => `<option value="${esc(v)}"${sel === String(v) ? " selected" : ""}>${esc(label || v)}</option>`;
+    return `<div class="row wrap" style="gap:6px;margin-bottom:8px">
+        <button class="chip ${bfCat === "all" ? "gold" : ""}" data-act="codex-cat" data-v="all">全部</button>
+        ${Object.keys(CATCN).map(k => `<button class="chip ${bfCat === k ? "gold" : ""}" data-act="codex-cat" data-v="${k}">${CATCN[k]}</button>`).join("")}
+      </div>
+      <div class="row wrap" style="gap:6px;margin-bottom:12px;align-items:center">
+        <span class="small-note">年份</span>
+        <select id="cf-season" class="input" style="width:auto;flex:0 0 auto;padding:6px 8px"><option value="all"${bfSeason === "all" ? " selected" : ""}>全部</option>${seasons.map(x => opt(bfSeason, x)).join("")}</select>
+        <span class="small-note">标签</span>
+        <select id="cf-tag" class="input" style="width:auto;flex:0 0 auto;max-width:160px;padding:6px 8px"><option value="all"${bfTag === "all" ? " selected" : ""}>全部</option>${tags.map(x => opt(bfTag, x)).join("")}</select>
+        <button class="btn small" data-act="codex-filter">筛选</button>
+        ${(bfCat !== "all" || bfSeason !== "all" || bfTag !== "all") ? `<button class="btn small ghost" data-act="codex-filter-reset">清空条件</button>` : ""}
+      </div>
+      <div style="display:grid;gap:6px">${rows.map(gossipCard).join("") || `<div class="small-note">没有对上号的。换个条件。</div>`}</div>
+      ${pg.html}`;
+  }
+  function fillLine(t) {
+    const S = (window.GAME && window.GAME.getState && window.GAME.getState()) || {};
+    const team = displayName(S.teamId) || S.teamName || "你的队";
+    return String(t == null ? "" : (typeof t === "string" ? t : (t.text || t.title || "")))
+      .replace(/\{opp\}/g, "对面").replace(/\{name\}/g, S.name || "你")
+      .replace(/\{team\}/g, team).replace(/\{pos\}/g, POSCN[S.pos] || "选手")
+      .replace(/#\{/g, "#").replace(/\}#/g, "#");
+  }
+  function trashHTML() {
+    const T = window.DATA_TRASH || {};
+    const groups = [["win", "赢了之后"], ["lose", "输了之后"], ["teammate", "队内嘴"], ["fan", "粉丝发言"]];
+    const box = (label, arr) => (arr || []).length ? `<h3 style="margin:16px 0 8px">${label} <span class="small-note">${arr.length} 条</span></h3>
+      <div style="display:grid;gap:6px">${arr.map(t => `<div class="panel flat"><div style="font-size:13px;line-height:1.7">${esc(fillLine(t))}</div></div>`).join("")}</div>` : "";
+    return `<div class="row wrap" style="gap:6px;margin-bottom:8px">
+      <button class="chip ${memeSub === "memes" ? "gold" : ""}" data-act="codex-memesub" data-v="memes">梗百科</button>
+      <button class="chip ${memeSub === "gossip" ? "gold" : ""}" data-act="codex-memesub" data-v="gossip">黑料档案</button>
+      <button class="chip ${memeSub === "trash" ? "gold" : ""}" data-act="codex-memesub" data-v="trash">抗压背锅吧</button>
+      <button class="chip ${memeSub === "hot" ? "gold" : ""}" data-act="codex-memesub" data-v="hot">热搜话题</button>
+    </div>
+    <p class="small-note">贴吧和微博那套话，看看就行。掉下去的时候他们会用同样的句式说你。</p>
+    ${groups.map(g => box(g[1], T[g[0]])).join("")}`;
+  }
+  function hotHTML() {
+    const H = window.DATA_HOT || {};
+    const groups = [["win", "赢了之后"], ["lose", "输了之后"], ["drama", "节奏"], ["hupu", "虎扑热帖"]];
+    const box = (label, arr) => (arr || []).length ? `<h3 style="margin:16px 0 8px">${label} <span class="small-note">${arr.length} 条</span></h3>
+      <div style="display:grid;gap:6px">${arr.map(t => `<div class="panel flat"><div style="font-size:13px;line-height:1.7">${esc(fillLine(t))}</div></div>`).join("")}</div>` : "";
+    return `<div class="row wrap" style="gap:6px;margin-bottom:8px">
+      <button class="chip ${memeSub === "memes" ? "gold" : ""}" data-act="codex-memesub" data-v="memes">梗百科</button>
+      <button class="chip ${memeSub === "gossip" ? "gold" : ""}" data-act="codex-memesub" data-v="gossip">黑料档案</button>
+      <button class="chip ${memeSub === "trash" ? "gold" : ""}" data-act="codex-memesub" data-v="trash">抗压背锅吧</button>
+      <button class="chip ${memeSub === "hot" ? "gold" : ""}" data-act="codex-memesub" data-v="hot">热搜话题</button>
+    </div>
+    <p class="small-note">赢的时候这些是赞美，输的时候同一个号换个主谓宾再发一遍。</p>
+    ${groups.map(g => box(g[1], H[g[0]])).join("")}`;
+  }
+  function memesHTML() {
+    const subs = `<div class="row wrap" style="gap:6px;margin-bottom:10px">
+      <button class="chip ${memeSub === "memes" ? "gold" : ""}" data-act="codex-memesub" data-v="memes">梗百科</button>
+      <button class="chip ${memeSub === "gossip" ? "gold" : ""}" data-act="codex-memesub" data-v="gossip">黑料档案</button>
+      <button class="chip ${memeSub === "trash" ? "gold" : ""}" data-act="codex-memesub" data-v="trash">抗压背锅吧</button>
+      <button class="chip ${memeSub === "hot" ? "gold" : ""}" data-act="codex-memesub" data-v="hot">热搜话题</button>
+    </div>`;
+    if (memeSub === "gossip") return subs + gossipHTML();
+    if (memeSub === "trash") return trashHTML();
+    if (memeSub === "hot") return hotHTML();
+    const MS = (window.DATA_MEME_EVENTS || []).filter(codexHit);
+    const body = MS.map(m => {
+      const srcChip = m.srcType === "real" ? `<span class="chip gold">真事改编</span>` : `<span class="chip">二创</span>`;
+      const opts = (m.opts || []).map((o, i) => `<div class="note-line" style="margin-top:6px"><b>${i + 1}. ${esc(o.t || "")}</b>${o.eff && Object.keys(o.eff).length ? `<span class="dim"> · ${esc(effCN(o.eff))}</span>` : ""}${o.res ? `<div class="src-note">${esc(o.res)}</div>` : ""}</div>`).join("");
+      return `<div class="panel flat meme-card">
+        <div class="between" style="align-items:flex-start;gap:10px">
+          <div class="row wrap" style="gap:6px">
+            ${m.who ? `<span class="chip blue">${esc(m.who)}</span>` : ""}
+            <span class="chip">第 ${esc(m.year || "?")} 年</span>${m.cat ? `<span class="chip">${esc(m.cat)}</span>` : ""}
+          </div>${srcChip}
+        </div>
+        <div style="font-size:13px;line-height:1.75;margin-top:6px">${esc(m.text || "")}</div>
+        ${m.quote ? `<div class="src-quote">「${esc(m.quote)}」</div>` : ""}
+        ${m.source ? `<div class="src-note">来源：${esc(m.source)}</div>` : ""}
+        ${m.ctx ? `<div class="src-note">${esc(m.ctx)}</div>` : ""}
+        <div style="margin-top:6px">${opts}</div>
+      </div>`;
+    }).join("");
+    return subs + `<div style="display:grid;gap:8px">${body || `<div class="small-note">搜不到这条梗。</div>`}</div>
+      <p class="small-note" style="margin-top:12px">梗是人编的，年份可能记错，当事人也可能根本没说过。当真你就输了。</p>`;
+  }
+  function cardsHTML() {
+    const TAL = window.DATA_TALENTS || [], MGR = window.DATA_MGR || {};
+    const subs = [["talents", "天赋 " + TAL.length], ["tactics", "经理战术 " + (MGR.tactics || []).length], ["players", "选手卡 " + (MGR.cards || []).length]];
+    const chips = `<div class="row wrap" style="gap:6px;margin-bottom:10px">
+      ${subs.map(x => `<button class="chip ${cardSub === x[0] ? "gold" : ""}" data-act="codex-cardsub" data-v="${x[0]}">${x[1]}</button>`).join("")}
+    </div>`;
+    const S0 = (window.GAME && window.GAME.getState && window.GAME.getState()) || {};
+    const seen = {};
+    (S0.bag || []).concat(S0.talents || []).forEach(id => { seen[id] = true; });
+    let list = cardSub === "tactics" ? (MGR.tactics || []) : cardSub === "players" ? (MGR.cards || []) : TAL;
+    const q = codexQ.toLowerCase();
+    list = list.filter(x => !q || JSON.stringify(x).toLowerCase().indexOf(q) >= 0);
+    const pg = pagerHTML(list.length, cardPage, 30, "codex-cpage");
+    cardPage = pg.page;
+    const rows = list.slice(cardPage * 30, cardPage * 30 + 30);
+    const effMgr = eff => Object.keys(eff || {}).map(k => (MGR_EFFCN[k] || k) + ((typeof eff[k] === "number" && eff[k] > 0) ? "+" + eff[k] : (typeof eff[k] === "number" ? eff[k] : ""))).join(" · ");
+    const body = rows.map(x => {
+      if (cardSub === "tactics") {
+        return `<div class="panel flat card-row">
+          <div class="between"><b>${esc(x.name || "")}</b><span class="row wrap" style="gap:5px"><span class="chip">${esc(x.dim || "")}</span><span class="chip gold">${esc(x.rarity || "")}</span></span></div>
+          <div class="small-note" style="margin-top:4px">${esc(x.desc || "")}</div>
+          <div class="small-note" style="color:var(--gold);margin-top:3px">${esc(effMgr(x.eff))}</div>
+        </div>`;
+      }
+      if (cardSub === "players") {
+        const st = x.st || {};
+        const kk = ["LANE", "MECH", "GAME", "POOL"].map(k => `${STATCN(k)} ${esc(st[k] == null ? "?" : Math.round(st[k]))}`).join(" · ");
+        return `<div class="panel flat card-row">
+          <div class="between"><b>${esc(x.name || "")}</b><span class="row wrap" style="gap:5px"><span class="chip gold">${esc(x.year || "")}</span><span class="chip">${esc(POSCN[x.pos] || x.pos || "")}</span><span class="chip">OVR ${esc(x.ovr == null ? "" : x.ovr)}</span></span></div>
+          <div class="small-note" style="margin-top:3px">${esc(x.cn || "")}${x.team ? " · " + esc(displayName(x.team) || x.team) : ""}${x.trait ? " · " + esc(x.trait) : ""}</div>
+          <div class="small-note mono" style="margin-top:3px">${kk}</div>
+          <div class="row wrap" style="gap:5px;margin-top:4px">${(x.tags || []).map(t => `<span class="chip">${esc(t)}</span>`).join("")}</div>
+        </div>`;
+      }
+      const got = seen[x.id];
+      return `<div class="panel flat card-row${got ? "" : " is-unknown"}">
+        <div class="between"><b>${esc(x.name || "")}</b><span class="row wrap" style="gap:5px">
+          <span class="chip gold">${esc(x.rarity || "")}</span>${x.build ? `<span class="chip blue">${esc(BUILDN(x.build) || x.build)}</span>` : ""}
+          ${got ? `<span class="chip gold">已获得</span>` : `<span class="chip dark">未获得</span>`}
+        </span></div>
+        <div class="small-note" style="margin-top:4px">${esc(x.desc || "")}</div>
+        <div class="small-note" style="color:var(--gold);margin-top:3px">${esc(effCN(x.eff || {}))}</div>
+        ${srcLine(x.src, "mini")}
+      </div>`;
+    }).join("");
+    const hint = cardSub === "talents"
+      ? `天赋卡 ${TAL.length} 张，你已经拿到 ${Math.min(TAL.length, Object.keys(seen).length)} 张。没拿到的也给你摆出来，看着长大的。`
+      : cardSub === "tactics" ? `经理模式里能点出来的战术，一共 ${(MGR.tactics || []).length} 套。` : `经理模式的选手卡，${(MGR.cards || []).length} 张，按年份和位置翻。`;
+    return chips + `<p class="small-note">${hint}</p>
+      <div style="display:grid;gap:7px;margin-top:8px">${body || `<div class="small-note">这页没搜到。清空搜索再试。</div>`}</div>
+      ${pg.html}`;
   }
   function renderCodex() {
     const total = {
@@ -279,7 +634,9 @@
       black: ((window.DATA_GOSSIP || {}).black || []).length
     };
     const ch = window.DATA_CHRONICLE || {};
-    const TABS = [["update", "更新"], ["worlds", "世界赛"], ["msi", "MSI"], ["lpl", "LPL"], ["timeline", "时间线"], ["hl", "名场面"], ["teams", "战队"], ["players", "选手"]];
+    const TABS = [["update", "更新"], ["memes", "梗百科"], ["cards", "卡牌图鉴"], ["worlds", "世界赛"], ["msi", "MSI"], ["lpl", "LPL"], ["timeline", "时间线"], ["hl", "名场面"], ["teams", "战队"], ["players", "选手"]];
+    const mgrN = (window.DATA_MGR || {});
+    const totalMgr = { tac: (mgrN.tactics || []).length, card: (mgrN.cards || []).length };
     let body = "";
     if (codexTab === "update") {
       const CL = window.DATA_CHANGELOG || [];
@@ -293,28 +650,32 @@
       </div>`).join("");
       if (!body) body = `<div class="small-note">还没有更新记录。</div>`;
       body = `<div class="upd">${body}</div>`;
+    } else if (codexTab === "memes") {
+      body = memesHTML();
+    } else if (codexTab === "cards") {
+      body = cardsHTML();
     } else if (codexTab === "worlds") {
-      body = (ch.worlds || []).filter(codexHit).map(w => codexRow(w.year, w.champion, "亚军 " + (w.runner || "?") + (w.city ? " · " + w.city : ""), (w.story || "") + (w.lpl ? " ｜LPL：" + w.lpl : ""))).join("");
+      body = (ch.worlds || []).filter(codexHit).map(w => codexRow(w.year, w.champion, "亚军 " + (w.runner || "?") + (w.city ? " · " + w.city : ""), (w.story || "") + (w.lpl ? " ｜LPL：" + w.lpl : ""), A.archiveArt(w.year))).join("");
     } else if (codexTab === "msi") {
-      body = (ch.msi || []).filter(codexHit).map(m => codexRow(m.year, m.champion, "亚军 " + (m.runner || "?"), m.story || "")).join("");
+      body = (ch.msi || []).filter(codexHit).map(m => codexRow(m.year, m.champion, "亚军 " + (m.runner || "?"), m.story || "", A.archiveArt(m.year))).join("");
     } else if (codexTab === "lpl") {
-      body = (ch.lpl || []).filter(codexHit).map(x => codexRow(x.year + " " + (x.split || ""), x.champion, "亚军 " + (x.runner || "?"), x.story || "")).join("");
+      body = (ch.lpl || []).filter(codexHit).map(x => codexRow(x.year + " " + (x.split || ""), x.champion, "亚军 " + (x.runner || "?"), x.story || "", A.archiveArt(x.year))).join("");
     } else if (codexTab === "timeline") {
-      body = (ch.timeline || []).filter(codexHit).map(t => codexRow(t.year || t.date || "", t.t || t.title || "", t.who || "", t.text || t.desc || "")).join("");
+      body = (ch.timeline || []).filter(codexHit).map(t => codexRow(t.year || t.date || "", t.t || t.title || "", displayName(t.who) || "", t.text || t.desc || "", A.archiveArt(t.year))).join("");
     } else if (codexTab === "hl") {
       const hs = ((G.getState() || {}).highlights || []).slice().reverse();
       body = hs.filter(codexHit).map(h => codexRow(h.event || "", h.hero || "", (HL_KIND[h.kind] || h.kind || "") + " " + (h.score || ""), h.text || "")).join("");
     } else if (codexTab === "teams") {
       const arr = Array.isArray(ch.teams) ? ch.teams : Object.keys(ch.teams || {}).map(k => Object.assign({ id: k, name: k }, ch.teams[k]));
-      body = arr.filter(codexHit).map(t => codexRow(t.name || t.id, t.region || "", (t.titles || []).length + " 冠", t.story || t.desc || "")).join("");
+      body = arr.filter(codexHit).map(t => codexRow(rowName(t), t.region || "", (t.titles || []).length + " 冠", t.story || t.desc || "")).join("");
     } else {
       const arr = Array.isArray(ch.players) ? ch.players : Object.keys(ch.players || {}).map(k => Object.assign({ id: k, name: k }, ch.players[k]));
-      body = arr.filter(codexHit).map(p => codexRow(p.name || p.id, p.team || "", p.peak ? "巅峰 " + p.peak : "", (p.moments || []).map(m => (m.year ? m.year + " " : "") + (m.event || "") + "：" + (m.text || "")).join(" ｜ "))).join("");
+      body = arr.filter(codexHit).map(p => codexRow(rowName(p), displayName(p.team) || p.team || "", p.peak ? "巅峰 " + p.peak : "", (p.moments || []).map(m => (m.year ? m.year + " " : "") + (m.event || "") + "：" + (m.text || "")).join(" ｜ "))).join("");
     }
     if (!body) body = `<div class="small-note" style="padding:12px 0">这里没有你要找的。换个词试试。</div>`;
-    /* 黑料档案：只给有证据的公开争议，随比赛解锁 */
+    const freeForm = codexTab === "memes" || codexTab === "cards";
+    /* 黑料档案：只给有证据的公开争议，20 条一页，按人/队/年/标签筛 */
     const S0 = G.getState();
-    const blacks = ((window.DATA_GOSSIP || {}).black || []).filter(codexHit).slice(0, 12);
     return `<div class="fade-in">
       <div class="between" style="margin-bottom:14px">
         <div><div class="kicker">ARCHIVE</div><h2>档案室</h2></div>
@@ -345,21 +706,14 @@
           <button class="btn small" data-act="codex-go" style="width:auto">搜</button>
           ${codexQ ? `<button class="btn small ghost" data-act="codex-clear" style="width:auto">清空</button>` : ""}
         </div>
-        <div class="chron">${body}</div>
+        <div class="${freeForm ? "codex-body" : "chron"}">${body}</div>
         <div class="divider"></div>
         <h3>黑料档案</h3>
         <p class="story">赛场上能查的都在上面。赛场外的这些东西，真伪自己判断，别当真。${S0 && S0.story && S0.story.corrupt >= 20 ? "\n\n你自己身上也有几条了。有些东西一旦写下来就删不掉。" : ""}</p>
-        <div style="display:grid;gap:6px;margin-top:8px">
-          ${blacks.map(b => {
-            const who = b.who || b.w || "";
-            const txt = b.text || b.t || b.desc || "";
-            const yr = b.year ? "第 " + b.year + " 年" : "";
-            return `<div class="panel flat"><div class="small-note" style="color:var(--gold)">${esc(who)} ${esc(yr)}</div><div style="font-size:13px;line-height:1.7">${esc(txt)}</div></div>`;
-          }).join("")}
-        </div>
+        ${gossipHTML()}
         <div class="divider"></div>
         <h3>数据量</h3>
-        <p class="story">事件 ${total.ev} 条 · 天赋卡 ${total.tal} 张 · 英雄 ${total.hero} 个 · 战队 ${total.team} 支 · 选手 ${total.pl} 名 · 黑料 ${total.black} 条。
+        <p class="story">事件 ${total.ev} 条 · 天赋卡 ${total.tal} 张 · 经理战术 ${totalMgr.tac} 套 · 选手卡 ${totalMgr.card} 张 · 英雄 ${total.hero} 个 · 战队 ${total.team} 支 · 选手 ${total.pl} 名 · 黑料 ${total.black} 条。
         编年史写到 2024（Worlds 2011–2024、MSI 2015–2024、LPL 2015–2024），2025 年起全部为推演。</p>
       </div>
     </div>`;
@@ -516,31 +870,79 @@
 
   /* ---------- 月度行动 ---------- */
   function renderAction(s) {
+    const S = G.getState();
+    const ml = s.ml || s.month || G.monthLabel(S.tick);
+    const acts = dedupeByLabel(s.acts || []);
+    const frees = dedupeByLabel(s.frees || []);
+    const used = s.actionUsed === true;
+    const isNew = s.actionUsed != null || acts.some(a => a && (a.id || a.energyCost != null || a.used != null || a.can === false));
+    const cnt = used ? "1/1" : "0/1";
+    const subline = used ? "已用，进入赛程" : "一个月只做一件事，点完就进赛程";
+
+    const actRows = acts.map((a, i) => {
+      const blocked = a.can === false;
+      const isUsed = used || a.used === true;
+      const cls = isUsed ? " is-used" : (blocked ? " is-off" : "");
+      const vAttr = (isNew && a.id) ? ` data-v="${esc(a.id)}"` : "";
+      const lock = "";
+      const ec = typeof a.energyCost === "number" ? a.energyCost : null;
+      const gainM = /\+(\d+)/.exec(a.cost || "");
+      const delta = ec == null ? 0 : (ec > 0 ? ec : (ec === 0 && gainM ? -Number(gainM[1]) : 0));
+      const costTxt = ec != null ? (ec > 0 ? "精力 −" + ec : (a.cost || "精力 ±0")) : (a.cost || "");
+      const prev = delta ? energyPreview(delta) : "";
+      const chip = isUsed
+        ? `<span class="chip dark">已用，进入赛程</span>`
+        : `<span class="chip gold">${esc(a.tag || "")}</span>`;
+      const why = blocked && a.reason ? `<span class="act-why">${esc(a.reason)}</span>` : "";
+      return `<div class="opt${blocked ? " dim" : ""}">
+        <span class="idx">${i + 1}</span>
+        <button class="btn act-btn${cls}" data-act="choose" data-i="${i}"${vAttr}${lock}>
+          ${esc(a.label)} ${chip}
+          <span class="tagline">${esc(a.desc || "")}</span>
+          ${prev ? `<span class="tagline mono">${prev}</span>` : ""}
+          ${why}
+        </button>
+        <span class="cost" style="padding-top:12px">${esc(costTxt)}</span>
+      </div>`;
+    }).join("");
+
+    const freeRows = frees.map((f, i) => {
+      const id = f.id || f.key || "";
+      const blocked = f.can === false;
+      const usedFree = f.used === true || (!isNew && id === "shop" && S.shopDone);
+      const vv = isNew ? (id || "free") : "free";
+      const lock = "";
+      const energyChip = f.energyCost != null && f.energyCost > 0
+        ? `<span class="chip">耗精力 −${f.energyCost}，不占行动</span>`
+        : (/练英雄|定打法/.test(f.label || "") ? `<span class="chip">耗精力，不占行动</span>` : "");
+      const onceChip = usedFree
+        ? `<span class="chip dark">本月已用</span>`
+        : (isNew && id === "shop" ? `<span class="chip">本月一次</span>` : "");
+      const why = blocked && f.reason ? `<span class="act-why">${esc(f.reason)}</span>` : "";
+      return `<button class="btn small free-btn${usedFree ? " is-used" : ""}${blocked ? " is-off" : ""}" data-act="choose" data-i="${i}" data-v="${esc(vv)}"${lock}>
+        ${esc(f.label)}${energyChip}${onceChip}<span class="small-note">${esc(f.note || f.desc || "")}</span>${why}
+      </button>`;
+    }).join("");
+
     return shell(`<div class="fade-in">
-      <div class="between">
+      <div class="between act-head">
         <div>
-          <div class="kicker">${s.ml.year} 年 ${s.ml.month} 月</div>
-          <h2 style="margin:5px 0 0">这个月做点什么</h2>
+          <div class="kicker">${ml.year} 年 ${ml.month} 月 · 月度行动</div>
+          <h2 style="margin:5px 0 0">本月行动 · ${cnt}</h2>
         </div>
-        <div class="small-note">一个月一个行动</div>
+        <div class="small-note">${subline}</div>
       </div>
       <div class="opts" style="margin-top:16px;display:grid;gap:9px">
-        ${s.acts.map((a, i) => `<div class="opt">
-          <span class="idx">${i + 1}</span>
-          <button class="btn" data-act="choose" data-i="${i}">
-            ${esc(a.label)} <span class="chip gold" style="margin-left:6px">${esc(a.tag)}</span>
-            <span class="tagline">${esc(a.desc)}</span>
-          </button>
-          <span class="cost" style="padding-top:12px">${esc(a.cost)}</span>
-        </div>`).join("")}
+        ${actRows}
       </div>
-      ${(s.frees || []).length ? `<div class="free-zone">
-        <div class="free-head"><span class="kicker">FREE · 不耗体力</span><span class="small-note">随便点，点完还是这个月，不占行动</span></div>
-        <div class="free-row">
-          ${s.frees.map((f, i) => `<button class="btn small free-btn" data-act="choose" data-v="free" data-i="${i}">
-            ${esc(f.label)}<span class="small-note">${esc(f.note || "")}</span>
-          </button>`).join("")}
-        </div>
+      ${frees.length ? `<div class="free-zone">
+        <div class="free-head"><span class="kicker">FREE · 不占行动</span><span class="small-note">不耗本月行动，点完还是这个月</span></div>
+        <div class="free-row">${freeRows}</div>
+      </div>` : ""}
+      ${s.feedback && (s.feedback.lines || []).length ? `<div class="feedback-panel"><span class="kicker">上月采购到手</span>${s.feedback.lines.map(l => `<div class="note-line">· ${esc(l)}</div>`).join("")}</div>` : ""}
+      ${used ? `<div class="row between" style="margin-top:16px;gap:10px">
+        <div class="small-note">行动已经用掉了。继续走进赛程。</div>
+        <button class="btn primary small" style="width:auto" data-act="choose" data-i="0" data-v="next">已用，进入赛程</button>
       </div>` : ""}
     </div>`);
   }
@@ -612,7 +1014,7 @@
           <span class="honor">${g.dmg}%</span>
         </div>`).join("")}
       </div>
-      ${s.patch ? `<div class="panel flat" style="margin-top:12px"><span class="chip gold">版本</span> <span class="dim">${esc(typeof s.patch === "string" ? s.patch : "14." + (s.patch.no || "") + " · 环境 " + (s.patch.env || ""))}</span></div>` : ""}
+      ${s.patch ? `<div class="panel flat" style="margin-top:12px"><span class="chip gold">版本</span> <span class="dim">${esc(typeof s.patch === "string" ? s.patch : patchVer(s.patch) + " · 环境 " + (s.patch.env || ""))}</span></div>` : ""}
       ${s.hot ? `<div class="panel flat" style="margin-top:10px"><span class="chip red">热搜</span> <span style="font-size:13px">${esc(s.hot)}</span></div>` : ""}
       ${trashLine((s.l || 0) > (s.w || 0) ? "lose" : "win") ? `<div class="panel flat" style="margin-top:10px"><span class="chip">论坛</span> <span style="font-size:13px" class="dim">${esc(trashLine((s.l || 0) > (s.w || 0) ? "lose" : "win"))}</span></div>` : ""}
       <div class="right" style="margin-top:18px;text-align:right"><button class="btn primary small" data-act="choose" data-i="0">过完这个月</button></div>
@@ -702,23 +1104,36 @@
 
   /* ---------- 月末 ---------- */
   function renderMonthEnd(s) {
+    const eNow = Math.round(s.energy == null ? 0 : s.energy), eB = (s.energyBand && s.energyBand.name) ? s.energyBand : energyBandOf(eNow);
+    const ePrev = s.preEnergy != null ? Math.round(s.preEnergy) : null;
+    const mNow = Math.round(s.money == null ? 0 : s.money), mB = (s.moneyBand && s.moneyBand.name) ? s.moneyBand : moneyBandOf(mNow);
+    const expenses = s.expenses || [];
+    const notes = s.notes || [];
+    const statusTxt = s.forcedRest ? "强制休息" : (s.injured ? "伤病" : (eB.name || "正常"));
     return shell(`<div class="fade-in">
       <div class="kicker">${s.ml.year} 年 ${s.ml.month} 月 · 结算</div>
       <h2 style="margin:5px 0 14px">月底</h2>
       <div class="stat-grid">
         <div class="stat-cell"><div class="k">评分</div><div class="v gold">${s.ovr}</div></div>
-        <div class="stat-cell"><div class="k">精力</div><div class="v">${Math.round(s.energy)}</div></div>
+        <div class="stat-cell" title="${bandTip(eB, energyBands(), eNow)}"><div class="k">精力</div><div class="v" style="color:${eB.color || "inherit"}">${eNow}<span style="font-size:12px;color:var(--dim,#8b96a3);margin-left:4px">${esc(eB.name || "")}</span></div></div>
         <div class="stat-cell"><div class="k">心态</div><div class="v">${Math.round(s.morale)}</div></div>
         <div class="stat-cell"><div class="k">士气</div><div class="v">${s.spirit == null ? "—" : Math.round(s.spirit)}</div></div>
         <div class="stat-cell"><div class="k">话语权</div><div class="v">${s.voice}</div></div>
         <div class="stat-cell"><div class="k">名气</div><div class="v">${s.fame}</div></div>
         <div class="stat-cell"><div class="k">粉丝</div><div class="v" style="font-size:17px">${fan(s.fans)}</div></div>
         <div class="stat-cell"><div class="k">本月工资</div><div class="v" style="font-size:16px">+${s.pay == null ? 0 : s.pay} 万</div></div>
-        <div class="stat-cell"><div class="k">存款</div><div class="v" style="font-size:16px">${Math.round(s.money || 0)} 万</div></div>
+        <div class="stat-cell" title="${bandTip(mB, moneyBands(), mNow)}"><div class="k">存款</div><div class="v" style="font-size:16px;color:${mB.color || "inherit"}">${mNow} 万<span style="font-size:12px;color:var(--dim,#8b96a3);margin-left:4px">${esc(mB.name || "")}</span></div></div>
         <div class="stat-cell"><div class="k">抽卡券</div><div class="v" style="font-size:16px">${s.ticket || 0}</div></div>
         <div class="stat-cell"><div class="k">抽卡</div><div class="v" style="font-size:17px">${s.draws > 0 ? s.draws + " 次" : "—"}</div></div>
-        <div class="stat-cell"><div class="k">状态</div><div class="v" style="font-size:16px">${s.injured ? "伤病" : "正常"}</div></div>
+        <div class="stat-cell"><div class="k">状态</div><div class="v" style="font-size:16px;color:${s.injured || s.forcedRest ? "#e0423f" : (eB.color || "inherit")}">${esc(statusTxt)}</div></div>
       </div>
+      ${ePrev != null ? `<div class="panel flat" style="margin-top:12px"><span class="chip">精力变化</span> <span class="dim mono">月初 ${ePrev} → 月底 ${eNow}（${eNow - ePrev >= 0 ? "+" : ""}${eNow - ePrev}）${ePrev !== eNow ? " · " + esc(eB.note || "") : ""}</span></div>` : ""}
+      ${expenses.length ? `<div class="panel flat" style="margin-top:12px">
+        <div class="between"><span class="kicker">本月支出</span><span class="dim mono">合计 ${s.expenseTotal != null ? s.expenseTotal : "—"} 万</span></div>
+        ${expenses.map(x => `<div class="expense-row"><span>${esc(x.label || x.n || x.name || "")}</span><b class="neg">−${esc(x.amount != null ? x.amount : (x.v != null ? x.v : "?"))} 万</b></div>`).join("")}
+      </div>` : ""}
+      ${notes.length ? `<div class="panel flat" style="margin-top:12px">${notes.map(n => `<div class="note-line">· ${esc(n)}</div>`).join("")}</div>` : ""}
+      ${s.forcedRest ? `<div class="panel flat" style="margin-top:12px;border-color:rgba(240,122,31,.5)"><span class="chip" style="color:#f07a1f;border-color:#f07a1f">强制休息</span> <span class="dim">这个月你被按在床上了，训练和比赛全停。身体是自己的，联赛不等人。</span></div>` : ""}
       ${s.injured ? `<div class="panel flat" style="margin-top:12px;border-color:rgba(211,58,58,.5)"><span class="chip red">伤病</span> <span class="dim">手腕又疼了。这个月你只能看着别人打。</span></div>` : ""}
       ${s.draws > 0 ? `<div class="panel flat" style="margin-top:12px"><span class="chip gold">机遇</span> <span class="dim">这个月有 ${s.draws} 次抽卡机会，赛季末的池子最肥。</span></div>` : ""}
       <div class="row between" style="margin-top:20px;gap:12px">
@@ -744,6 +1159,7 @@
             <div class="cdesc">${esc(c.desc)}</div>
             <div class="cflavor" style="color:var(--gold)">${esc(effCN(c.eff || {}))}</div>
             ${c.flavor ? `<div class="cflavor">${esc(c.flavor)}</div>` : ""}
+            ${srcLine(srcOf(c))}
           </div></div>`;
         }).join("")}
       </div>
@@ -788,8 +1204,11 @@
 
   /* ---------- 退役 ---------- */
   function renderRetire(s) {
+    const S = G.getState() || {};
+    const ml = s.ml || S._ml || {};
+    const kicker = ml.month ? `DECISION · ${ml.year} 年 ${ml.month} 月` : "DECISION · 赛季末";
     return shell(`<div class="fade-in">
-      <div class="kicker">DECISION · 十一月</div>
+      <div class="kicker">${esc(kicker)}</div>
       <h1 style="margin:8px 0 6px">还打吗</h1>
       <p class="dim">你 ${s.age} 岁，第 ${s.season} 季。手还能动，反应慢了一点。经理把续约合同放在桌上，没催你。</p>
       <div class="stat-grid" style="margin-top:16px">
@@ -841,7 +1260,9 @@
     const isEndless = s.mode === "endless";
     const reasonText = { age: "打到了打不动", fade: "没人要了", retire: "自己按下的停止键", three: "三年打完，落子无悔" }[s.reason || "three"] || "";
     return shell(`<div class="fade-in">
-      <div class="ending-hero">
+      <div class="ending-hero has-art">
+        <div class="ending-art" style="background-image:url('${A.endingArt(s)}')" aria-hidden="true"></div>
+        <div class="ending-shade" aria-hidden="true"></div>
         <div class="rank">${esc(s.end.rank)} · ${esc(s.end.sub)}</div>
         <h1>${esc(s.end.name)}</h1>
         <div class="scene-tag" style="margin-top:8px">${esc(s.name)} · ${POSCN[s.pos]} · ${esc(s.teamName)} · ${isEndless ? `第 ${s.season} 季 · ${s.age} 岁` : "2025–2027"}</div>
@@ -908,6 +1329,31 @@
   const RC = r => ((G.RARITY || {})[r] || { c: "#9aa7b4", n: "" });
   const BUILDN = k => (((TERM().build || {})[k] || {}).name) || "";
   const KEYVAR = k => (((TERM().keyVar || {})[k]) || k);
+  /* 天赋卡的「原梗」：src 由数据层给（real/parody/original），缺失就整行不显示 */
+  function talentById(id) {
+    if (!id) return null;
+    const all = (G.talents ? G.talents() : (window.DATA_TALENTS || [])) || [];
+    for (let i = 0; i < all.length; i++) if (all[i] && all[i].id === id) return all[i];
+    return null;
+  }
+  function srcOf(card) {
+    if (card && card.src && typeof card.src === "object") return card.src;
+    const t = card && talentById(card.id);
+    return (t && t.src && typeof t.src === "object") ? t.src : null;
+  }
+  function srcLine(src, cls) {
+    if (!src || typeof src !== "object") return "";
+    if (src.type === "original") {
+      return `<div class="card-src ${cls || ""}">原创梗${src.note ? " · " + esc(src.note) : ""}</div>`;
+    }
+    const who = esc(src.who || "圈内");
+    const segs = [who];
+    if (src.year && String(src.year) !== "0") segs.push(esc(String(src.year)));
+    if (src.event) segs.push(esc(src.event));
+    const q = src.quote ? `<span class="src-quote">「${esc(src.quote)}」</span>` : "";
+    const n = src.note ? `<span class="src-note">${esc(src.note)}</span>` : "";
+    return `<div class="card-src ${cls || ""}">原梗：${segs.join(" · ")}${q}${n}</div>`;
+  }
   function tagsHTML(tags, cls) {
     return (tags || []).map(t => {
       if (t && typeof t === "object") {
@@ -920,11 +1366,18 @@
   }
 
   /* ---------- 版本更新 ---------- */
+  function patchVer(p) {
+    if (!p) return "";
+    if (typeof p.ver === "string") return p.ver;
+    if (!p.no) return "";
+    const yy = Number(p.year) >= 2000 ? (Number(p.year) % 100) : null;
+    return (yy ? String(yy) : "25") + "." + p.no;
+  }
   function renderPatch(s) {
     const p = s.patch || {}, list = p.list || [];
     return shell(`<div class="fade-in">
       <div class="between">
-        <div><div class="kicker">${p.year} 年 ${p.month} 月 · 版本 ${p.no ? "14." + p.no : ""}</div>
+        <div><div class="kicker">${p.year} 年 ${p.month} 月 · 版本 ${patchVer(p)}</div>
         <h2 style="margin:5px 0 0">${p.big ? "大版本" : "补丁"}更新</h2></div>
         <div class="row"><span class="chip ${p.big ? "gold" : "blue"}">环境：${esc(p.env || "")}</span></div>
       </div>
@@ -952,6 +1405,7 @@
       <div class="match-list" style="margin-top:12px">
         ${rows.map(r => `<div class="match-row" style="${r.mine ? "border-color:rgba(240,195,60,.6);background:rgba(240,195,60,.06)" : ""}">
           <span class="res ${r.rank <= 4 ? "w" : ""}" style="width:44px">${r.rank}</span>
+          ${A.crest(r.id || r.name, 26, r.color || "#e8b923")}
           <span class="opp">${esc(r.name)}${r.mine ? ' <span class="chip gold">你</span>' : ""}</span>
           <span class="dim" style="font-family:var(--mono)">${r.w}-${r.l}</span>
           <span class="honor">${(r.last || []).join("")}</span>
@@ -1000,16 +1454,22 @@
         <div style="text-align:right"><div class="mono" style="font-size:20px;color:var(--gold)">${esc(s.score || "0-0")}</div><div class="small-note">大比分</div></div>
       </div>`;
     if (s.step === 0) {
+      const dataKnown = s.dataKnown != null ? !!s.dataKnown : (s.reveal > 0);
       return shell(`<div class="fade-in">${head}
         <div class="panel flat" style="margin-top:12px">
           <div class="between wrap">
 <div><span class="chip ${s.side === "blue" ? "blue" : "red"}">${s.side === "blue" ? "蓝方 · 一选" : "红方 · 后手"}</span>
             <span class="chip blue" style="margin-left:6px">对面打法：${esc((s.opp || {}).tendency || "运营")}</span>
             <span class="chip" style="margin-left:6px">我方 OVR ${s.myOvr} · 对面战力 ${s.oppPower}</span>
-            ${s.decider ? `<span class="chip gold" style="margin-left:6px">决胜局 · ${s.banNeed || 3} ban</span>` : ""}</div>
-            <div class="small-note">${s.reveal > 0 ? "数据团队给了一份报告：多看一层 BP 倾向" : "没有数据团队，对面练什么全靠猜"}</div>
+            ${s.decider ? `<span class="chip gold" style="margin-left:6px">决胜局 · 本轮还剩 ${s.banLeft != null ? s.banLeft : (s.banNeed != null ? s.banNeed : 3)} ban</span>` : (s.banLeft != null ? `<span class="chip">本轮还剩 ${s.banLeft} ban</span>` : "")}</div>
+            <div class="small-note">${dataKnown ? "数据团队给了一份报告：多看一层 BP 倾向" : "没有数据团队，对面练什么全靠猜"}</div>
           </div>
-          ${s.coachTip ? `<div class="small-note" style="margin-top:8px;color:var(--gold-2)">${esc(s.coachTip)}</div>` : ""}
+          ${dataKnown && ((s.oppComfort || []).length || s.oppOnePick) ? `<div class="row wrap" style="gap:6px;margin-top:8px">
+            ${(s.oppComfort || []).length ? `<span class="small-note">对面舒适区：</span>` : ""}
+            ${(s.oppComfort || []).map(c => `<span class="chip red">${esc(typeof c === "string" ? c : ((c.n || c.hero || "") + (c.star ? " · 最熟" : "")))}</span>`).join("")}
+            ${s.oppOnePick ? `<span class="chip gold">可能一选 ${esc(s.oppOnePick)}</span>` : ""}
+          </div>` : ""}
+          ${s.coachTip ? `<div class="small-note" style="margin-top:8px;color:var(--gold-2)">助教：${esc(s.coachTip)}</div>` : ""}
 ${(s.oppBans || []).length ? `<div class="row wrap" style="gap:6px;margin-top:8px">
             <span class="small-note">对面先手 ban 掉了你的：</span>
             ${s.oppBans.map(b => `<span class="chip red">${esc(b)}</span>`).join("")}
@@ -1021,14 +1481,29 @@ ${(s.oppBans || []).length ? `<div class="row wrap" style="gap:6px;margin-top:8p
         </div>
         <div class="scene-tag" style="margin-top:16px">第一步 · ban 掉对面的英雄${s.decider ? "（决胜局 ban 三个，按掉绝活他这条线就废一半）" : ""}</div>
         <div class="opts" style="display:grid;gap:9px;margin-top:10px">
-          ${(s.banOpts || []).map((o, i) => `<div class="opt"><span class="idx">${i + 1}</span>
-            <button class="btn" data-act="choose" data-i="${i}">${esc(o.t)}
-              <span class="tagline">${o.comfort ? `<span class="chip red">对面常用</span>` : ""}<span class="chip">${esc(o.d || "")}</span></span>
-            </button></div>`).join("")}
+          ${(s.banOpts || []).map((o, i) => {
+            const nm = o.n != null ? (o.n ? "ban " + o.n : "不 ban，留着名额") : (o.t || "");
+            const vv = o.pick || (o.n != null ? "ban:" + (o.n || "") : null);
+            const vAttr = vv ? ` data-v="${esc(vv)}"` : "";
+            const tg = o.tag == null ? [] : (Array.isArray(o.tag) ? o.tag : [o.tag]);
+            const chips = [
+              o.comfort ? `<span class="chip red">对面常用</span>` : "",
+              tg.filter(t => t !== "常用").map(t => `<span class="chip">${esc(t)}</span>`).join(""),
+              o.star ? `<span class="chip gold">最熟</span>` : "",
+              o.diff != null ? `<span class="chip">难度 ${esc(o.diff)}</span>` : "",
+              o.patch != null ? `<span class="chip">版本 ${o.patch > 0 ? "+" + o.patch : o.patch}</span>` : "",
+              o.d ? `<span class="chip">${esc(o.d)}</span>` : ""
+            ].filter(Boolean).join("");
+            return `<div class="opt"><span class="idx">${i + 1}</span>
+              <button class="btn" data-act="choose" data-i="${i}"${vAttr}>${esc(nm)}
+                <span class="tagline">${chips}</span>
+              </button></div>`;
+          }).join("")}
         </div>
       </div>`);
     }
     if (s.step === 1) {
+      const hs = s.hs || s.opts || [];
       return shell(`<div class="fade-in">${head}
 <div class="scene-tag" style="margin-top:14px">第二步 · 选英雄（被 ban 的已经没了，池子浅就只能硬玩）</div>
         <div class="panel flat" style="margin-top:8px">
@@ -1036,29 +1511,76 @@ ${(s.oppBans || []).length ? `<div class="row wrap" style="gap:6px;margin-top:8p
             <span class="chip ${s.side === "blue" ? "blue" : "red"}">${s.side === "blue" ? "蓝方 · 一选" : "红方 · 后手"}</span>
             <span class="chip">你的 ban：${esc(s.ban || "空 ban")}</span>
             ${(s.oppBans || []).map(b => `<span class="chip red">对面 ban ${esc(b)}</span>`).join("")}
-            ${s.oppHero ? `<span class="chip gold">对面已选 ${esc(s.oppHero)}</span>` : `<span class="chip">对面还没选，你一选他必针对</span>`}
+            ${s.oppHero ? `<span class="chip gold">对面已选 ${esc(s.oppHero)}</span>` : (s.side === "blue" ? `<span class="chip">你先亮，对面后手针对你</span>` : `<span class="chip">对面还没选，你一选他必针对</span>`)}
           </div>
-          <div class="small-note" style="margin-top:6px">池子里还能挑 <b style="color:var(--gold)">${(s.pool || {}).left || "?"}</b> / ${(s.pool || {}).total || "?"} 个</div>
+          <div class="small-note" style="margin-top:6px">池子里还能挑 <b style="color:var(--gold)">${(s.pool || {}).left || "?"}</b> / ${(s.pool || {}).total || "?"} 个${s.hsFallback ? " · 池子被 ban 光了，只能从剩下的里挑" : ""}</div>
         </div>
         <div class="opts" style="display:grid;gap:9px;margin-top:12px">
-          ${(s.opts || []).map((o, i) => `<div class="opt"><span class="idx">${i + 1}</span>
-            <button class="btn" data-act="choose" data-i="${i}">${esc(o.t)}${o.main ? ' <span class="chip gold">本命</span>' : ""}
-<span class="tagline"><span class="chip ${o.prof >= 80 ? "gold" : "blue"}">熟练 ${Math.round(o.prof)}</span>${o.ctr ? `<span class="chip ${o.ctr > 0 ? "green" : "red"}">克制 ${o.ctr > 0 ? "+" : ""}${o.ctr}%</span>` : ""}${(o.tags || []).map(t => `<span class="chip">${esc(t)}</span>`).join("")}<span class="chip">${esc(o.d || "")}</span></span>
-              ${o.ctrWhy ? `<span class="tagline" style="color:var(--dim)">${esc(o.ctrWhy)}</span>` : ""}
-            </button></div>`).join("")}
+          ${hs.map((o, i) => {
+            const nm = o.t || o.hero || o.n || "";
+            const hname = o.hero || (o.n != null && o.n !== "" ? o.n : null);
+            const vv = o.pick || (hname ? "hero:" + hname : null);
+            const vAttr = vv ? ` data-v="${esc(vv)}"` : "";
+            const chips = [
+              o.prof != null ? `<span class="chip ${o.prof >= 80 ? "gold" : "blue"}">熟练 ${Math.round(o.prof)}</span>` : "",
+              o.ctr != null ? `<span class="chip ${o.ctr > 0 ? "green" : o.ctr < 0 ? "red" : ""}">克制 ${o.ctr > 0 ? "+" : ""}${o.ctr}%</span>` : "",
+              o.diff != null ? `<span class="chip">难度 ${esc(o.diff)}</span>` : "",
+              o.patch != null ? `<span class="chip">版本 ${o.patch > 0 ? "+" + o.patch : o.patch}</span>` : "",
+              o.synergy ? `<span class="chip green">${esc(o.synergy)}</span>` : "",
+              (o.tags || (o.tag ? [o.tag] : [])).filter(t => t && t !== "本命").map(t => `<span class="chip">${esc(t)}</span>`).join(""),
+              o.d ? `<span class="chip">${esc(o.d)}</span>` : ""
+            ].filter(Boolean).join("");
+            return `<div class="opt"><span class="idx">${i + 1}</span>
+              <button class="btn" data-act="choose" data-i="${i}"${vAttr}>${esc(nm)}${o.main || (hname && hname === S.mainHero) ? ' <span class="chip gold">本命</span>' : ""}
+<span class="tagline">${chips}</span>
+                ${o.ctrWhy ? `<span class="tagline" style="color:var(--dim)">${esc(o.ctrWhy)}</span>` : ""}
+              </button></div>`;
+          }).join("")}
         </div>
         <div class="right" style="margin-top:14px;text-align:right"><button class="btn small" style="width:auto" data-act="choose" data-i="0" data-v="back">回去重 ban</button></div>
       </div>`);
     }
+    const info = s.oppHeroInfo || null;
+    const myH = s.myHero || s.hero || "";
+    const quick = s.quick || null;
+    const qprob = info && info.prob != null ? (info.prob <= 1 ? Math.round(info.prob * 100) : Math.round(info.prob)) : null;
+    const quickRows = Array.isArray(quick) ? quick.map(q => ({ v: q.v, t: q.label || q.t || q.v, d: q.d || "" }))
+      : quick ? [
+        quick.reuse ? { v: "reuse", t: "沿用上一局", d: "上一套打法原样再来一遍，省脑子，也省得对面摸清你" } : null,
+        quick.aide ? { v: "aide", t: "助教代 BP", d: "交给助教按数据选，稳，但这局你没什么手感加成" } : null,
+        quick.sim ? { v: "sim", t: "模拟本场", d: "先在训练室过一遍这套阵容，赌一把成功率" } : null
+      ].filter(Boolean) : [];
     return shell(`<div class="fade-in">${head}
       <div class="scene-tag" style="margin-top:14px">第三步 · 这局怎么打</div>
-      <div class="panel flat" style="margin-top:8px"><span class="dim" style="font-size:13px">你的 ${esc(s.hero || "")} · 对面 ${esc(s.oppHero || "")} · 对面 ${esc((s.opp || {}).tendency || "")}（${esc(s.opp ? "" : "")}）</span></div>
-      <div class="opts" style="display:grid;gap:9px;margin-top:12px">
-        ${(s.opts || []).map((o, i) => `<div class="opt"><span class="idx">${i + 1}</span>
-          <button class="btn" data-act="choose" data-i="${i}">${esc(o.t)}
-            <span class="tagline"><span class="chip ${o.edge > 0 ? "green" : o.edge < 0 ? "red" : ""}">克制 ${o.edge > 0 ? "+" : ""}${o.edge}%</span><span class="chip">${esc(o.why || "")}</span><span class="chip">${esc(o.d || "")}</span></span>
-          </button></div>`).join("")}
+      <div class="panel flat" style="margin-top:8px">
+        <div class="row wrap" style="gap:6px">
+          <span class="chip gold">你的 ${esc(myH)}</span>
+          <span class="chip ${s.side === "blue" ? "blue" : "red"}">${s.side === "blue" ? "蓝方" : "红方"}</span>
+          <span class="chip red">对面 ${esc(s.oppHero || "还没定")}</span>
+          <span class="chip blue">对面打法 ${esc((s.opp || {}).tendency || "运营")}</span>
+        </div>
       </div>
+      ${info ? `<div class="bp-info">
+        <div class="between"><span class="kicker">对位信息 · ${esc(info.n || s.oppHero || "")}</span>${qprob != null ? `<span class="bpi-prob">胜率估计 ${qprob}%</span>` : ""}</div>
+        <div class="row wrap" style="gap:6px;margin-top:8px">
+          ${info.pos ? `<span class="chip">定位 ${esc(POSCN[info.pos] || info.pos)}</span>` : ""}
+          ${info.diff != null ? `<span class="chip">难度 ${esc(info.diff)}</span>` : ""}
+          ${info.patch != null ? `<span class="chip">版本 ${info.patch > 0 ? "+" + info.patch : info.patch}</span>` : ""}
+          ${info.ctr && info.ctr.d != null ? `<span class="chip ${info.ctr.d > 0 ? "red" : info.ctr.d < 0 ? "green" : ""}">克制 ${info.ctr.d > 0 ? "+" : ""}${info.ctr.d}%</span>` : ""}
+          ${info.tag != null ? (Array.isArray(info.tag) ? info.tag : [info.tag]).filter(Boolean).map(t => `<span class="chip">${esc(t)}</span>`).join("") : ""}
+        </div>
+        ${info.ctr && info.ctr.why ? `<div class="small-note" style="margin-top:6px">${esc(info.ctr.why)}</div>` : ""}
+      </div>` : ""}
+      <div class="opts" style="display:grid;gap:9px;margin-top:12px">
+        ${(s.opts || []).map((o, i) => {
+          const vAttr = o.k ? ` data-v="tac:${esc(o.k)}"` : "";
+          return `<div class="opt"><span class="idx">${i + 1}</span>
+          <button class="btn" data-act="choose" data-i="${i}"${vAttr}>${esc(o.t || o.n || "")}
+            <span class="tagline"><span class="chip ${o.edge > 0 ? "green" : o.edge < 0 ? "red" : ""}">克制 ${o.edge > 0 ? "+" : ""}${o.edge}%</span><span class="chip">${esc(o.why || "")}</span><span class="chip">${esc(o.d || "")}</span></span>
+          </button></div>`;
+        }).join("")}
+      </div>
+      ${quickRows.length ? `<div class="quick-row">${quickRows.map(q => `<button class="btn small ghost quick-btn" data-act="choose" data-i="0" data-v="quick:${esc(q.v)}" title="${esc(q.d)}">${esc(q.t)}</button>`).join("")}</div>` : ""}
       <div class="right" style="margin-top:14px;text-align:right"><button class="btn small" style="width:auto" data-act="choose" data-i="0" data-v="back">换英雄</button></div>
     </div>`);
   }
@@ -1264,8 +1786,10 @@ ${(s.oppBans || []).length ? `<div class="row wrap" style="gap:6px;margin-top:8p
       return `<div class="match-row"><span class="opp">${esc(a.name)} <span class="dim">vs</span> ${esc(b.name)}</span><span class="honor">${esc(p.score || "")}</span></div>`;
     }).join("");
     const roundName = ["瑞士轮", "八强", "四强", "决赛"][s.round || 0] || "";
+    const stageLabel = s.stageLabel || roundName;
+    const swissDone = !!(br && br.qf);
     return shell(`<div class="fade-in">
-      <div class="kicker">世界赛 · 现在的进度：${esc(roundName)}</div>
+      <div class="kicker">世界赛 · 现在的进度：${esc(stageLabel)}</div>
       <h2 style="margin:5px 0 4px">16 队，只有 8 个位置</h2>
       <p class="dim">赢三场出线，输三场回家。3-0 的队伍直接进八强，2-2 的最后一把是真刀真枪。</p>
       <div class="panel" style="margin-top:12px">
@@ -1274,14 +1798,14 @@ ${(s.oppBans || []).length ? `<div class="row wrap" style="gap:6px;margin-top:8p
           <div class="row wrap" style="gap:6px;flex:1;justify-content:flex-end">${grp[k].map(r => `<span class="chip ${r.mine ? "gold" : r.out ? "" : "blue"}">${esc(r.name)}</span>`).join(" ")}</div>
         </div>`).join("")}
       </div>
-      ${br ? `<div class="panel flat" style="margin-top:12px">
+      ${swissDone ? `<div class="panel flat" style="margin-top:12px">
         <div class="scene-tag">淘汰赛</div>
         <div style="margin-top:8px"><div class="small-note">八强</div>${pairHTML(br.qf)}</div>
         ${br.sf ? `<div style="margin-top:8px"><div class="small-note">四强</div>${pairHTML(br.sf)}</div>` : ""}
         ${br.f ? `<div style="margin-top:8px"><div class="small-note">决赛</div>${pairHTML(br.f)}</div>` : ""}
-      </div>` : ""}
+      </div>` : `<div class="panel flat" style="margin-top:12px"><span class="chip">淘汰赛对阵待定</span> <span class="small-note">瑞士轮打完才排种子，现在谁碰谁都不知道。</span></div>`}
       <div class="row between" style="margin-top:18px;gap:10px">
-        <div class="row">${s.canTree ? `<button class="btn small" style="width:auto" data-act="choose" data-i="0" data-v="tree">看赛程树</button>` : ""}</div>
+        <div class="row">${s.canTree ? `<button class="btn small" style="width:auto" data-act="choose" data-i="0" data-v="tree">看赛程树</button>` : `<span class="small-note">${esc(s.canTreeNote || "赛程树还没解锁，打完这轮再看。")}</span>`}</div>
         <button class="btn primary small" style="width:auto" data-act="choose" data-i="0">继续</button>
       </div>
     </div>`);
@@ -1305,13 +1829,15 @@ ${(s.oppBans || []).length ? `<div class="row wrap" style="gap:6px;margin-top:8p
         ${m.upset ? '<span class="br-upset">爆冷</span>' : ""}
       </div>`;
     };
+    const stageLabel = s.stageLabel || "";
+    const swissNotDone = /瑞士轮/.test(stageLabel) || !(rounds.length && (rounds[0].matches || []).length);
     return shell(`<div class="fade-in">
       <div class="between wrap">
-        <div><div class="kicker">世界赛 ${esc(String(s.year || ""))} · 淘汰赛对阵</div>
+        <div><div class="kicker">世界赛 ${esc(String(s.year || ""))} · ${esc(stageLabel || "淘汰赛对阵")}</div>
         <h2 style="margin:5px 0 4px">整棵树</h2></div>
-        <div class="chip ${s.predicted ? "blue" : "gold"}">${s.predicted ? "预测 · 瑞士轮还没打完" : "实时"}</div>
+        <div class="chip gold">实时</div>
       </div>
-      <p class="dim">你自己打的那几场按真实比分走；别人没打完的，按各队数值加爆冷概率推。实力差 3 点以上被翻，标「爆冷」。</p>
+      <p class="dim">${swissNotDone ? "瑞士轮还没打完，种子没排，对阵和冠军都是空的。打完才排得出来。" : "你自己打的那几场按真实比分走；别人没打完的，按各队数值加爆冷概率推。实力差 3 点以上被翻，标「爆冷」。"}</p>
       <div class="bracket" style="margin-top:14px">
         ${rounds.map(r => `<div class="br-col">
           <div class="br-round">${esc(r.name)}<span class="dim mono">${esc(r.en || "")}</span></div>
@@ -1320,7 +1846,7 @@ ${(s.oppBans || []).length ? `<div class="row wrap" style="gap:6px;margin-top:8p
         <div class="br-col br-champ">
           <div class="br-round">冠军</div>
           <div class="br-list"><div class="br-champ-card ${s.champion && s.champion.mine ? "mine" : ""}">
-            <span class="dim small-note">${s.predicted ? "预测冠军" : "冠军"}</span>
+            <span class="dim small-note">${s.champion ? "冠军" : "对阵待定"}</span>
             <b>${s.champion ? esc(s.champion.name) : "待定"}</b>
             ${s.champion ? `<span class="small-note">评分 ${s.champion.power}</span>` : ""}
           </div></div>
@@ -1332,23 +1858,46 @@ ${(s.oppBans || []).length ? `<div class="row wrap" style="gap:6px;margin-top:8p
 
   /* ---------- 商店 ---------- */
   function renderShop(s) {
+    const S = G.getState() || {};
+    const m0 = Math.round(s.money == null ? 0 : s.money);
+    const mb = (s.moneyBand && s.moneyBand.name) ? s.moneyBand : moneyBandOf(m0);
+    const items = s.items || [];
+    const lines = (s.feedback && s.feedback.lines) || [];
     return shell(`<div class="fade-in">
       <div class="between">
         <div><div class="kicker">${s.ml ? s.ml.year + " 年 " + s.ml.month + " 月" : ""} · 本月采购</div>
         <h2 style="margin:5px 0 0">钱要用出去</h2></div>
-        <div style="text-align:right"><div class="mono gold" style="font-size:20px;color:var(--gold)">${Math.round(s.money)} 万</div><div class="small-note">存款</div></div>
+        <div style="text-align:right"><div class="mono gold" style="font-size:20px;color:${mb.color || "var(--gold)"}">${m0} 万</div><div class="small-note">存款 · ${esc(mb.name || "")}</div></div>
       </div>
       <p class="dim" style="margin-top:8px">一个月只能买一样。买之前想清楚，这钱是你三年的青春换的。</p>
-      <div style="display:grid;gap:10px;margin-top:14px">
-        ${(s.items || []).map((it, i) => `<div class="offer" data-act="choose" data-i="${i}" style="${s.money < it.price ? "opacity:.5" : ""}">
-          <div class="between">
-            <div style="flex:1">
-              <div style="font-weight:800;font-size:16px">${esc(it.name)} <span class="chip ${s.money >= it.price ? "blue" : "red"}">${it.price} 万</span></div>
-              <div class="small-note" style="margin-top:4px">${esc(it.desc || "")}</div>
-              <div class="small-note" style="color:var(--gold);margin-top:3px">${esc(effCN(it.eff || {}))}</div>
+      ${lines.length ? `<div class="feedback-panel" style="margin-top:10px"><span class="kicker">上一笔钱换来的</span>${lines.map(l => `<div class="note-line">· ${esc(l)}</div>`).join("")}</div>` : ""}
+      <div class="scene-tag" style="margin-top:14px">本期货架 · ${items.length} 样${items.some(it => it.once) ? " · 一次性商品买过就不再上架" : ""}</div>
+      <div style="display:grid;gap:10px;margin-top:10px">
+        ${items.map((it, i) => {
+          const nm = it.n || it.name || "";
+          const ds = it.d || it.desc || "";
+          const afford = s.money >= it.price;
+          const bought = !!it.bought && !!it.once;
+          const chips = [
+            `<span class="chip ${afford ? "blue" : "red"}">${esc(it.price)} 万</span>`,
+            it.once ? `<span class="chip">一次性</span>` : "",
+            bought ? `<span class="chip dark">已拥有</span>` : "",
+            it.detail ? `<span class="chip">${esc(it.detail)}</span>` : ""
+          ].filter(Boolean).join("");
+          return `<div class="offer" data-act="choose" data-i="${i}" style="${!afford || bought ? "opacity:.5" : ""}">
+            <div class="between">
+              <div class="row" style="flex:1;align-items:flex-start;gap:10px">
+                ${it.icon ? `<img class="offer-ico" src="assets/icons/${esc(it.icon)}.webp" alt="" loading="lazy" decoding="async" onerror="this.style.display='none'">` : ""}
+                <div style="flex:1">
+                  <div style="font-weight:800;font-size:16px">${esc(nm)} ${chips}</div>
+                  <div class="small-note" style="margin-top:4px">${esc(ds)}</div>
+                  ${it.flavor ? `<div class="small-note" style="margin-top:3px;color:var(--dim,#8b96a3)">${esc(it.flavor)}</div>` : ""}
+                  <div class="small-note" style="color:var(--gold);margin-top:3px">${esc(effCN(it.eff || {}))}</div>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>`).join("")}
+          </div>`;
+        }).join("")}
       </div>
       <div class="row between" style="margin-top:16px;gap:10px">
         <div class="row"><button class="btn small" style="width:auto" data-act="choose" data-i="0" data-v="skip">不买了，攒着</button>
@@ -1362,10 +1911,12 @@ ${(s.oppBans || []).length ? `<div class="row wrap" style="gap:6px;margin-top:8p
   function renderGachaCard(c) {
     const rc = RC(c.rarity), b = BUILDN(c.build);
     return `<div class="card-face" style="--rc:${rc.c}">
+      <div class="card-art" style="background-image:url('${A.cardArt(c.build, c.id || c.name)}')" aria-hidden="true"></div>
       <div class="between"><span class="rar">${esc(rc.n)}${b ? " · " + esc(b) : ""}</span>${c.dup ? `<span class="dup">重复 · 折现 ${c.cash || 0} 元</span>` : ""}</div>
       <div class="cname">${esc(c.name)}</div>
       <div class="cdesc">${esc(c.desc || "")}</div>
       <div class="cflavor">${esc(effCN(c.eff || {}))}</div>
+      ${srcLine(srcOf(c))}
     </div>`;
   }
   function renderGacha(s) {
@@ -1383,9 +1934,10 @@ ${(s.oppBans || []).length ? `<div class="row wrap" style="gap:6px;margin-top:8p
       <div class="row" style="margin-top:18px;gap:10px">
         <button class="btn primary small" style="width:auto" data-act="choose" data-i="0" data-v="one">单抽 · 1 券</button>
         <button class="btn small" style="width:auto" data-act="choose" data-i="0" data-v="ten">十连 · 9 券</button>
-        ${pulled.length ? `<button class="btn small" style="width:auto" data-act="choose" data-i="0">收下继续</button>` : `<button class="btn small" style="width:auto" data-act="choose" data-i="0">退出</button>`}
+        ${pulled.length ? `<button class="btn small" style="width:auto" data-act="choose" data-i="0" data-v="next">收下继续</button>` : `<button class="btn small" style="width:auto" data-act="choose" data-i="0" data-v="back">退出</button>`}
       </div>
       <div class="panel flat" style="margin-top:12px"><span class="small-note">券从比赛里来：常规赛赢一场 1 张，季后赛一场 3 张，国际赛赢一场 5 张，S 赛赢一场 8 张。抽到的卡在「卡组」里装槽才生效。</span></div>
+      <div class="disclaimer" style="margin-top:8px">卡面上的「原梗」是二创整理，不是选手本人原话；标了「说话人与年份存疑」的，就当听个段子。</div>
     </div>`);
   }
 
@@ -1727,8 +2279,9 @@ ${(s.oppBans || []).length ? `<div class="row wrap" style="gap:6px;margin-top:8p
     if (view !== "game" || !started || (sc && /^create_/.test(sc.type))) { dock.classList.add("hidden"); return; }
     dock.classList.remove("hidden");
     const S = G.getState();
+    const canSave = !!(G.canSave && G.canSave()) && !(sc && /^create_/.test(sc.type || ""));
     dock.innerHTML = `
-      <button class="btn small" style="width:auto" data-act="quicksave">存档</button>
+      <button class="btn small" style="width:auto" data-act="quicksave" ${canSave ? "" : "disabled"} title="${canSave ? "自动档" : "只能月初存档"}">${canSave ? "存档" : "存档 · 月初"}</button>
       <button class="btn small" style="width:auto" data-act="tab-slots">读档</button>
       <button class="btn small ghost" style="width:auto" data-act="tab-codex">档案</button>
       <button class="btn small ghost" style="width:auto" data-act="dm-toggle">弹幕${DM.on ? "开" : "关"}</button>
@@ -1743,6 +2296,7 @@ ${(s.oppBans || []).length ? `<div class="row wrap" style="gap:6px;margin-top:8p
       app.innerHTML = window.UIMGR.bodyHTML(ms);
       app.dataset.scene = ms.type || "mgr";
       document.body.classList.remove("in-game");
+      try { A.sceneBg(app.dataset.scene, { S: (window.MGR && window.MGR.state ? window.MGR.state() : null) }); } catch (e) {}
       bgmFor("menu");
       return;
     }
@@ -1750,10 +2304,11 @@ ${(s.oppBans || []).length ? `<div class="row wrap" style="gap:6px;margin-top:8p
     const top = creating ? "" : topbarHTML();
     app.innerHTML = top + bodyHTML();
     app.dataset.scene = view === "menu" ? "menu:" + tab : (sc ? sc.type : "");
+    try { A.sceneBg(app.dataset.scene, { S: G.getState ? G.getState() : null }); } catch (e) {}
     document.body.classList.toggle("in-game", view === "game" && started);
     renderDock();
-    if (view === "game" && sc && sc.type !== "ending") {
-      try { G.save("auto"); } catch (e) {}
+    if (view === "game" && sc && sc.type !== "ending" && started && !/^create_/.test(sc.type || "")) {
+      try { if (!G.canSave || G.canSave()) G.save("auto"); } catch (e) {}
     }
     const dmScene = view === "game" && sc && (/^(duel|matchday|duelResult|swissResult|bp|inGame|boGame|prep|worldsMap|highlight|moment)$/.test(sc.type) || !!sc.dm);
     if (dmScene) dmStart(sc, { keep: DM.lastMatch === true }); else dmStop(false);
@@ -1814,6 +2369,14 @@ ${(s.oppBans || []).length ? `<div class="row wrap" style="gap:6px;margin-top:8p
         render();
         break;
       }
+      case "mgr-diff": {
+        if (!window.MGR || !window.UIMGR) { toast("经理模式没加载"); break; }
+        mgrMode = true;
+        window.MGR.start({ diff: v });
+        try { wakeAudio(); } catch (e) {}
+        render();
+        break;
+      }
       case "mgr-exit": mgrMode = false; render(); break;
       case "mgr": {
         if (!window.MGR || !window.UIMGR) break;
@@ -1847,21 +2410,47 @@ ${(s.oppBans || []).length ? `<div class="row wrap" style="gap:6px;margin-top:8p
         break;
       }
       case "save": {
+        if (G.canSave && !G.canSave()) { toast("只能月初存档"); break; }
         if (G.save(v)) toast("已存到档位 " + v); else toast("存档失败");
         render();
         break;
       }
-      case "quicksave": if (G.save("auto")) toast("已自动存档"); break;
+      case "quicksave": {
+        if (G.canSave && !G.canSave()) { toast("只能月初存档"); break; }
+        if (G.save("auto")) toast("已自动存档"); else toast("存档失败");
+        break;
+      }
       case "tab-slots": tab = "slots"; view = "menu"; render(); break;
       case "tab-codex": tab = "codex"; view = "menu"; render(); break;
-      case "codex-tab": codexTab = v; render(); break;
-      case "codex-go": {
-        const el2 = document.getElementById("codexQ");
-        codexQ = el2 ? String(el2.value || "").trim() : "";
+      case "codex-tab": {
+        codexTab = v || "update";
+        if (codexTab === "memes") memeSub = memeSub || "memes";
+        if (codexTab === "cards") cardPage = 0;
         render();
         break;
       }
-      case "codex-clear": codexQ = ""; render(); break;
+      case "codex-cat": bfCat = v || "all"; bPage = 0; render(); break;
+      case "codex-filter": {
+        const a = document.getElementById("cf-season"), b = document.getElementById("cf-tag");
+        bfSeason = a ? (a.value || "all") : "all";
+        bfTag = b ? (b.value || "all") : "all";
+        bPage = 0;
+        render();
+        break;
+      }
+      case "codex-filter-reset": bfCat = "all"; bfSeason = "all"; bfTag = "all"; bPage = 0; codexQ = ""; render(); break;
+      case "codex-bpage": bPage += Number(v) || 0; render(); break;
+      case "codex-memesub": memeSub = v || "memes"; render(); break;
+      case "codex-cardsub": cardSub = v || "talents"; cardPage = 0; render(); break;
+      case "codex-cpage": cardPage += Number(v) || 0; render(); break;
+      case "codex-go": {
+        const el2 = document.getElementById("codexQ");
+        codexQ = el2 ? String(el2.value || "").trim() : "";
+        bPage = 0; cardPage = 0;
+        render();
+        break;
+      }
+      case "codex-clear": codexQ = ""; bPage = 0; cardPage = 0; render(); break;
       case "menu": view = "menu"; tab = "main"; started = false; render(); break;
       case "restart": startNew(); break;
       case "name-ok": doName(); break;
@@ -1889,20 +2478,41 @@ ${(s.oppBans || []).length ? `<div class="row wrap" style="gap:6px;margin-top:8p
   });
 
   document.addEventListener("keydown", e => {
-    if (view !== "game" || !sc) return;
-    const k = e.key;
+    if (view !== "game" || !sc || mgrMode) return;
+    const k = e.key, t = sc.type || "";
     if (k >= "1" && k <= "9") {
       const idx = Number(k) - 1;
-      const sc2 = sc;
-      if (sc2.type === "action" || sc2.type === "event" || sc2.type === "duel" || sc2.type === "retire" || sc2.type === "talk" || sc2.type === "moment") {
-        const n = sc2.type === "event" ? sc2.ev.opts.length : sc2.type === "duel" ? sc2.duel.sit.opts.length : sc2.type === "retire" ? 2 : (sc2.type === "talk" || sc2.type === "moment") ? (sc2.opts || []).length : sc2.acts.length;
-        if (idx < n) { wakeAudio(); sfx("click"); advance(idx); e.preventDefault(); }
-      } else if (sc2.type === "create_base" || sc2.type === "create_pool") {
-        if (idx < 3) { wakeAudio(); sfx("click"); advance(idx); e.preventDefault(); }
+      let n = 0, v = undefined;
+      if (t === "action") n = (sc.acts || []).length;
+      else if (t === "event") n = ((sc.ev || {}).opts || []).length;
+      else if (t === "duel") n = ((sc.duel && sc.duel.sit && sc.duel.sit.opts) || []).length;
+      else if (t === "retire") n = 2;
+      else if (t === "talk" || t === "moment" || t === "style" || t === "trainHero" || t === "voice" || t === "inGame" || t === "prep" || t === "gacha") n = (sc.opts || []).length;
+      else if (t === "create_base" || t === "create_pool") n = 3;
+      else if (t === "create_origin") n = (sc.origins || []).length;
+      else if (t === "transfer") n = (sc.offers || []).length;
+      else if (t === "shop") n = (sc.items || []).length;
+      else if (t === "bp") n = sc.step === 0 ? (sc.banOpts || []).length : sc.step === 1 ? (sc.hs || sc.opts || []).length : (sc.opts || []).length;
+      else if (t === "skipOffer") { n = 2; v = idx === 0 ? "skip" : "play"; }
+      else if (t === "seriesPick") n = (sc.opts || []).length;
+      if (n && idx >= 0 && idx < n) {
+        wakeAudio(); sfx("click");
+        advance(idx, v);
+        e.preventDefault();
       }
+      return;
     }
-    if (k === "Enter" && (sc.type === "result" || sc.type === "matchday" || sc.type === "duelResult" || sc.type === "swissResult" || sc.type === "monthend" || sc.type === "draw")) {
-      wakeAudio(); sfx("click"); advance(0); e.preventDefault();
+    if (k !== "Enter" && k !== " ") return;
+    let v;
+    if (t === "shop") v = "skip";
+    else if (t === "gacha" || t === "deck" || t === "skipOffer" || t === "transfer") return;
+    else if (t === "create_base") v = undefined;
+    if (t === "result" || t === "matchday" || t === "duelResult" || t === "swissResult" || t === "monthend"
+      || t === "draw" || t === "standings" || t === "patch" || t === "worldsMap" || t === "worldsTree"
+      || t === "forum" || t === "highlight" || t === "create_card") {
+      wakeAudio(); sfx("click");
+      advance(0, v);
+      e.preventDefault();
     }
   });
 
