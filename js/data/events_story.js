@@ -4,8 +4,8 @@ window.DATA_STORY_EVENTS = [
   {
     id: "ln_fix_1", cat: "drama", w: 12, once: true, chain: false,
     req: { minSeason: 2, minMoney: 0 },
-    text: "经理在楼梯间塞给你一个号码，说这人想跟你聊聊，聊什么都行，别问我从哪弄的。你妈昨天刚打过电话，说我爸那个厂子又停了，房贷这个月还没着落。",
-    sub: "两件事凑在同一天，你就知道后面没那么干净。",
+    text: "经理在楼梯间塞给你一个号码：这人想跟你聊聊，聊什么都行，别问我从哪弄的。",
+    sub: "你妈昨天打电话，说我爸那个厂子又停了，房贷这个月还没着落。",
     opts: [
       { t: "打过去，先听听", eff: { story: { corrupt: 1 }, MENTAL: -2 },
         res: "对面声音很年轻，开口就叫你的 ID。他说不用现在答复，先加个微信。",
@@ -20,8 +20,8 @@ window.DATA_STORY_EVENTS = [
   },
   {
     id: "ln_fix_2", cat: "drama", w: 0, once: true, chain: true,
-    text: "三天后号码自己打了过来：三十万定金，已经在你老家那张卡上了。他发来一张照片，是你上周进地下车库的背影。",
-    sub: "那个角度说明，他从那时候就在等你点头。",
+    text: "三天后号码自己打了过来：三十万定金，已经在你老家那张卡上了。",
+    sub: "他发来一张照片，是你上周进地下车库的背影。",
     opts: [
       { t: "收下，就当借的", eff: { money: 30, story: { corrupt: 3 }, MENTAL: -4 },
         res: "你去 ATM 查了余额，数字后面多了好几个零。回来的路上你一直没敢抬头。",
@@ -36,8 +36,8 @@ window.DATA_STORY_EVENTS = [
   },
   {
     id: "ln_fix_3", cat: "drama", w: 0, once: true, chain: true,
-    text: "联盟调查组进了基地，有人把聊天记录交了上去，截图里你的头像很清楚。俱乐部只发了一句：全力配合调查，别乱说话。队友在门外站着，没人看你。",
-    sub: "走廊的灯很亮，亮得你不敢抬头。",
+    text: "联盟调查组进了基地。有人把聊天记录交了上去，截图里你的头像很清楚。",
+    sub: "俱乐部只发了一句：全力配合调查，别乱说话。队友在门外站着，没人看你。",
     opts: [
       { t: "死不承认，说号被盗了", eff: { story: { corrupt: 2 }, MENTAL: -4, coach: -3 },
         res: "你演了两个小时。走的时候调查组的人说：我们会再找你，别换手机。",
@@ -52,8 +52,8 @@ window.DATA_STORY_EVENTS = [
   },
   {
     id: "ln_fix_4", cat: "drama", w: 0, once: true, chain: true,
-    text: "听证会定在周五，律师把两份文件推过来：一份认罪，一份证人陈述。他说：签哪份，你这辈子都不一样了。",
-    sub: "两支笔都摆在桌上，笔帽都摘了。",
+    text: "听证会定在周五。律师把两份文件推过来：一份认罪，一份证人陈述。",
+    sub: "他说：签哪份，你这辈子都不一样了。",
     opts: [
       { t: "认罪，一个人扛", eff: { MENTAL: -8, FAME: -10, story: { corrupt: 2, banned: 1 } },
         res: "你在会上说了四十分钟，一个人名都没提。公告出来那天，基地门口的应援牌全被收走了。",
@@ -71,8 +71,8 @@ window.DATA_STORY_EVENTS = [
   {
     id: "ln_fan_1", cat: "drama", w: 11, once: true, chain: false,
     req: { minHaters: 8000, minSeason: 2 },
-    text: "有人在超话发了你家小区的照片，楼栋号都对，评论还在涨。保安说，这几天门口总停着一辆白色车，没牌照。",
-    sub: "你第一次意识到，家这个字原来是能被查到的。",
+    text: "有人在超话发了你家小区的照片，楼栋号都对。评论还在涨。",
+    sub: "保安说，这几天门口总停着一辆白色车，没牌照。",
     opts: [
       { t: "报警", eff: { story: { justice: 1 }, MENTAL: -2, energy: -5 },
         res: "警察做了笔录，说会留意。第二天那辆车还在，只是停远了一点。",
@@ -87,8 +87,8 @@ window.DATA_STORY_EVENTS = [
   },
   {
     id: "ln_fan_2", cat: "drama", w: 0, once: true, chain: true,
-    text: "快递拆开是个鞋盒，里面一把美工刀，一张纸：下一场别上。寄件人写的是你的名字，地址是基地。",
-    sub: "他连你的名字和地址都写得比你自己还熟。",
+    text: "快递拆开是个鞋盒，里面一把美工刀，一张纸：下一场别上。",
+    sub: "寄件人写的是你的名字，地址是基地。",
     opts: [
       { t: "留着，当证据", eff: { story: { justice: 2 }, MENTAL: -3 },
         res: "你把鞋盒放进柜子最上层。每次开柜门，都能看见那个角。",
@@ -103,8 +103,8 @@ window.DATA_STORY_EVENTS = [
   },
   {
     id: "ln_fan_3", cat: "drama", w: 0, once: true, chain: true,
-    text: "训练完出门，那辆白车跟在后面，跟了三个路口，最后停在基地门口。车窗摇下来，里面的人冲你笑了一下。",
-    sub: "他笑得挺客气，客气得像在打招呼，不像在威胁。",
+    text: "训练完出门，那辆白车跟在后面，跟了三个路口，最后停在基地门口。",
+    sub: "车窗摇下来，里面的人冲你笑了一下。",
     opts: [
       { t: "报警，做笔录", eff: { story: { justice: 2 }, MENTAL: -2, energy: -8 },
         res: "警察来了，车已经走了。笔录做到凌晨一点，第二天你照常训练。",
@@ -119,8 +119,8 @@ window.DATA_STORY_EVENTS = [
   },
   {
     id: "ln_fan_4", cat: "drama", w: 0, once: true, chain: true,
-    text: "凌晨两点，前台打电话上来：有个人说是你表哥，要上楼。监控里他拎着一个保温桶，另一只手一直插在口袋里。",
-    sub: "你没有表哥。这个念头让你从床上坐了起来。",
+    text: "凌晨两点，前台打电话上来：有个人说是你表哥，要上楼。",
+    sub: "监控里他拎着一个保温桶，另一只手一直插在口袋里。",
     opts: [
       { t: "报警，锁门，等警察", eff: { MENTAL: -4, energy: -10, injury: 0.02, story: { stalker: 1 } },
         res: "警察十分钟后到。保温桶里是汤，检测报告你只看了一眼。第二天训练，你的手一直抖。",
@@ -138,8 +138,8 @@ window.DATA_STORY_EVENTS = [
   {
     id: "ln_pay_1", cat: "drama", w: 10, once: true, chain: false,
     req: { minSeason: 2 },
-    text: "工资拖了三个月，财务在群里发：本周一定到账，然后退了群。老板的电话从上周开始关机。",
-    sub: "退群这个动作，比那条消息清楚多了。",
+    text: "工资拖了三个月。财务在群里发：本周一定到账，然后退了群。",
+    sub: "老板的电话从上周开始关机。",
     opts: [
       { t: "找经理问", eff: { coach: -2, MENTAL: -2, status: -2 },
         res: "经理说他也是打工的，让再等等。他自己的工位已经空了。",
@@ -154,8 +154,8 @@ window.DATA_STORY_EVENTS = [
   },
   {
     id: "ln_pay_2", cat: "drama", w: 0, once: true, chain: true,
-    text: "第二天训练取消，会议室的门关着，五个人坐了一上午，谁都不先开口。联盟仲裁的电话就贴在墙上，谁都没先去打。",
-    sub: "那串号码贴了三年，第一次有人认真看它。",
+    text: "第二天训练取消。会议室的门关着，五个人坐了一上午，谁都不先开口。",
+    sub: "联盟仲裁的电话就贴在墙上，谁都没先去打。",
     opts: [
       { t: "集体签字，申请仲裁", eff: { story: { justice: 2 }, TEAM: 3, coach: -3, MENTAL: -1 },
         res: "五个人签了字。第二天训练赛照打，但没人再喊战术。",
@@ -170,8 +170,8 @@ window.DATA_STORY_EVENTS = [
   },
   {
     id: "ln_pay_3", cat: "drama", w: 0, once: true, chain: true,
-    text: "仲裁开庭前一天，老板的律师来了，带了一份新合同：降薪一半，欠的一笔勾销。他说不签的话，队伍下个月解散。",
-    sub: "他说解散两个字的时候，语气跟说下雨差不多。",
+    text: "仲裁开庭前一天，老板的律师来了，带了一份新合同：降薪一半，欠的一笔勾销。",
+    sub: "他说不签的话，队伍下个月解散。",
     opts: [
       { t: "签，先保住工作", eff: { money: 3, coach: 2, MENTAL: -2, status: -2 },
         res: "你签了。合同上的数字比去年少了一半，你看了三遍才落笔。",
@@ -186,8 +186,8 @@ window.DATA_STORY_EVENTS = [
   },
   {
     id: "ln_pay_4", cat: "drama", w: 0, once: true, chain: true,
-    text: "仲裁结果下来：补发两个月工资，剩下的按破产清算排，队伍挂牌出售。同一天，三支队伍的人加了你微信。",
-    sub: "三支队伍，三个头像，同时亮起来。",
+    text: "仲裁结果下来：补发两个月工资，剩下的按破产清算排。队伍挂牌出售。",
+    sub: "同一天，三支队伍的人加了你微信。",
     opts: [
       { t: "拿钱，签新队", eff: { money: 15, status: 2, TEAM: -2, MENTAL: 1, story: { justice: 1 } },
         res: "你拿回了两个月工资，签字那天没跟任何人告别。新队的基地在另一个城市。",
@@ -205,8 +205,8 @@ window.DATA_STORY_EVENTS = [
   {
     id: "ln_bench_1", cat: "drama", w: 10, once: true, chain: false,
     req: { minSeason: 2 },
-    text: "教练把你叫进办公室：下一场让队友上，你先歇歇。他说这是为了队伍。也可能不是。",
-    sub: "「为了队伍」这四个字，你今年听了三遍。",
+    text: "教练把你叫进办公室：下一场让队友上，你先歇歇。",
+    sub: "他说这是为了队伍。也可能不是。",
     opts: [
       { t: "答应", eff: { coach: 3, status: -5, MENTAL: -3 },
         res: "你说了声好。走出办公室，替补席的椅子比平时凉。",
@@ -221,8 +221,8 @@ window.DATA_STORY_EVENTS = [
   },
   {
     id: "ln_bench_2", cat: "drama", w: 0, once: true, chain: true,
-    text: "接下来四场，名单上都没有你。训练赛顶你的那个人打得一般，教练没换人。直播间有人问你是不是被雪藏了，弹幕刷得很快。",
-    sub: "打得一般也不换，说明问题从来不在打得好不好。",
+    text: "接下来四场，名单上都没有你。训练赛顶你的那个人打得一般，教练没换人。",
+    sub: "直播间有人问你是不是被雪藏了，弹幕刷得很快。",
     opts: [
       { t: "直播开麦，把话说明白", eff: { FAME: 4, coach: -6, status: -3, haters: 2000, MENTAL: 2 },
         res: "你讲了二十分钟，没提名字。切片上了热搜，教练在群里发了句：好自为之。",
@@ -237,8 +237,8 @@ window.DATA_STORY_EVENTS = [
   },
   {
     id: "ln_bench_3", cat: "drama", w: 0, once: true, chain: true,
-    text: "转会期最后一天，经理把三份报价摆在桌上：一支季后赛队，一支重建队，还有一份留队涨薪。他说：你自己选，选完别后悔。",
-    sub: "三份纸，三个方向，没有一个写着「稳」。",
+    text: "转会期最后一天，经理把三份报价摆在桌上：一支季后赛队，一支重建队，还有一份留队涨薪。",
+    sub: "他说：你自己选，选完别后悔。",
     opts: [
       { t: "去季后赛队，先跟那边吃个饭", eff: { status: 6, money: 20, MENTAL: 2, TEAM: -3, story: { scandal: 1 } },
         res: "饭吃完，字也签了。旧队知道后，把你的柜子清空了。",
@@ -256,8 +256,8 @@ window.DATA_STORY_EVENTS = [
   {
     id: "ln_inj_1", cat: "drama", w: 11, once: true, chain: false,
     req: { minSeason: 2 },
-    text: "手腕疼了两个月，队医看完片子说：腱鞘炎，再拖下去，鼠标都握不住。可下周打关键局。",
-    sub: "片子上的那点阴影，看着比对面中单还难缠。",
+    text: "手腕疼了两个月。队医看完片子说：腱鞘炎，再拖下去，鼠标都握不住。",
+    sub: "下周打关键局。",
     opts: [
       { t: "手术，赌下个赛季", eff: { money: -10, PHYS: -8, energy: -25, injury: 0.01, MENTAL: 2 },
         res: "手术做了三个小时。醒来的时候，手腕上缠着厚厚的纱布，你第一反应是问几点了。",
@@ -272,8 +272,8 @@ window.DATA_STORY_EVENTS = [
   },
   {
     id: "ln_inj_2", cat: "drama", w: 0, once: true, chain: true,
-    text: "康复做到第三个月，教练发来消息：季后赛名单要报了，你能不能上？医生说，现在上，等于把前面白养了。",
-    sub: "你把那条消息看了四遍，才回了一个字。",
+    text: "康复做到第三个月，教练发来消息：季后赛名单要报了，你能不能上？",
+    sub: "医生说，现在上，等于把前面白养了。",
     opts: [
       { t: "上，绑着护腕上", eff: { injury: 0.04, PHYS: -5, coach: 4, status: 4, MENTAL: -2 },
         res: "你上了。第一场打完，护腕里全是汗，手腕肿了一圈。",
@@ -288,8 +288,8 @@ window.DATA_STORY_EVENTS = [
   },
   {
     id: "ln_inj_3", cat: "drama", w: 0, once: true, chain: true,
-    text: "赛季结束，队医把复查单给你：手腕的积液少了一点，腰椎多了两节突出。俱乐部发来新合同，签字费很高，条件是明年打满。",
-    sub: "一张复查单，一份新合同，摆在一起像在问你选哪个身体。",
+    text: "赛季结束，队医把复查单给你：手腕的积液少了一点，腰椎多了两节突出。",
+    sub: "俱乐部发来新合同，签字费很高，条件是明年打满。",
     opts: [
       { t: "签，继续打", eff: { money: 20, injury: 0.03, MECH: 2, MENTAL: -2, story: { corrupt: 1 } },
         res: "你签了。签字费到账那天，你去医院又拍了一次片子，没敢给队里看。",
@@ -306,8 +306,8 @@ window.DATA_STORY_EVENTS = [
   /* ================= B 队友互动 ================= */
   {
     id: "st_mate_duo", cat: "team", w: 12, once: false, year: 0, mate: true,
-    text: "{mate}拉你双排，说好只打两把，打到第四把的时候天已经亮了。他还在语音里喊：再来一把，这把肯定赢。",
-    sub: "你看了眼时间，八点有训练赛。",
+    text: "{mate}拉你双排，说好只打两把，打到第四把的时候天亮了。",
+    sub: "他还在语音里喊：再来一把，这把肯定赢。",
     opts: [
       { t: "陪他打到天亮", eff: { TEAM: 3, energy: -12, MECH: 2, MENTAL: 1 },
         res: "你们连赢了五把。他下线前说：跟你打真舒服。你看了眼时间，八点训练赛。",
@@ -322,8 +322,8 @@ window.DATA_STORY_EVENTS = [
   },
   {
     id: "st_mate_night", cat: "life", w: 11, once: false, year: 0, mate: true,
-    text: "凌晨一点，{mate}点了炸鸡，问你要不要，盒子上还冒着油。明天上午有训练赛。",
-    sub: "他连问都没问训练赛的事，好像那玩意儿明天不会来。",
+    text: "凌晨一点，{mate}点了炸鸡，问你要不要。盒子上还冒着油。",
+    sub: "明天上午有训练赛。",
     opts: [
       { t: "吃", eff: { PHYS: -3, MENTAL: 3, TEAM: 2 },
         res: "你们蹲在阳台吃完了一整盒。他说这家店的辣酱是自带的，你说确实够辣。",
@@ -338,8 +338,8 @@ window.DATA_STORY_EVENTS = [
   },
   {
     id: "st_mate_start", cat: "team", w: 12, once: false, year: 0, mate: true,
-    text: "训练赛名单贴出来，{pos}这个位置只有一个名字。你和{mate}都在等教练开口，他看了你一眼，什么都没说。",
-    sub: "一个位置，两个人，谁先说话谁就矮一截。",
+    text: "训练赛名单贴出来，{pos}这个位置只有一个名字。你和{mate}都在等教练开口。",
+    sub: "他看了你一眼，什么都没说。",
     opts: [
       { t: "训练赛往死里打", eff: { MECH: 2, GAME: 2, TEAM: -3, energy: -8 },
         res: "你那把打得很凶，赢了。散会的时候他没跟你击掌。",
@@ -348,14 +348,14 @@ window.DATA_STORY_EVENTS = [
         res: "你跟教练说让他上。那天晚上你在训练室练到两点，他路过看了一眼，没进来。",
         risk: null },
       { t: "找他聊清楚", eff: { TEAM: 3, MENTAL: 1, coach: -1 },
-        res: "你们在楼下便利店坐了一个小时。他说他想打，你说你也是，最后谁都没让。",
+        res: "你们在楼下便利店坐了一个小时。他说他想打，你说你也是。最后谁都没让。",
         risk: { stat: "MENTAL", dc: 12, ok: "他先笑了，说那就各凭本事。第二天训练赛，你们俩都打得很认真。", bonus: { TEAM: 2 } } }
     ]
   },
   {
     id: "st_mate_fight", cat: "team", w: 12, once: false, year: 0, mate: true,
-    text: "训练赛输了，{mate}在语音里说你那波为什么不跟。你说他开团前不喊。其他三个人都不说话。",
-    sub: "四个人都在等谁先闭嘴。",
+    text: "训练赛输了，{mate}在语音里说你那波为什么不跟。你说他开团前不喊。",
+    sub: "其他三个人都不说话。",
     opts: [
       { t: "散会再说", eff: { TEAM: 1, MENTAL: -1 },
         res: "你摘了耳机。半小时后他过来递了瓶水，这事就算过去了。",
@@ -370,8 +370,8 @@ window.DATA_STORY_EVENTS = [
   },
   {
     id: "st_mate_review", cat: "team", w: 10, once: false, year: 0, mate: true,
-    text: "复盘会上，{mate}把你第三局的操作投到屏幕上，一帧一帧地放。他说：你自己看，这叫不叫送。",
-    sub: "投影的光打在你脸上，全队都在看屏幕，也都在看你。",
+    text: "复盘会上，{mate}把你第三局的操作投到屏幕上，一帧一帧地放。",
+    sub: "他说：你自己看，这叫不叫送。",
     opts: [
       { t: "看完，承认", eff: { GAME: 3, TEAM: 2, MENTAL: -3 },
         res: "你看到第四遍，确实是自己走位错了。你说了句我的。他把笔放下了。",
@@ -386,8 +386,8 @@ window.DATA_STORY_EVENTS = [
   },
   {
     id: "st_mate_gear", cat: "team", w: 9, once: false, year: 0, mate: true,
-    text: "{mate}的鼠标坏了，问你借那个备用的，那是你托人从国外带的。他说明天就还。",
-    sub: "他说「明天就还」的时候，眼睛都没抬。",
+    text: "{mate}的鼠标坏了，问你借那个备用的。那是你托人从国外带的。",
+    sub: "他说明天就还。",
     opts: [
       { t: "借", eff: { TEAM: 2, money: -0.5, MENTAL: -1 },
         res: "第二天他还回来，线被缠成了一团。你解开的时候，发现侧键有点松。",
@@ -402,8 +402,8 @@ window.DATA_STORY_EVENTS = [
   },
   {
     id: "st_mate_scapegoat", cat: "team", w: 10, once: false, year: 0, mate: true,
-    text: "教练追查谁在训练赛前看了对手直播。{mate}低着头，你确实看见他看了。{coach}把本子往桌上一拍：谁？",
-    sub: "全队都知道是谁，全队都在等一个名字。",
+    text: "教练追查谁在训练赛前看了对手直播。{mate}低着头，你确实看见他看了。",
+    sub: "{coach}把本子往桌上一拍：谁？",
     opts: [
       { t: "替他扛", eff: { TEAM: 4, coach: -4, MENTAL: -2 },
         res: "你说是你。教练盯了你三秒，扣了你半个月的绩效。散会后他给你发了条消息：记着。",
@@ -418,8 +418,8 @@ window.DATA_STORY_EVENTS = [
   },
   {
     id: "st_mate_snore", cat: "life", w: 10, once: false, year: 0, mate: true,
-    text: "{mate}打呼，隔着墙都听得见，你戴耳塞戴了三天，耳朵发炎了。明天还有比赛。",
-    sub: "你现在一听那个节奏就知道他睡到第几层了。",
+    text: "{mate}打呼，隔着墙都听得见。你戴耳塞戴了三天，耳朵发炎了。",
+    sub: "明天有比赛。",
     opts: [
       { t: "去敲他门", eff: { TEAM: -1, PHYS: 2, energy: -4 },
         res: "他迷迷糊糊开了门，说不好意思，翻个身又睡了。五分钟后，呼噜声重新响起来。",
@@ -434,8 +434,8 @@ window.DATA_STORY_EVENTS = [
   },
   {
     id: "st_mate_family", cat: "team", w: 10, once: true, year: 0, mate: true,
-    text: "{mate}接了个电话，回来坐在楼梯上，眼睛是红的。他爸住院了。他问你：能不能借我点钱。",
-    sub: "他问这句的时候，手一直捏着手机边。",
+    text: "{mate}接了个电话，回来坐在楼梯上，眼睛是红的。他爸住院了。",
+    sub: "他问你：能不能借我点钱。",
     opts: [
       { t: "借五万", eff: { money: -5, TEAM: 5, MENTAL: 1 },
         res: "你转了五万。他说了句谢谢，声音很小。半年后他把钱还了，多转了两千，你没收。",
@@ -450,8 +450,8 @@ window.DATA_STORY_EVENTS = [
   },
   {
     id: "st_mate_gossip", cat: "life", w: 11, once: false, year: 0, mate: true,
-    text: "{mate}最近总在半夜出门，回来身上有香水味，队里都在猜。教练问你知不知道。",
-    sub: "教练问得很随意，眼睛却一直看着你。",
+    text: "{mate}最近总在半夜出门，回来身上有香水味。队里都在猜。",
+    sub: "教练问你知不知道。",
     opts: [
       { t: "帮他瞒", eff: { TEAM: 3, coach: -2, story: { scandal: 1 } },
         res: "你说不知道。教练看了你一眼，没再问。第二天{mate}给你带了杯咖啡。",
@@ -460,17 +460,17 @@ window.DATA_STORY_EVENTS = [
         res: "教练找他谈了话。之后他半夜照常出门，只是再没跟你说过话。",
         risk: null },
       { t: "当面问他", eff: { TEAM: 2, MENTAL: 1 },
-        res: "他愣了下，笑了：我谈恋爱了，不行啊。你问是谁，他说你猜，你猜了三个都错。",
+        res: "他愣了下，笑了：我谈恋爱了，不行啊。你问是谁，他说你猜。你猜了三个都错。",
         risk: { stat: "MENTAL", dc: 11, ok: "他说是隔壁队的运营。你答应保密，他请你吃了顿火锅。", bonus: { TEAM: 2 } } }
     ]
   },
   {
     id: "st_mate_kr", cat: "team", w: 10, once: false, year: 0, mate: true,
-    text: "新来的韩援{mate}在训练赛里一直说「等一下」，说了七次。没人知道他在等什么，他自己急得开始比手势。",
-    sub: "七次「等一下」，一次都没人听懂。",
+    text: "新来的韩援{mate}在训练赛里一直说“等一下”，说了七次。没人知道他在等什么。",
+    sub: "他急得开始比手势。",
     opts: [
       { t: "学两句韩语", eff: { TEAM: 3, GAME: 2, energy: -6 },
-        res: "你学了「上」和「撤」两个词。下一次他说等一下，你问等什么，他笑了。",
+        res: "你学了“上”和“撤”两个词。下一次他说等一下，你问等什么，他笑了。",
         risk: null },
       { t: "让他说英语", eff: { TEAM: 1, MENTAL: 1 },
         res: "他英语也不好。两个人比划了半局，最后靠 ping 信号打完了训练赛。",
@@ -482,8 +482,8 @@ window.DATA_STORY_EVENTS = [
   },
   {
     id: "st_mate_sponsor", cat: "media", w: 10, once: false, year: 0, mate: true,
-    text: "{team}的赞助商要拍一组照片，{mate}拉你一起去，说拍两小时给两千。可那天下午本来要复盘。",
-    sub: "两千块，两小时，一次复盘。他算得比谁都清楚。",
+    text: "{team}的赞助商要拍一组照片，{mate}拉你一起去，说拍两小时给两千。",
+    sub: "那天下午本来要复盘。",
     opts: [
       { t: "去", eff: { money: 0.2, FAME: 2, coach: -2, energy: -6 },
         res: "你们在绿幕前站了两个小时，笑到脸僵。钱到账那天，他请你吃了顿烧烤。",
@@ -498,8 +498,8 @@ window.DATA_STORY_EVENTS = [
   },
   {
     id: "st_mate_skin", cat: "life", w: 11, once: false, year: 0, mate: true,
-    text: "{mate}给你送了个皮肤，备注写着：上次那波谢了。你想不起来是哪一波。",
-    sub: "你翻了翻战绩，有三个「上次那波」都挺像。",
+    text: "{mate}给你送了个皮肤，备注写着：上次那波谢了。",
+    sub: "你想不起来是哪一波。",
     opts: [
       { t: "回送一个更贵的", eff: { money: -0.3, TEAM: 3, MENTAL: 2 },
         res: "你挑了个限定回送。他收到后在语音里喊了一声，全基地都听见了。",
@@ -514,8 +514,8 @@ window.DATA_STORY_EVENTS = [
   },
   {
     id: "st_mate_blackout", cat: "life", w: 9, once: false, year: 0, mate: true,
-    text: "基地跳闸了，五个人排位同时掉线。{mate}在黑暗里骂了一句，然后所有人都笑了。电闸在地下室。",
-    sub: "有人在黑暗里喊：谁去修。没人动。",
+    text: "基地跳闸了，五个人排位同时掉线。{mate}在黑暗里骂了一句，然后所有人都笑了。",
+    sub: "电闸在地下室。",
     opts: [
       { t: "下去修", eff: { TEAM: 3, energy: -5, PHYS: -1 },
         res: "你打着手电筒找到电闸，推上去的瞬间，楼上一片欢呼。你踩着楼梯上来，像个修理工。",
@@ -530,8 +530,8 @@ window.DATA_STORY_EVENTS = [
   },
   {
     id: "st_mate_therapy", cat: "team", w: 9, once: true, year: 0, mate: true,
-    text: "{mate}每周三下午都出去，后来你才知道他去看心理医生。他让你别跟别人说。",
-    sub: "他说这话的时候，语气比平时轻。",
+    text: "{mate}每周三下午都出去，后来你才知道他去看心理医生。",
+    sub: "他让你别跟别人说。",
     opts: [
       { t: "陪他去一次", eff: { TEAM: 3, MENTAL: 2, energy: -4 },
         res: "你在诊所楼下等了一个小时。他下来的时候眼睛有点红，说：走，吃饭。",
@@ -540,14 +540,14 @@ window.DATA_STORY_EVENTS = [
         res: "你谁都没说。后来教练问起，你说他那天去体检了。",
         risk: null },
       { t: "告诉教练", eff: { coach: 2, TEAM: -5, story: { corrupt: 1 } },
-        res: "教练给他批了假，也在会上说了句「有问题的早点说」。他再没约过你吃饭。",
+        res: "教练给他批了假，也在会上说了句“有问题的早点说”。他再没约过你吃饭。",
         risk: null }
     ]
   },
   {
     id: "st_mate_rookie", cat: "team", w: 11, once: true, year: 0, mate: true,
-    text: "青训的小孩上来了，十七岁，第一天训练赛就把你打穿了。{mate}在旁边看着，没说话，教练在场边记东西。",
-    sub: "教练那个本子，你见过，是记「谁能用」的。",
+    text: "青训的小孩上来了，十七岁，第一天训练赛就把你打穿了。{mate}在旁边看着，没说话。",
+    sub: "教练在场边记东西。",
     opts: [
       { t: "教他", eff: { TEAM: 3, GAME: 2, status: -2, MENTAL: -1 },
         res: "你把自己的对线笔记给了他一半。两周后，他在训练赛里用你教的那套打赢了你。",
@@ -562,8 +562,8 @@ window.DATA_STORY_EVENTS = [
   },
   {
     id: "st_mate_vet_money", cat: "money", w: 9, once: false, year: 0, mate: true,
-    text: "{mate}把手机银行打开给你看，六位数。他说：打职业就这几年，别乱花。他上个月刚换了个新键盘，三千。",
-    sub: "一边劝你别乱花，一边自己先花了。",
+    text: "{mate}把手机银行打开给你看，六位数。他说：打职业就这几年，别乱花。",
+    sub: "他上个月刚换了个新键盘，三千。",
     opts: [
       { t: "听，开始存", eff: { money: 1, MENTAL: 2 },
         res: "你开了个定期，每个月发工资先转一半。看着数字慢慢涨，比赢一把还踏实。",
@@ -578,8 +578,8 @@ window.DATA_STORY_EVENTS = [
   },
   {
     id: "st_mate_jungle", cat: "team", w: 12, once: false, year: 0, mate: true,
-    text: "{mate}在语音里第三次喊你跟，你还在补那波兵。他直接把耳机摘了。训练赛还有十分钟。",
-    sub: "耳机挂在椅背上，晃了两下。",
+    text: "{mate}在语音里第三次喊你跟，你还在补那波兵。他直接把耳机摘了。",
+    sub: "训练赛还有十分钟。",
     opts: [
       { t: "道歉，改", eff: { TEAM: 3, GAME: 2 },
         res: "你说我的，下一波就跟。他真的又来了三次中路，你一次都没落下。",
@@ -594,8 +594,8 @@ window.DATA_STORY_EVENTS = [
   },
   {
     id: "st_mate_vision", cat: "team", w: 10, once: false, year: 0, mate: true,
-    text: "你中路河道黑了整局，{mate}的眼全插在对面野区，一个都没回来。你被 gank 了四次。",
-    sub: "你在塔下站着，像在等谁，其实是在等死。",
+    text: "你中路河道黑了整局。{mate}的眼全插在对面野区，一个都没回来。",
+    sub: "你被 gank 了四次。",
     opts: [
       { t: "自己买真眼", eff: { money: -0.1, GAME: 2, MENTAL: -1 },
         res: "你自己买了两个真眼，插在河道两边。下一局，你一次都没被抓。",
@@ -610,8 +610,8 @@ window.DATA_STORY_EVENTS = [
   },
   {
     id: "st_mate_notes", cat: "team", w: 9, once: false, year: 0, mate: true,
-    text: "你的笔记本被人翻过，最新那页多了个折角，{mate}的桌上放着一本一样的。上面记着你对线期的习惯。",
-    sub: "折角那页，正好写着你怎么打第一个三分钟。",
+    text: "你的笔记本被人翻过，最新那页多了个折角。{mate}的桌上放着一本一样的。",
+    sub: "上面记着你对线期的习惯。",
     opts: [
       { t: "对质", eff: { TEAM: -4, MENTAL: 2 },
         res: "你把本子摊在他面前。他看了三秒，说：我就想学一下。",
@@ -626,8 +626,8 @@ window.DATA_STORY_EVENTS = [
   },
   {
     id: "st_mate_stream", cat: "media", w: 11, once: false, year: 0, mate: true,
-    text: "{mate}直播的时候把你拉进语音，直播间人数从三千涨到两万，弹幕全在刷你的 ID。",
-    sub: "他对着镜头笑了一下，把麦往你这边推。",
+    text: "{mate}直播的时候把你拉进语音，直播间人数从三千涨到两万。",
+    sub: "弹幕全在刷你的 ID。",
     opts: [
       { t: "多聊一会儿", eff: { FAME: 4, energy: -8, TEAM: 2 },
         res: "你陪他播了一个小时，讲了两句比赛里的梗。下播后他说：你比我会说。",
@@ -642,8 +642,8 @@ window.DATA_STORY_EVENTS = [
   },
   {
     id: "st_mate_netcafe", cat: "life", w: 10, once: false, year: 0, mate: true,
-    text: "{mate}说基地的网太卡，拉你去楼下网吧开黑。他说戴口罩没人认得出。你信了。",
-    sub: "你后来回想，那天你连帽子都没戴。",
+    text: "{mate}说基地的网太卡，拉你去楼下网吧开黑。他说戴口罩没人认得出。",
+    sub: "你信了。",
     opts: [
       { t: "去", eff: { TEAM: 3, FAME: 2, MENTAL: 3 },
         res: "你们刚坐下十分钟，隔壁桌就有人举着手机拍。第二天超话里全是你们的照片。",
@@ -658,8 +658,8 @@ window.DATA_STORY_EVENTS = [
   },
   {
     id: "st_mate_teambuild", cat: "team", w: 9, once: false, year: 0, mate: true,
-    text: "俱乐部组织团建，去爬山。{mate}在半山腰坐下，说谁爱爬谁爬。教练在前面喊集合。",
-    sub: "他坐的那块石头，正好能看见所有人往上爬。",
+    text: "俱乐部组织团建，去爬山。{mate}在半山腰坐下，说谁爱爬谁爬。",
+    sub: "教练在前面喊集合。",
     opts: [
       { t: "陪他坐着", eff: { TEAM: 3, coach: -2, PHYS: 1 },
         res: "你们在石头上坐了半小时，看别人往上爬。他说：这比训练赛累。",
@@ -674,8 +674,8 @@ window.DATA_STORY_EVENTS = [
   },
   {
     id: "st_mate_cp", cat: "media", w: 10, once: false, year: 0, mate: true,
-    text: "运营找你和{mate}拍一组双人照，说现在流行这个，能涨粉。文案都写好了：最好的下路，最好的兄弟。",
-    sub: "文案里那几个字，你们平时一次都没说过。",
+    text: "运营找你和{mate}拍一组双人照，说现在流行这个，能涨粉。",
+    sub: "文案都写好了：最好的下路，最好的兄弟。",
     opts: [
       { t: "拍", eff: { FAME: 5, money: 0.5, TEAM: 2, MENTAL: -2 },
         res: "照片发出去，转发破了十万。评论区一半在磕，一半在骂。他倒是挺高兴。",
@@ -690,8 +690,8 @@ window.DATA_STORY_EVENTS = [
   },
   {
     id: "st_mate_bet", cat: "money", w: 9, once: false, year: 0, mate: true,
-    text: "{mate}把手机递过来，上面是个盘口：今晚这场，买对面赢，稳的。他说队里好几个人都买了。",
-    sub: "他把「稳的」说得特别轻，像在说一件家务事。",
+    text: "{mate}把手机递过来，上面是个盘口：今晚这场，买对面赢，稳的。",
+    sub: "他说队里好几个人都买了。",
     opts: [
       { t: "买两千", eff: { money: 0.3, story: { corrupt: 1 }, MENTAL: -2, TEAM: 1 },
         res: "比赛结束，钱到账了。你盯着那条转账记录，第一次觉得两千块这么烫。",
@@ -706,8 +706,8 @@ window.DATA_STORY_EVENTS = [
   },
   {
     id: "st_mate_harass", cat: "media", w: 10, once: false, year: 0, mate: true,
-    text: "{mate}今天上了热搜，词条很难听，俱乐部让所有人别发声。{team}官博发的声明，评论区已经关了。",
-    sub: "训练室里没人开电视，也没人开手机外放。",
+    text: "{mate}今天上了热搜，词条很难听。俱乐部让所有人别发声。",
+    sub: "{team}官博发的声明，评论区已经关了。",
     opts: [
       { t: "发微博挺他", eff: { FAME: 2, haters: 3000, coach: -4, TEAM: 4 },
         res: "你发了五个字：他是我队友。评论区炸了，他给你发了条语音，没说话，只有呼吸声。",
@@ -722,8 +722,8 @@ window.DATA_STORY_EVENTS = [
   },
   {
     id: "st_mate_debt", cat: "money", w: 9, once: false, year: 0, mate: true,
-    text: "上个月{mate}借了你两万，说发工资就还。今天他换了个新手机，没提钱的事。",
-    sub: "新手机的盒子就放在他桌上，没拆的封条你看了三眼。",
+    text: "上个月{mate}借了你两万，说发工资就还。今天他换了个新手机。",
+    sub: "他没提钱的事。",
     opts: [
       { t: "直接要", eff: { money: 2, TEAM: -3, MENTAL: -1 },
         res: "你把话说了。他愣了下，当场转了钱，说：急什么。之后你们再没一起吃过饭。",
@@ -738,8 +738,8 @@ window.DATA_STORY_EVENTS = [
   },
   {
     id: "st_mate_smurf", cat: "money", w: 9, once: false, year: 0, mate: true,
-    text: "{mate}接了个代练单，问你借小号。他说一晚上两千，分你一半。联盟查得正严。",
-    sub: "两千这个数字，他说得比「查得严」还顺口。",
+    text: "{mate}接了个代练单，问你借小号。他说一晚上两千，分你一半。",
+    sub: "联盟查得正严。",
     opts: [
       { t: "借", eff: { money: 0.1, story: { corrupt: 1 }, MENTAL: -1 },
         res: "号借出去三天，回来的时候多了七个好友申请。你把他拉黑了。",
@@ -754,8 +754,8 @@ window.DATA_STORY_EVENTS = [
   },
   {
     id: "st_mate_goodbye", cat: "team", w: 10, once: true, year: 0, mate: true,
-    text: "{mate}的柜子空了。他走之前把外设留给你，说：用不上就扔了。你们一起打了两年。",
-    sub: "那副外设的键帽被磨得发亮，是他自己的手磨的。",
+    text: "{mate}的柜子空了。他走之前把外设留给你，说：用不上就扔了。",
+    sub: "你们一起打了两年。",
     opts: [
       { t: "送他去车站", eff: { TEAM: 3, MENTAL: 2, energy: -4 },
         res: "你们在候车厅坐了半小时，没说什么。检票的时候他抱了你一下，说：好好打。",
@@ -770,8 +770,8 @@ window.DATA_STORY_EVENTS = [
   },
   {
     id: "st_mate_penta", cat: "team", w: 11, once: false, year: 0, mate: true,
-    text: "你四杀的时候，{mate}一个技能把最后那个人收了。语音里安静了两秒。他说：手滑。",
-    sub: "手滑得很准，那个人他打了一整局。",
+    text: "你四杀的时候，{mate}一个技能把最后那个人收了。语音里安静了两秒。",
+    sub: "他说：手滑。",
     opts: [
       { t: "骂他两句", eff: { TEAM: -1, MENTAL: 1 },
         res: "你骂了句脏话。他笑着说下次让你。下一把，他又抢了。",
@@ -786,8 +786,8 @@ window.DATA_STORY_EVENTS = [
   },
   {
     id: "st_mate_breakup", cat: "life", w: 10, once: false, year: 0, mate: true,
-    text: "凌晨三点，{mate}敲你门，说他分手了。他手里拎着两瓶啤酒。明天早上八点训练赛。",
-    sub: "他站在门口，眼睛比平时亮，也比平时空。",
+    text: "凌晨三点，{mate}敲你门，说他分手了。他手里拎着两瓶啤酒。",
+    sub: "明天早上八点训练赛。",
     opts: [
       { t: "陪他喝", eff: { TEAM: 4, PHYS: -3, energy: -8, MENTAL: 2 },
         res: "你们喝到天亮。训练赛他打得很烂，教练骂了他一顿，他一句都没反驳。",
@@ -802,8 +802,8 @@ window.DATA_STORY_EVENTS = [
   },
   {
     id: "st_mate_burnout", cat: "team", w: 11, once: false, year: 0, mate: true,
-    text: "{mate}最近训练赛一直送，复盘也不说话，教练说他心态崩了。明天有比赛。",
-    sub: "他坐在角落里，把脸埋在手里，像在等谁给他一个台阶。",
+    text: "{mate}最近训练赛一直送，复盘也不说话。教练说他心态崩了。",
+    sub: "明天有比赛。",
     opts: [
       { t: "找他聊", eff: { TEAM: 4, MENTAL: 2, energy: -5 },
         res: "你们在楼下走了两圈。他说他不想打了，你说那就先不想。第二天他上了，打得还行。",
