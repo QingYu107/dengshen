@@ -11,7 +11,7 @@ window.DATA_PLAYERS = {
     bio: "自称世界第一上单，奖杯在别人手里。"
   },
   p_xun: {
-    name: "Xun", cn: "", pos: "JUG", team: "t_jdg", age: 22, no: 2,
+    name: "Xun", cn: "", pos: "JUG", team: "t_blg", age: 22, no: 2,
     st: {LANE: 80, MECH: 87, GAME: 84, POOL: 78, MENTAL: 74, PHYS: 84, TEAM: 80, FAME: 76},
     tags: ["奈德丽", "节奏", "野核"],
     trait: ["2024 世界赛 BLG 首发打野", "前期入侵凶，后期偶尔把自家水晶走没"],
@@ -53,7 +53,7 @@ window.DATA_PLAYERS = {
     bio: "摇到 9 是世界第一，摇到 3 是真人机。"
   },
   p_tian: {
-    name: "Tian", cn: "高天亮", pos: "JUG", team: "t_wbg", age: 24, no: 2,
+    name: "Tian", cn: "高天亮", pos: "JUG", team: "t_tes", age: 24, no: 2,
     st: {LANE: 82, MECH: 86, GAME: 88, POOL: 82, MENTAL: 72, PHYS: 80, TEAM: 82, FAME: 82},
     tags: ["2019 世界赛 FMVP", "盲僧", "节奏"],
     trait: ["2019 世界冠军打野、当届 FMVP", "常年在给队友擦屁股"],
@@ -77,7 +77,7 @@ window.DATA_PLAYERS = {
     bio: "能一打五，也能一秒送。"
   },
   p_meiko: {
-    name: "Meiko", cn: "田野", pos: "SUP", team: "t_ig", age: 27, no: 5,
+    name: "Meiko", cn: "田野", pos: "SUP", team: "t_tes", age: 27, no: 5,
     st: {LANE: 76, MECH: 72, GAME: 90, POOL: 86, MENTAL: 84, PHYS: 74, TEAM: 92, FAME: 88},
     tags: ["锤石", "指挥", "大满贯"],
     trait: ["MSI 冠军 + 世界冠军 + 亚运金牌，LPL 唯一大满贯辅助", "2024 转会 TES 重新出发"],
@@ -87,7 +87,7 @@ window.DATA_PLAYERS = {
 
   // ---- JDG ----
   p_flandre: {
-    name: "Flandre", cn: "李炫君", pos: "TOP", team: "t_al", age: 27, no: 6,
+    name: "Flandre", cn: "李炫君", pos: "TOP", team: "t_jdg", age: 27, no: 6,
     st: {LANE: 82, MECH: 83, GAME: 85, POOL: 89, MENTAL: 72, PHYS: 71, TEAM: 83, FAME: 78},
     tags: ["纳尔", "男枪", "老将"],
     trait: ["2019 随 FPX 拿下世界冠军", "LPL 现役最老的上单之一", "2024 在 JDG 打春季赛，夏天把首发让给了 20 岁的 Sheer"],
@@ -103,7 +103,7 @@ window.DATA_PLAYERS = {
     bio: "顶替传奇上单的位置，压力比操作更重。"
   },
   p_kanavi: {
-    name: "Kanavi", cn: "徐进赫", pos: "JUG", team: "t_tes", age: 24, no: 2,
+    name: "Kanavi", cn: "徐进赫", pos: "JUG", team: "t_jdg", age: 24, no: 2,
     st: {LANE: 84, MECH: 88, GAME: 86, POOL: 82, MENTAL: 74, PHYS: 82, TEAM: 78, FAME: 84},
     tags: ["李青", "野核", "反野"],
     trait: ["2023 随 JDG 拿下春、夏、MSI 三冠", "2024 全年被 Ruler 的光环盖住"],
@@ -119,9 +119,9 @@ window.DATA_PLAYERS = {
     bio: "不亮眼，但你把他换掉队伍当场散架。"
   },
   p_ruler: {
-    name: "Ruler", cn: "朴载赫", pos: "BOT", team: "t_gen", age: 26, no: 4,
+    name: "Ruler", cn: "朴载赫", pos: "BOT", team: "t_jdg", age: 26, no: 4,
     st: {LANE: 92, MECH: 94, GAME: 86, POOL: 86, MENTAL: 86, PHYS: 82, TEAM: 80, FAME: 89},
-    tags: ["卡莎", "伊泽芮尔", "2017 世界冠军"],
+    tags: ["卡莎", "伊泽瑞尔", "2017 世界冠军"],
     trait: ["2017 世界冠军 ADC（三星）", "2023 随 JDG 拿下三冠", "2024 队里只剩他一个人在打"],
     salary: 20,
     bio: "队里唯一还能打的，独自美丽。"
@@ -145,7 +145,7 @@ window.DATA_PLAYERS = {
     bio: "每支队伍都觉得他是拼图，最后都差一块。"
   },
   p_tarzan: {
-    name: "Tarzan", cn: "李承勇", pos: "JUG", team: "t_al", age: 26, no: 2,
+    name: "Tarzan", cn: "李承勇", pos: "JUG", team: "t_wbg", age: 26, no: 2,
     st: {LANE: 82, MECH: 84, GAME: 86, POOL: 80, MENTAL: 70, PHYS: 80, TEAM: 80, FAME: 80},
     tags: ["千珏", "野区掌控", "韩援"],
     trait: ["2024 夏天加入 WBG，一路打进世界赛四强", "2023 世界赛后一度无队可去"],
@@ -195,7 +195,7 @@ window.DATA_PLAYERS = {
     bio: "跟着队伍起起伏伏，自己永远不温不火。"
   },
   p_scout: {
-    name: "Scout", cn: "李汭燦", pos: "MID", team: "t_jdg", age: 26, no: 3,
+    name: "Scout", cn: "李汭燦", pos: "MID", team: "t_lng", age: 26, no: 3,
     st: {LANE: 89, MECH: 88, GAME: 88, POOL: 84, MENTAL: 82, PHYS: 80, TEAM: 80, FAME: 86},
     tags: ["佐伊", "瑞兹", "2021 世界冠军"],
     trait: ["2021 世界冠军中单、当届 FMVP", "2024 世界赛八强出局"],
@@ -203,7 +203,7 @@ window.DATA_PLAYERS = {
     bio: "离开 EDG 之后，再没摸到决赛地板。"
   },
   p_gala: {
-    name: "Gala", cn: "陈伟", pos: "BOT", team: "t_ig", age: 24, no: 4,
+    name: "Gala", cn: "陈伟", pos: "BOT", team: "t_lng", age: 24, no: 4,
     st: {LANE: 88, MECH: 88, GAME: 84, POOL: 82, MENTAL: 76, PHYS: 78, TEAM: 78, FAME: 82},
     tags: ["卡莎", "大核", "后期"],
     trait: ["2021、2022 两届 MSI 冠军（RNG）", "2024 世界赛八强"],
@@ -211,7 +211,7 @@ window.DATA_PLAYERS = {
     bio: "稳定得可怕，可惜从没进过决赛。"
   },
   p_hang: {
-    name: "Hang", cn: "", pos: "SUP", team: "t_tes", age: 23, no: 5,
+    name: "Hang", cn: "", pos: "SUP", team: "t_lng", age: 23, no: 5,
     st: {LANE: 74, MECH: 76, GAME: 82, POOL: 76, MENTAL: 70, PHYS: 76, TEAM: 78, FAME: 62},
     tags: ["洛", "开团", "配合"],
     trait: ["跟 Gala 打成了 LNG 的固定下路"],
@@ -221,7 +221,7 @@ window.DATA_PLAYERS = {
 
   // ---- EDG ----
   p_jiejie: {
-    name: "Jiejie", cn: "赵礼杰", pos: "JUG", team: "t_ig", age: 24, no: 1,
+    name: "Jiejie", cn: "赵礼杰", pos: "JUG", team: "t_edg", age: 24, no: 1,
     st: {LANE: 80, MECH: 84, GAME: 84, POOL: 78, MENTAL: 74, PHYS: 80, TEAM: 78, FAME: 80},
     tags: ["2021 世界冠军", "盲僧", "EDG 的脸面"],
     trait: ["2021 世界冠军打野", "2024 一个人守着重建中的 EDG"],
@@ -247,7 +247,7 @@ window.DATA_PLAYERS = {
     bio: "在废墟里练级的中单。"
   },
   p_wei: {
-    name: "Wei", cn: "", pos: "JUG", team: "t_blg", age: 24, no: 2,
+    name: "Wei", cn: "", pos: "JUG", team: "t_rng", age: 24, no: 2,
     st: {LANE: 80, MECH: 82, GAME: 84, POOL: 78, MENTAL: 72, PHYS: 78, TEAM: 78, FAME: 72},
     tags: ["盲僧", "2021 MSI", "节奏"],
     trait: ["2021 MSI 冠军打野（RNG）", "在 RNG 打了很多年，2024 中途离队"],
@@ -301,7 +301,7 @@ window.DATA_PLAYERS = {
   p_deokdam: {
     name: "Deokdam", cn: "徐大吉", pos: "BOT", team: "t_fpx", age: 25, no: 4,
     st: {LANE: 84, MECH: 84, GAME: 78, POOL: 78, MENTAL: 68, PHYS: 78, TEAM: 72, FAME: 60},
-    tags: ["韩援", "伊泽芮尔", "后期"],
+    tags: ["韩援", "伊泽瑞尔", "后期"],
     trait: ["2024 年来 LPL 打工的韩援 ADC"],
     salary: 3,
     bio: "韩援流水线上的标准件。"
@@ -309,7 +309,7 @@ window.DATA_PLAYERS = {
 
   // ---- WE ----
   p_shanks: {
-    name: "Shanks", cn: "", pos: "MID", team: "t_al", age: 23, no: 1,
+    name: "Shanks", cn: "", pos: "MID", team: "t_we", age: 23, no: 1,
     st: {LANE: 82, MECH: 80, GAME: 78, POOL: 78, MENTAL: 68, PHYS: 78, TEAM: 72, FAME: 64},
     tags: ["发条", "中规中矩", "老 WE"],
     trait: ["在 WE 打了好几年，队伍年年重建"],
@@ -381,7 +381,7 @@ window.DATA_PLAYERS = {
 
   // ---- NIP ----
   p_rookie: {
-    name: "Rookie", cn: "宋义进", pos: "MID", team: "t_ig", age: 28, no: 1,
+    name: "Rookie", cn: "宋义进", pos: "MID", team: "t_nip", age: 28, no: 1,
     st: {LANE: 90, MECH: 88, GAME: 86, POOL: 84, MENTAL: 78, PHYS: 72, TEAM: 80, FAME: 85},
     tags: ["2018 世界冠军", "妖姬", "老将"],
     trait: ["2018 世界冠军中单", "在 LPL 打了十年，冠军只有那一个", "2024 在 NIP 打了一年"],
@@ -411,7 +411,7 @@ window.DATA_PLAYERS = {
 
   // ---- T1 ----
   p_zeus: {
-    name: "Zeus", cn: "崔祐齐", pos: "TOP", team: "t_hle", age: 20, no: 1,
+    name: "Zeus", cn: "崔祐齐", pos: "TOP", team: "t_t1", age: 20, no: 1,
     st: {LANE: 92, MECH: 92, GAME: 84, POOL: 82, MENTAL: 80, PHYS: 86, TEAM: 84, FAME: 88},
     tags: ["杰斯", "剑魔", "世界冠军"],
     trait: ["2023、2024 两连冠上单", "2022 决赛被 Kingen 打哭过"],
@@ -477,7 +477,7 @@ window.DATA_PLAYERS = {
     bio: "对线之神，世界赛之谜。"
   },
   p_peyz: {
-    name: "Peyz", cn: "金修奂", pos: "BOT", team: "t_jdg", age: 21, no: 4,
+    name: "Peyz", cn: "金修奂", pos: "BOT", team: "t_gen", age: 21, no: 4,
     st: {LANE: 88, MECH: 87, GAME: 82, POOL: 80, MENTAL: 76, PHYS: 80, TEAM: 78, FAME: 70},
     tags: ["卡莎", "新人", "稳定"],
     trait: ["2024 MSI 冠军 ADC", "Ruler 走后 GEN 的答案"],
@@ -495,7 +495,7 @@ window.DATA_PLAYERS = {
 
   // ---- HLE ----
   p_doran: {
-    name: "Doran", cn: "崔玄埈", pos: "TOP", team: "t_t1", age: 25, no: 1,
+    name: "Doran", cn: "崔玄埈", pos: "TOP", team: "t_hle", age: 25, no: 1,
     st: {LANE: 86, MECH: 82, GAME: 80, POOL: 78, MENTAL: 68, PHYS: 80, TEAM: 76, FAME: 70},
     tags: ["大虫子", "稳", "气氛组"],
     trait: ["在 GEN 拿过 LCK 冠军", "常规赛是神，关键局是谜"],
@@ -862,7 +862,7 @@ window.DATA_PLAYERS = {
 
   // ---- EDG（补 TOP / MID / SUP）----
   p_ale: {
-    name: "Ale", cn: "胡显昭", pos: "TOP", team: "t_jdg", age: 25, no: 3,
+    name: "Ale", cn: "胡显昭", pos: "TOP", team: "t_edg", age: 25, no: 3,
     st: {LANE: 86, MECH: 86, GAME: 74, POOL: 78, MENTAL: 62, PHYS: 80, TEAM: 72, FAME: 72},
     tags: ["剑姬", "贾克斯", "进攻"],
     trait: ["2024 EDG 的首发上单", "凶起来能把对面单杀到挂机，送起来能把自己队送走"],
@@ -1619,55 +1619,5 @@ window.DATA_PLAYERS = {
     trait: ["iG 的老 ADC，鲟将军", "从 ADC 打成辅助，从职业打成主播，全都没打成顶级"],
     salary: 1,
     bio: "鲟，永远的亚军命。"
-  },
-
-  /* ===================== 2025–2026 补员 ===================== */
-  p_hope: {
-    name: "Hope", cn: "", pos: "BOT", team: "t_al", age: 25, no: 4,
-    st: {LANE: 86, MECH: 84, GAME: 82, POOL: 80, MENTAL: 78, PHYS: 80, TEAM: 82, FAME: 74},
-    tags: ["卡莎", "霞", "稳定", "后期"],
-    trait: ["2025–2026 AL 首发 ADC", "不是最亮的那一个，但 AL 的后期团战总有人兜底"],
-    salary: 10,
-    bio: "不抢镜的 ADC，冠军队最需要的那种。"
-  },
-  p_kael: {
-    name: "Kael", cn: "", pos: "SUP", team: "t_al", age: 23, no: 5,
-    st: {LANE: 74, MECH: 78, GAME: 84, POOL: 78, MENTAL: 76, PHYS: 78, TEAM: 86, FAME: 66},
-    tags: ["洛", "开团", "视野", "保护"],
-    trait: ["2025–2026 AL 首发辅助", "AL 的视野和开团发动机，Tarzan 进野区之前先看他"],
-    salary: 6,
-    bio: "把“辅助没人记得”打成了“AL 不能没有他”。"
-  },
-  p_duro: {
-    name: "Duro", cn: "", pos: "SUP", team: "t_gen", age: 22, no: 5,
-    st: {LANE: 76, MECH: 80, GAME: 86, POOL: 78, MENTAL: 78, PHYS: 78, TEAM: 88, FAME: 68},
-    tags: ["洛", "芮尔", "视野", "开团"],
-    trait: ["GEN 2025 首发辅助", "接替 Lehends 的位置，第一个赛季就被拿去和冠军辅助比较"],
-    salary: 7,
-    bio: "在 GEN 打辅助，赢是应该的，输是你的。"
-  },
-  p_missing: {
-    name: "Missing", cn: "", pos: "SUP", team: "t_jdg", age: 25, no: 5,
-    st: {LANE: 74, MECH: 76, GAME: 82, POOL: 80, MENTAL: 74, PHYS: 76, TEAM: 84, FAME: 70},
-    tags: ["锤石", "洛", "保护", "经验"],
-    trait: ["JDG 的老辅助", "见过 JDG 最风光的那两年，也见过队伍重建"],
-    salary: 6,
-    bio: "JDG 换了很多人，辅助位一直是他。"
-  },
-  p_siwoo: {
-    name: "Siwoo", cn: "", pos: "TOP", team: "t_dk", age: 20, no: 1,
-    st: {LANE: 86, MECH: 88, GAME: 78, POOL: 80, MENTAL: 72, PHYS: 84, TEAM: 76, FAME: 72},
-    tags: ["剑姬", "贾克斯", "操作", "新人"],
-    trait: ["DK 2025 上单新人", "操作上限很高，交学费的方式也很直接"],
-    salary: 6,
-    bio: "DK 重建期里最像未来的一块拼图。"
-  },
-  p_way: {
-    name: "Way", cn: "", pos: "SUP", team: "t_kt", age: 24, no: 5,
-    st: {LANE: 72, MECH: 74, GAME: 78, POOL: 76, MENTAL: 70, PHYS: 74, TEAM: 80, FAME: 60},
-    tags: ["芮尔", "开团", "游走"],
-    trait: ["KT 2025 辅助", "KT 一路杀进 S15 决赛时，他是那个负责开团的人"],
-    salary: 4,
-    bio: "KT 的亚军阵容里，最容易被忽略的那一个。"
   }
 };
