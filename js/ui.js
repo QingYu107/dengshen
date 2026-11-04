@@ -308,7 +308,7 @@
           <button class="btn" data-act="tab" data-v="about">作者的话 <span class="tagline">青雨 · 做这个游戏的一些碎碎念</span></button>
           <button class="btn gold" data-act="tab" data-v="mgrpick">电竞经理模式 <span class="tagline">不当选手了 · 选难度 · 选队或自建 · 抽卡组队 · BP 打比赛</span></button>
           <button class="btn" data-act="cockfight">斗蛐蛐 <span class="tagline">不进游戏，把两个人拉到台上按数据打一场，看谁先死</span></button>
-        <button class="btn" data-act="tab" data-v="hall">名人堂 <span class="tagline">你打出来过的角色 · 结局与战绩留档</span></button>
+        <button class="btn" data-act="tab" data-v="hall">名人堂 <span class="tagline">你打出来过的角色 · 结局战绩 · 跨局成就墙</span></button>
         </div>
       </div>
       <div class="menu-foot">真实选手 ID 与真实战绩（2011–2024 按历史，2025–2026 按公开赛果，2026 世界赛进行中）<br>调侃不是事实，梗只对事不对人。该夸就夸，该骂就骂。</div>
@@ -404,9 +404,19 @@
       return '<div class="chron-row"><span class="chron-a" style="color:' + (RC[h.rank] || "#ccc") + '">' + esc(h.rank) + " · " + esc(h.story || "") + '</span><span class="chron-b">' + esc(h.name) + " · " + esc(h.pos || "") + " · " + esc(h.team || "") + '</span><span class="chron-c">评分 ' + esc(h.ovr) + " · 冠军 " + esc(h.titles || 0) + " · 世界赛 " + esc(h.worlds || "无") + '</span><span class="chron-d">' + esc(h.mode === "endless" ? h.seasons + " 季" : "三年") + '</span></div>';
     }).join("") : '<div class="empty">你还没打出过一个角色。三年打完，不管什么结局，都会刻在这里。</div>';
     const mgLine = (mg && mg.best) ? '<div class="callout">上一轮经理模式：' + esc(mg.best.team || "") + " · " + esc(mg.best.grade || "") + " · 奖杯 " + esc(mg.best.cups || 0) + ' 座（本局生涯开局多 5 抽卡券 + 50 万）</div>' : "";
+    const aGot = achvGot(), aList = achvList();
+    const aGotN = aList.filter(function (a) { return aGot[a.id || a.k || a.name]; }).length;
+    const aLine = aList.length
+      ? '<div class="between wrap" style="gap:8px;margin-bottom:10px"><div><div class="panel-kicker">成就墙 ' + aGotN + " / " + aList.length + '</div>'
+        + '<div class="small-note">跨局保留：换个存档、重开一局，已经亮着的还亮着。每月结算和结局各查一遍，新解锁的会列在结算页上。</div></div>'
+        + '<span class="achv-pct">' + Math.round(aGotN / Math.max(1, aList.length) * 100) + '%</span></div>'
+        + '<div class="achv-bar"><i style="width:' + Math.round(aGotN / Math.max(1, aList.length) * 100) + '%"></i></div>'
+        + achvHTML({ plain: true, compact: true, hideCount: true })
+      : '<div class="small-note">成就表还没加载出来，刷新一下再看看。</div>';
     return '<div class="menu-wrap fade-in"><div class="title-mark"><div class="tm-k">HALL OF FAME</div><div class="tm-t">名人堂</div></div>'
       + '<div class="panel"><div class="panel-kicker">已留档 ' + list.length + ' 位 · 登神 / 无冕之王 / 人间理想会同时进经理模式当股东</div>'
       + mgLine + rows + '</div>'
+      + '<div class="panel" style="margin-top:16px">' + aLine + '</div>'
       + '<button class="btn small" data-act="tab" data-v="main">返回</button></div>';
   }
 
@@ -1865,33 +1875,40 @@
     } catch (e) { }
     return (o && typeof o === "object") ? o : {};
   }
-  function achvHTML() {
+  const ACHV_CAT = { career: "生涯", honor: "荣誉", money: "经济", relation: "关系", absurd: "整活" };
+  const achvCatCN = c => ACHV_CAT[c] || c;
+  function achvHTML(opts) {
+    opts = opts || {};
     const list = achvList();
     const got = achvGot();
-    const total = (window.DATA_ACHV && window.DATA_ACHV.total) || 40;
+    const total = list.length || (window.DATA_ACHV && window.DATA_ACHV.total) || 40;
     if (!list.length) return `<div class="small-note" style="padding:12px 0">成就数据还没接进来。等这一版的数据表落地，这里会按分类列出所有条目。</div>`;
     const cats = [];
     list.forEach(a => { const c = a.cat || a.category || "其他"; if (cats.indexOf(c) < 0) cats.push(c); });
     const shown = list.filter(a => {
-      if (codexQ) { try { return JSON.stringify(a).toLowerCase().indexOf(codexQ.toLowerCase()) >= 0; } catch (e) { return false; } }
+      if (!opts.plain && codexQ) { try { return JSON.stringify(a).toLowerCase().indexOf(codexQ.toLowerCase()) >= 0; } catch (e) { return false; } }
       return achvCat === "all" || (a.cat || a.category || "其他") === achvCat;
+    }).slice().sort((a, b) => {
+      const ia = got[a.id || a.k || a.name] ? 0 : 1, ib = got[b.id || b.k || b.name] ? 0 : 1;
+      if (ia !== ib) return ia - ib;
+      return (a.tier || 9) - (b.tier || 9);
     });
-    const gotN = Object.keys(got).filter(k => got[k]).length;
+    const gotN = list.filter(a => got[a.id || a.k || a.name]).length;
     return `<div class="achv-wrap">
       <div class="between wrap" style="gap:8px">
         <div class="row wrap" style="gap:6px">
           <button class="chip ${achvCat === "all" ? "gold" : ""}" data-act="achv-cat" data-v="all" style="cursor:pointer">全部</button>
-          ${cats.map(c => `<button class="chip ${achvCat === c ? "gold" : ""}" data-act="achv-cat" data-v="${esc(c)}" style="cursor:pointer">${esc(c)}</button>`).join("")}
+          ${cats.map(c => `<button class="chip ${achvCat === c ? "gold" : ""}" data-act="achv-cat" data-v="${esc(c)}" style="cursor:pointer">${esc(achvCatCN(c))}</button>`).join("")}
         </div>
-        <span class="mono" style="color:var(--gold)">${gotN}/${total}</span>
+        ${opts.hideCount ? "" : `<span class="mono" style="color:var(--gold)">${gotN}/${total}</span>`}
       </div>
       <div class="achv-list">
         ${shown.map(a => {
           const id = a.id || a.k || a.name;
           const on = !!got[id];
           return `<div class="achv-row ${on ? "on" : "off"}">
-            <div class="achv-h"><b>${esc(a.name || a.t || id)}</b>${on ? `<span class="chip gold">已达成</span>` : `<span class="chip dark">未达成</span>`}</div>
-            <div class="small-note">${esc(a.desc || a.d || a.text || "")}</div>
+            <div class="achv-h"><b>${esc(a.name || a.t || id)}</b><span class="row" style="gap:4px">${a.tier ? `<span class="chip dark">难度 ${"★".repeat(Math.max(1, Math.min(3, a.tier)))}</span>` : ""}${on ? `<span class="chip gold">已达成</span>` : `<span class="chip dark">未达成</span>`}</span></div>
+            ${(opts.compact && !on) ? "" : `<div class="small-note">${esc(a.desc || a.d || a.text || "")}</div>`}
             ${condTxt(a.cond || a.conds) ? `<div class="small-note dim" style="margin-top:2px">条件：${esc(condTxt(a.cond || a.conds))}</div>` : ""}
             ${a.reward ? `<div class="small-note" style="color:var(--gold-2);margin-top:2px">奖励：${esc(typeof a.reward === "string" ? a.reward : effCN(a.reward))}</div>` : ""}
           </div>`;

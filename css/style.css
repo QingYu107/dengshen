@@ -1144,6 +1144,9 @@ p { margin: 9px 0; }
 .duo-panel b.gold { color: var(--gold); }
 
 .achv-wrap { padding: 2px 0; }
+.achv-bar { height: 6px; border-radius: 99px; background: rgba(255,255,255,.07); overflow: hidden; margin: 2px 0 6px; }
+.achv-bar i { display: block; height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--gold), var(--gold-2, #d8c27a)); }
+.achv-pct { font: 600 13px/1 ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--gold); }
 .achv-list { margin-top: 12px; display: grid; gap: 8px; }
 .achv-row {
   border: 1px solid var(--line); border-radius: var(--r-sm);
