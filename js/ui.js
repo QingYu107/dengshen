@@ -290,6 +290,7 @@
     if (tab === "slots") return renderSlots();
     if (tab === "codex") return renderCodex();
     if (tab === "hall") return renderHall();
+    if (tab === "about") return renderAbout();
     const has = G.hasSave("auto");
     return `<div class="menu-wrap fade-in">
       <div class="title-mark">
@@ -304,12 +305,30 @@
           ${has ? `<button class="btn" data-act="continue">继续上次 <span class="tagline">读取自动存档</span></button>` : ""}
           <button class="btn" data-act="tab" data-v="slots">存档 / 读档 <span class="tagline">三个手动档 + 一个自动档</span></button>
           <button class="btn" data-act="tab" data-v="codex">档案室 <span class="tagline">赛制、数值、编年史、冷知识、黑料</span></button>
+          <button class="btn" data-act="tab" data-v="about">作者的话 <span class="tagline">青雨 · 做这个游戏的一些碎碎念</span></button>
           <button class="btn gold" data-act="tab" data-v="mgrpick">电竞经理模式 <span class="tagline">不当选手了 · 选难度 · 选队或自建 · 抽卡组队 · BP 打比赛</span></button>
           <button class="btn" data-act="cockfight">斗蛐蛐 <span class="tagline">不进游戏，把两个人拉到台上按数据打一场，看谁先死</span></button>
         <button class="btn" data-act="tab" data-v="hall">名人堂 <span class="tagline">你打出来过的角色 · 结局与战绩留档</span></button>
         </div>
       </div>
-      <div class="menu-foot">真实选手 ID 与真实战绩（截至 2024 赛季，2025 年起为推演）<br>调侃不是事实，梗只对事不对人。该夸就夸，该骂就骂。</div>
+      <div class="menu-foot">真实选手 ID 与真实战绩（2011–2024 按历史，2025–2026 按公开赛果，2026 世界赛进行中）<br>调侃不是事实，梗只对事不对人。该夸就夸，该骂就骂。</div>
+    </div>`;
+  }
+
+  function renderAbout() {
+    return `<div class="fade-in">
+      <div class="between" style="margin-bottom:16px">
+        <div><div class="kicker">A WORD FROM THE AUTHOR</div><h2>作者的话</h2></div>
+        <button class="btn small ghost" data-act="tab" data-v="main">返回</button>
+      </div>
+      <div class="panel">
+        <div class="kicker">青雨 · v4.0</div>
+        <p class="story" style="margin-top:12px">各位玩到这个游戏的朋友你们好啊！这里是青雨！几天折磨勉强做出来这么一个游戏，基本上把我对英雄联盟的认识和理解都做了进去，希望能让大家有个好的体验！</p>
+        <p class="story">文案剧情路线什么的是我比较上心的部分，数值这块大概会存在一定的小问题，希望大家多多包涵，不过正常难度和简单难度想爽还是很简单的，高难度挑战因为是存在解的，可以放心的玩！</p>
+        <p class="story">最后……都是对事不对人……LPL加油！等S赛结束了我再更新新版本。</p>
+        <div class="divider"></div>
+        <p class="small-note">这个游戏是纯前端单机，存档在你自己的浏览器里；没有服务器，也没有排行榜。真实选手 ID 只用于玩梗和生涯叙事，里面的调侃不是事实指控；如果哪条梗让你不舒服，骂我就行，别去骂选手。</p>
+      </div>
     </div>`;
   }
 
