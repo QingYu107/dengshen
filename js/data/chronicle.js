@@ -687,7 +687,7 @@ window.DATA_CHRONICLE = {
       {year: 2023, event: "一年三冠", text: "国内无敌，世界赛半决赛被 T1 打回原形。"}]},
 
     p_ruler: {peak: "2023", score: 92, moments: [
-      {year: 2017, event: "世界冠军 ADC", text: "三星 3:0 SKT，他的维鲁斯在鸟巢射穿了一个王朝。"},
+      {year: 2017, event: "世界冠军 ADC", text: "三星 3:0 SKT，他的韦鲁斯在鸟巢射穿了一个王朝。"},
       {year: 2023, event: "LPL 大满贯", text: "来 LPL 第一年拿春、夏、MSI，把 JDG 抬到了上限。"}]},
 
     p_missing: {peak: "2023", score: 82, moments: [

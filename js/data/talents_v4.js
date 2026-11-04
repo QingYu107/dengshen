@@ -269,7 +269,7 @@ window.DATA_TALENTS_V4 = [
   },
   {
     id: "tal4_teddy",
-    src: { type: "real", who: "LCK:Teddy", year: 2019, event: "LCK AD，卡莉丝塔、伊泽瑞尔，对线期能把对面压到不敢吃线", quote: "补刀落后，你就已经输了" },
+    src: { type: "real", who: "LCK:Teddy", year: 2019, event: "LCK AD，卡莉丝塔、伊泽芮尔，对线期能把对面压到不敢吃线", quote: "补刀落后，你就已经输了" },
     name: "对线期就结束",
     type: "talent",
     rarity: "purple",
@@ -361,7 +361,7 @@ window.DATA_TALENTS_V4 = [
   },
   {
     id: "tal4_rekkles",
-    src: { type: "real", who: "LEC:Rekkles", year: 2020, event: "欧洲 AD，薇恩、伊泽瑞尔、卡莎，打了多年还在追那个冠军", quote: "我还能再打一年" },
+    src: { type: "real", who: "LEC:Rekkles", year: 2020, event: "欧洲 AD，薇恩、伊泽芮尔、卡莎，打了多年还在追那个冠军", quote: "我还能再打一年" },
     name: "再打一年",
     type: "talent",
     rarity: "gold",

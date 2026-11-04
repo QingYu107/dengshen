@@ -73,11 +73,11 @@
 
   /* ---------- 明星手写表（按选手 pid；覆盖所有年份版本） ---------- */
   var STARS = {
-    p_uzi: { pool: ["卡莎", "薇恩", "德莱文", "伊泽瑞尔", "霞"], sig: ["卡莎", "薇恩"], tilt: { farm: 88, greed: 74, tempo: 70, teamfight: 86, mental: 56 } },
+    p_uzi: { pool: ["卡莎", "薇恩", "德莱文", "伊泽芮尔", "霞"], sig: ["卡莎", "薇恩"], tilt: { farm: 88, greed: 74, tempo: 70, teamfight: 86, mental: 56 } },
     p_clearlove: { pool: ["盲僧", "猪妹", "大树", "赵信", "男枪"], sig: ["盲僧", "猪妹"], tilt: { farm: 80, greed: 52, tempo: 84, teamfight: 70, mental: 84 } },
     p_rookie: { pool: ["妖姬", "辛德拉", "沙皇", "发条", "阿狸"], sig: ["妖姬", "辛德拉"], tilt: { farm: 80, greed: 64, tempo: 86, teamfight: 80, mental: 72 } },
-    p_theshy: { pool: ["剑姬", "瑞雯", "杰斯", "凯南", "格温"], sig: ["剑姬", "瑞雯"], tilt: { farm: 60, greed: 90, tempo: 58, teamfight: 66, mental: 52 } },
-    p_jackeylove: { pool: ["卡莎", "德莱文", "霞", "伊泽瑞尔", "维鲁斯"], sig: ["卡莎", "德莱文"], tilt: { farm: 78, greed: 82, tempo: 72, teamfight: 82, mental: 46 } },
+    p_theshy: { pool: ["剑姬", "锐雯", "杰斯", "凯南", "格温"], sig: ["剑姬", "锐雯"], tilt: { farm: 60, greed: 90, tempo: 58, teamfight: 66, mental: 52 } },
+    p_jackeylove: { pool: ["卡莎", "德莱文", "霞", "伊泽芮尔", "韦鲁斯"], sig: ["卡莎", "德莱文"], tilt: { farm: 78, greed: 82, tempo: 72, teamfight: 82, mental: 46 } },
     p_ning: { pool: ["青钢影", "盲僧", "男枪", "蔚", "赵信"], sig: ["青钢影", "盲僧"], tilt: { farm: 64, greed: 86, tempo: 82, teamfight: 78, mental: 60 } },
     p_baolan: { pool: ["洛", "牛头", "布隆", "锤石", "蕾欧娜"], sig: ["洛", "牛头"], tilt: { farm: 56, greed: 46, tempo: 70, teamfight: 82, mental: 62 } },
     p_xiaohu: { pool: ["瑞兹", "阿卡丽", "格温", "杰斯", "沙皇"], sig: ["瑞兹", "阿卡丽"], tilt: { farm: 82, greed: 58, tempo: 80, teamfight: 82, mental: 72 } },
@@ -86,46 +86,46 @@
     p_doinb: { pool: ["瑞兹", "加里奥", "卡尔玛", "卡牌", "塞拉斯"], sig: ["瑞兹", "加里奥"], tilt: { farm: 70, greed: 56, tempo: 92, teamfight: 88, mental: 86 } },
     p_tian: { pool: ["盲僧", "男枪", "蔚", "赵信", "佛耶戈"], sig: ["盲僧", "男枪"], tilt: { farm: 68, greed: 78, tempo: 90, teamfight: 80, mental: 58 } },
     p_crisp: { pool: ["锤石", "洛", "牛头", "派克", "蕾欧娜"], sig: ["锤石", "洛"], tilt: { farm: 58, greed: 60, tempo: 80, teamfight: 84, mental: 70 } },
-    p_lwx: { pool: ["卡莎", "霞", "伊泽瑞尔", "小炮", "维鲁斯"], sig: ["卡莎", "霞"], tilt: { farm: 80, greed: 66, tempo: 74, teamfight: 80, mental: 66 } },
+    p_lwx: { pool: ["卡莎", "霞", "伊泽芮尔", "小炮", "韦鲁斯"], sig: ["卡莎", "霞"], tilt: { farm: 80, greed: 66, tempo: 74, teamfight: 80, mental: 66 } },
     p_bin: { pool: ["剑姬", "杰斯", "贾克斯", "格温", "船长"], sig: ["剑姬", "杰斯"], tilt: { farm: 66, greed: 84, tempo: 60, teamfight: 64, mental: 62 } },
     p_knight: { pool: ["辛德拉", "阿卡丽", "沙皇", "发条", "佐伊"], sig: ["辛德拉", "阿卡丽"], tilt: { farm: 82, greed: 64, tempo: 82, teamfight: 74, mental: 58 } },
     p_369: { pool: ["奥恩", "杰斯", "剑魔", "纳尔", "奎桑提"], sig: ["奥恩", "杰斯"], tilt: { farm: 76, greed: 52, tempo: 66, teamfight: 78, mental: 54 } },
     p_elk: { pool: ["卡莎", "厄斐琉斯", "金克丝", "霞", "泽丽"], sig: ["卡莎", "厄斐琉斯"], tilt: { farm: 84, greed: 70, tempo: 76, teamfight: 82, mental: 64 } },
-    p_on: { pool: ["洛", "锤石", "瑞尔", "布隆", "牛头"], sig: ["洛", "锤石"], tilt: { farm: 56, greed: 70, tempo: 78, teamfight: 80, mental: 56 } },
+    p_on: { pool: ["洛", "锤石", "芮尔", "布隆", "牛头"], sig: ["洛", "锤石"], tilt: { farm: 56, greed: 70, tempo: 78, teamfight: 80, mental: 56 } },
     p_kanavi: { pool: ["盲僧", "男枪", "蔚", "佛耶戈", "千珏"], sig: ["盲僧", "男枪"], tilt: { farm: 80, greed: 76, tempo: 86, teamfight: 78, mental: 60 } },
     p_yagao: { pool: ["沙皇", "发条", "辛德拉", "瑞兹", "妖姬"], sig: ["沙皇", "发条"], tilt: { farm: 78, greed: 56, tempo: 78, teamfight: 76, mental: 70 } },
-    p_ruler: { pool: ["卡莎", "薇恩", "伊泽瑞尔", "霞", "泽丽"], sig: ["卡莎", "薇恩"], tilt: { farm: 88, greed: 64, tempo: 74, teamfight: 86, mental: 78 } },
+    p_ruler: { pool: ["卡莎", "薇恩", "伊泽芮尔", "霞", "泽丽"], sig: ["卡莎", "薇恩"], tilt: { farm: 88, greed: 64, tempo: 74, teamfight: 86, mental: 78 } },
     p_missing: { pool: ["洛", "锤石", "牛头", "布隆", "娜美"], sig: ["洛", "锤石"], tilt: { farm: 54, greed: 48, tempo: 74, teamfight: 82, mental: 74 } },
     p_flandre: { pool: ["船长", "剑姬", "格温", "杰斯", "奥恩"], sig: ["船长", "剑姬"], tilt: { farm: 80, greed: 66, tempo: 70, teamfight: 78, mental: 72 } },
     p_jiejie: { pool: ["盲僧", "赵信", "男枪", "猪妹", "蔚"], sig: ["盲僧", "赵信"], tilt: { farm: 74, greed: 70, tempo: 84, teamfight: 78, mental: 70 } },
     p_meiko: { pool: ["洛", "锤石", "牛头", "布隆", "蕾欧娜"], sig: ["洛", "锤石"], tilt: { farm: 60, greed: 54, tempo: 82, teamfight: 86, mental: 76 } },
     p_scout: { pool: ["妖姬", "辛德拉", "沙皇", "佐伊", "塞拉斯"], sig: ["妖姬", "辛德拉"], tilt: { farm: 84, greed: 62, tempo: 80, teamfight: 78, mental: 70 } },
-    p_viper: { pool: ["卡莎", "霞", "伊泽瑞尔", "厄斐琉斯", "泽丽"], sig: ["卡莎", "霞"], tilt: { farm: 86, greed: 68, tempo: 76, teamfight: 84, mental: 76 } },
+    p_viper: { pool: ["卡莎", "霞", "伊泽芮尔", "厄斐琉斯", "泽丽"], sig: ["卡莎", "霞"], tilt: { farm: 86, greed: 68, tempo: 76, teamfight: 84, mental: 76 } },
     p_gala: { pool: ["卡莎", "厄斐琉斯", "金克丝", "霞", "小炮"], sig: ["卡莎", "厄斐琉斯"], tilt: { farm: 86, greed: 66, tempo: 72, teamfight: 84, mental: 74 } },
     p_wei: { pool: ["盲僧", "男枪", "蔚", "赵信", "佛耶戈"], sig: ["盲僧", "男枪"], tilt: { farm: 72, greed: 68, tempo: 84, teamfight: 76, mental: 70 } },
     p_faker: { pool: ["妖姬", "辛德拉", "沙皇", "发条", "瑞兹"], sig: ["妖姬", "辛德拉"], tilt: { farm: 86, greed: 58, tempo: 88, teamfight: 88, mental: 92 } },
     p_zeus: { pool: ["剑姬", "杰斯", "剑魔", "格温", "永恩"], sig: ["剑姬", "杰斯"], tilt: { farm: 78, greed: 76, tempo: 70, teamfight: 80, mental: 74 } },
     p_oner: { pool: ["盲僧", "蔚", "赵信", "千珏", "佛耶戈"], sig: ["盲僧", "蔚"], tilt: { farm: 76, greed: 74, tempo: 86, teamfight: 80, mental: 70 } },
-    p_gumayusi: { pool: ["卡莎", "厄斐琉斯", "金克丝", "霞", "维鲁斯"], sig: ["卡莎", "厄斐琉斯"], tilt: { farm: 86, greed: 72, tempo: 76, teamfight: 86, mental: 72 } },
+    p_gumayusi: { pool: ["卡莎", "厄斐琉斯", "金克丝", "霞", "韦鲁斯"], sig: ["卡莎", "厄斐琉斯"], tilt: { farm: 86, greed: 72, tempo: 76, teamfight: 86, mental: 72 } },
     p_keria: { pool: ["洛", "锤石", "牛头", "巴德", "娜美"], sig: ["洛", "锤石"], tilt: { farm: 62, greed: 64, tempo: 86, teamfight: 86, mental: 76 } },
     p_chovy: { pool: ["沙皇", "发条", "辛德拉", "佐伊", "阿狸"], sig: ["沙皇", "发条"], tilt: { farm: 92, greed: 46, tempo: 82, teamfight: 78, mental: 64 } },
     p_canyon: { pool: ["盲僧", "男枪", "千珏", "豹女", "佛耶戈"], sig: ["盲僧", "男枪"], tilt: { farm: 84, greed: 72, tempo: 88, teamfight: 80, mental: 70 } },
     p_showmaker: { pool: ["辛德拉", "佐伊", "妖姬", "沙皇", "阿狸"], sig: ["辛德拉", "佐伊"], tilt: { farm: 82, greed: 62, tempo: 86, teamfight: 82, mental: 78 } },
-    p_deft: { pool: ["卡莎", "薇恩", "伊泽瑞尔", "霞", "泽丽"], sig: ["卡莎", "薇恩"], tilt: { farm: 88, greed: 60, tempo: 78, teamfight: 84, mental: 80 } },
+    p_deft: { pool: ["卡莎", "薇恩", "伊泽芮尔", "霞", "泽丽"], sig: ["卡莎", "薇恩"], tilt: { farm: 88, greed: 60, tempo: 78, teamfight: 84, mental: 80 } },
     p_beryl: { pool: ["巴德", "派克", "锤石", "洛", "莫甘娜"], sig: ["巴德", "派克"], tilt: { farm: 58, greed: 60, tempo: 88, teamfight: 82, mental: 84 } },
     p_nuguri: { pool: ["剑姬", "杰斯", "凯南", "格温", "纳尔"], sig: ["剑姬", "杰斯"], tilt: { farm: 76, greed: 78, tempo: 70, teamfight: 80, mental: 66 } },
     p_smeb: { pool: ["剑姬", "兰博", "凯南", "船长", "杰斯"], sig: ["剑姬", "兰博"], tilt: { farm: 78, greed: 74, tempo: 72, teamfight: 80, mental: 70 } },
     p_mata: { pool: ["锤石", "牛头", "布隆", "娜美", "巴德"], sig: ["锤石", "牛头"], tilt: { farm: 60, greed: 50, tempo: 84, teamfight: 84, mental: 86 } },
     p_caps: { pool: ["妖姬", "辛德拉", "佐伊", "塞拉斯", "阿卡丽"], sig: ["妖姬", "辛德拉"], tilt: { farm: 78, greed: 72, tempo: 86, teamfight: 80, mental: 70 } },
-    p_perkz: { pool: ["妖姬", "霞", "卡莎", "辛德拉", "伊泽瑞尔"], sig: ["妖姬", "霞"], tilt: { farm: 80, greed: 74, tempo: 82, teamfight: 80, mental: 72 } },
-    p_rekkles: { pool: ["卡莎", "薇恩", "伊泽瑞尔", "小炮", "霞"], sig: ["卡莎", "薇恩"], tilt: { farm: 86, greed: 58, tempo: 72, teamfight: 80, mental: 66 } },
+    p_perkz: { pool: ["妖姬", "霞", "卡莎", "辛德拉", "伊泽芮尔"], sig: ["妖姬", "霞"], tilt: { farm: 80, greed: 74, tempo: 82, teamfight: 80, mental: 72 } },
+    p_rekkles: { pool: ["卡莎", "薇恩", "伊泽芮尔", "小炮", "霞"], sig: ["卡莎", "薇恩"], tilt: { farm: 86, greed: 58, tempo: 72, teamfight: 80, mental: 66 } },
     p_jankos: { pool: ["盲僧", "男枪", "豹女", "千珏", "蔚"], sig: ["盲僧", "男枪"], tilt: { farm: 72, greed: 76, tempo: 86, teamfight: 76, mental: 74 } },
     p_wunder: { pool: ["剑姬", "杰斯", "纳尔", "凯南", "格温"], sig: ["剑姬", "杰斯"], tilt: { farm: 76, greed: 70, tempo: 70, teamfight: 74, mental: 68 } },
     p_mikyx: { pool: ["锤石", "洛", "牛头", "派克", "巴德"], sig: ["锤石", "洛"], tilt: { farm: 58, greed: 62, tempo: 84, teamfight: 80, mental: 72 } },
     p_elyoya: { pool: ["盲僧", "男枪", "蔚", "赵信", "佛耶戈"], sig: ["盲僧", "男枪"], tilt: { farm: 74, greed: 72, tempo: 84, teamfight: 76, mental: 70 } },
     p_humanoid: { pool: ["辛德拉", "妖姬", "沙皇", "发条", "阿狸"], sig: ["辛德拉", "妖姬"], tilt: { farm: 82, greed: 62, tempo: 80, teamfight: 76, mental: 68 } },
-    p_caliste: { pool: ["卡莎", "霞", "伊泽瑞尔", "泽丽", "金克丝"], sig: ["卡莎", "霞"], tilt: { farm: 84, greed: 66, tempo: 74, teamfight: 80, mental: 70 } },
-    p_hanssama: { pool: ["卡莎", "霞", "伊泽瑞尔", "小炮", "维鲁斯"], sig: ["卡莎", "霞"], tilt: { farm: 84, greed: 64, tempo: 74, teamfight: 80, mental: 66 } }
+    p_caliste: { pool: ["卡莎", "霞", "伊泽芮尔", "泽丽", "金克丝"], sig: ["卡莎", "霞"], tilt: { farm: 84, greed: 66, tempo: 74, teamfight: 80, mental: 70 } },
+    p_hanssama: { pool: ["卡莎", "霞", "伊泽芮尔", "小炮", "韦鲁斯"], sig: ["卡莎", "霞"], tilt: { farm: 84, greed: 64, tempo: 74, teamfight: 80, mental: 66 } }
   };
 
   /* ---------- 羁绊表（最小兜底） ---------- */
@@ -264,6 +264,12 @@
     if ((st.POOL || 0) <= 58 && (st.MECH || 0) >= 78) add("bond_onetrick");
     if ((st.MENTAL || 0) < 45) add("bond_boom");
     if ((card.tags || []).indexOf("老将") >= 0 || (tilt && tilt.farm >= 78 && (st.MECH || 0) < 72)) add("bond_old");
+    /* 选手内部串梗 */
+    if ((card.team === "t_edg" || card.team === "t_rng") && card.year === 2021) add("bond_iceland");
+    if (card.team === "t_fpx" && card.year === 2019) add("bond_jinyu");
+    if (card.pid === "p_elk" || card.pid === "p_on") add("bond_clear");
+    if (card.team === "t_tes") add("bond_foreign");
+    if (card.team === "t_tes") add("bond_spin");
     if (card.pos === "BOT" || card.pos === "SUP") add("bond_bot");
     if (card.pos === "MID" || card.pos === "JUG") add("bond_midjung");
     if (card.pos === "TOP" || card.pos === "JUG") add("bond_topjung");
@@ -356,6 +362,23 @@
     BONDS.push({ id: tbDef[0], name: tbDef[1], need: 3, desc: tbDef[2], eff: tbDef[3] });
     TAL4_BOND_BY_ID[tbDef[0]] = tb2;
   }
+  /* ---------- 选手内部串梗（双刃） ---------- */
+  BONDS.push({ id: "bond_iceland", name: "冰岛往事", need: 3, risk: true,
+    desc: "EDG / RNG 的 2021 冰岛一代：见过最高的山，也背过最重的锅。",
+    eff: { mental: 1.2, teamfight: 0.8, resource: -0.6, tempo: -0.4 } });
+  BONDS.push({ id: "bond_jinyu", name: "金玉良缘", need: 2, risk: true,
+    desc: "FPX 中野的旧账：节奏一起来是金玉良缘，崩起来是谁也不理谁。",
+    eff: { tempo: 1.6, teamfight: 0.5, mental: -1.2 } });
+  BONDS.push({ id: "bond_clear", name: "清者自清", need: 2, risk: true,
+    desc: "Elk 和 ON 的下路：从 BLG 一起打出来，后来一个说“清者自清”，一个被说“好快的切割”，默契还在，信任没了。",
+    eff: { lanes: 1.4, teamfight: 1.0, mental: -1.2, resource: -0.5 } });
+  BONDS.push({ id: "bond_foreign", name: "外战满败", need: 3, risk: true,
+    desc: "TES 的三个人：国内敢开敢打，一出国就手软，回来还得说“我们尽力了”。",
+    eff: { lanes: 1.2, teamfight: -1.0, mental: -1.4, resource: -0.5 } });
+  BONDS.push({ id: "bond_spin", name: "突然的陀螺", need: 3, risk: true,
+    desc: "TES 的三个人：外战看滔博，转起来是陀螺，停下来是原地。",
+    eff: { tempo: 1.4, teamfight: -0.8, mental: -0.8 } });
+
   /* ---------- 双刃剑 / 负面羁绊 ---------- */
   BONDS.push({ id: "bond_egos", name: "银河战舰", need: 3, risk: true,
     desc: "三个 FAME≥88 的明星：个人能力拉满，但资源分配和更衣室开始打架。",

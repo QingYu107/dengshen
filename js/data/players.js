@@ -121,7 +121,7 @@ window.DATA_PLAYERS = {
   p_ruler: {
     name: "Ruler", cn: "朴载赫", pos: "BOT", team: "t_gen", age: 26, no: 4,
     st: {LANE: 92, MECH: 94, GAME: 86, POOL: 86, MENTAL: 86, PHYS: 82, TEAM: 80, FAME: 89},
-    tags: ["卡莎", "伊泽瑞尔", "2017 世界冠军"],
+    tags: ["卡莎", "伊泽芮尔", "2017 世界冠军"],
     trait: ["2017 世界冠军 ADC（三星）", "2023 随 JDG 拿下三冠", "2024 队里只剩他一个人在打"],
     salary: 20,
     bio: "队里唯一还能打的，独自美丽。"
@@ -301,7 +301,7 @@ window.DATA_PLAYERS = {
   p_deokdam: {
     name: "Deokdam", cn: "徐大吉", pos: "BOT", team: "t_fpx", age: 25, no: 4,
     st: {LANE: 84, MECH: 84, GAME: 78, POOL: 78, MENTAL: 68, PHYS: 78, TEAM: 72, FAME: 60},
-    tags: ["韩援", "伊泽瑞尔", "后期"],
+    tags: ["韩援", "伊泽芮尔", "后期"],
     trait: ["2024 年来 LPL 打工的韩援 ADC"],
     salary: 3,
     bio: "韩援流水线上的标准件。"
@@ -1641,7 +1641,7 @@ window.DATA_PLAYERS = {
   p_duro: {
     name: "Duro", cn: "", pos: "SUP", team: "t_gen", age: 22, no: 5,
     st: {LANE: 76, MECH: 80, GAME: 86, POOL: 78, MENTAL: 78, PHYS: 78, TEAM: 88, FAME: 68},
-    tags: ["洛", "瑞尔", "视野", "开团"],
+    tags: ["洛", "芮尔", "视野", "开团"],
     trait: ["GEN 2025 首发辅助", "接替 Lehends 的位置，第一个赛季就被拿去和冠军辅助比较"],
     salary: 7,
     bio: "在 GEN 打辅助，赢是应该的，输是你的。"
@@ -1665,7 +1665,7 @@ window.DATA_PLAYERS = {
   p_way: {
     name: "Way", cn: "", pos: "SUP", team: "t_kt", age: 24, no: 5,
     st: {LANE: 72, MECH: 74, GAME: 78, POOL: 76, MENTAL: 70, PHYS: 74, TEAM: 80, FAME: 60},
-    tags: ["瑞尔", "开团", "游走"],
+    tags: ["芮尔", "开团", "游走"],
     trait: ["KT 2025 辅助", "KT 一路杀进 S15 决赛时，他是那个负责开团的人"],
     salary: 4,
     bio: "KT 的亚军阵容里，最容易被忽略的那一个。"

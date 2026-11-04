@@ -18,7 +18,7 @@ window.DATA_HEROES = [
   { n: "凯南", en: "Kennen", pos: ["TOP"], diff: 2, tag: ["开团", "爆发", "闪现"] },
   { n: "蒙多", en: "Dr. Mundo", pos: ["TOP"], diff: 1, tag: ["坦克", "续航", "混"] },
   { n: "船长", en: "Gangplank", pos: ["TOP"], diff: 3, tag: ["后期", "团战", "运营"] },
-  { n: "瑞雯", en: "Riven", pos: ["TOP"], diff: 3, tag: ["操作", "1v1", "连招"] },
+  { n: "锐雯", en: "Riven", pos: ["TOP"], diff: 3, tag: ["操作", "1v1", "连招"] },
   { n: "奎桑提", en: "KSante", pos: ["TOP"], diff: 3, tag: ["坦克", "开团", "操作"] },
 
   /* ============ 打野 ============ */
@@ -28,7 +28,7 @@ window.DATA_HEROES = [
   { n: "蔚", en: "Vi", pos: ["JUG"], diff: 1, tag: ["开团", "锁人", "节奏"] },
   { n: "大树", en: "Maokai", pos: ["JUG", "SUP"], diff: 1, tag: ["坦克", "开团", "视野"] },
   { n: "佛耶戈", en: "Viego", pos: ["JUG"], diff: 3, tag: ["团战", "滚雪球", "操作"] },
-  { n: "破败王", en: "BelVeth", pos: ["JUG"], diff: 2, tag: ["后期", "单带", "刷"] },
+  { n: "卑尔维斯", en: "BelVeth", pos: ["JUG"], diff: 2, tag: ["后期", "单带", "刷"] },
   { n: "莉莉娅", en: "Lillia", pos: ["JUG"], diff: 2, tag: ["团战", "消耗", "节奏"] },
   { n: "螳螂", en: "KhaZix", pos: ["JUG"], diff: 2, tag: ["刺客", "入侵", "滚雪球"] },
   { n: "赵信", en: "XinZhao", pos: ["JUG"], diff: 1, tag: ["节奏", "开团", "前中期"] },
@@ -59,15 +59,15 @@ window.DATA_HEROES = [
   { n: "厄斐琉斯", en: "Aphelios", pos: ["BOT"], diff: 3, tag: ["后期", "团战", "武器库"] },
   { n: "薇恩", en: "Vayne", pos: ["BOT"], diff: 3, tag: ["后期", "操作", "1v1"] },
   { n: "德莱文", en: "Draven", pos: ["BOT"], diff: 3, tag: ["对线", "滚雪球", "操作"] },
-  { n: "伊泽瑞尔", en: "Ezreal", pos: ["BOT"], diff: 2, tag: ["消耗", "机动", "混"] },
+  { n: "伊泽芮尔", en: "Ezreal", pos: ["BOT"], diff: 2, tag: ["消耗", "机动", "混"] },
   { n: "金克丝", en: "Jinx", pos: ["BOT"], diff: 1, tag: ["后期", "团战", "推塔"] },
   { n: "女警", en: "Caitlyn", pos: ["BOT"], diff: 2, tag: ["对线", "推塔", "消耗"] },
   { n: "霞", en: "Xayah", pos: ["BOT"], diff: 2, tag: ["团战", "自保", "对线"] },
   { n: "卢锡安", en: "Lucian", pos: ["BOT"], diff: 2, tag: ["对线", "压制", "前中期"] },
   { n: "小炮", en: "Tristana", pos: ["BOT"], diff: 1, tag: ["推塔", "后期", "跳跃"] },
   { n: "泽丽", en: "Zeri", pos: ["BOT"], diff: 3, tag: ["后期", "机动", "操作"] },
-  { n: "维鲁斯", en: "Varus", pos: ["BOT"], diff: 2, tag: ["消耗", "团战", "稳定"] },
-  { n: "萨米拉", en: "Samira", pos: ["BOT"], diff: 3, tag: ["团战", "操作", "爆发"] },
+  { n: "韦鲁斯", en: "Varus", pos: ["BOT"], diff: 2, tag: ["消耗", "团战", "稳定"] },
+  { n: "莎弥拉", en: "Samira", pos: ["BOT"], diff: 3, tag: ["团战", "操作", "爆发"] },
   { n: "斯莫德", en: "Smolder", pos: ["BOT"], diff: 2, tag: ["后期", "叠层", "混"] },
 
   /* ============ 辅助 ============ */
@@ -77,10 +77,10 @@ window.DATA_HEROES = [
   { n: "布隆", en: "Braum", pos: ["SUP"], diff: 1, tag: ["保护", "团战", "坦度"] },
   { n: "蕾欧娜", en: "Leona", pos: ["SUP"], diff: 1, tag: ["开团", "硬控", "越塔"] },
   { n: "娜美", en: "Nami", pos: ["SUP"], diff: 2, tag: ["保护", "续航", "对线"] },
-  { n: "露露", en: "Lulu", pos: ["SUP"], diff: 1, tag: ["保护", "加buff", "混"] },
+  { n: "璐璐", en: "Lulu", pos: ["SUP"], diff: 1, tag: ["保护", "加buff", "混"] },
   { n: "卡尔玛", en: "Karma", pos: ["SUP", "MID"], diff: 1, tag: ["消耗", "对线", "保护"] },
   { n: "派克", en: "Pyke", pos: ["SUP"], diff: 3, tag: ["游走", "收割", "开团"] },
-  { n: "瑞尔", en: "Rell", pos: ["SUP"], diff: 2, tag: ["开团", "硬控", "团战"] },
+  { n: "芮尔", en: "Rell", pos: ["SUP"], diff: 2, tag: ["开团", "硬控", "团战"] },
   { n: "巴德", en: "Bard", pos: ["SUP"], diff: 3, tag: ["游走", "视野", "整活"] },
   { n: "莫甘娜", en: "Morgana", pos: ["SUP"], diff: 1, tag: ["反手", "控制", "保护"] },
   { n: "塔姆", en: "TahmKench", pos: ["SUP"], diff: 2, tag: ["保护", "坦度", "救援"] },
@@ -89,12 +89,12 @@ window.DATA_HEROES = [
   /* ============ 2023–2026 新英雄补充 ============ */
   { n: "米利欧", en: "Milio", pos: ["SUP"], diff: 1, tag: ["保护", "续航", "团战"] },
   { n: "纳亚菲利", en: "Naafiri", pos: ["MID", "JUG"], diff: 2, tag: ["刺客", "爆发", "游走"] },
-  { n: "布蕾尔", en: "Briar", pos: ["JUG"], diff: 2, tag: ["入侵", "续航", "莽"] },
-  { n: "奥罗拉", en: "Aurora", pos: ["MID", "TOP"], diff: 3, tag: ["对线", "爆发", "机动"] },
-  { n: "赫韦", en: "Hwei", pos: ["MID"], diff: 3, tag: ["消耗", "团战", "运营"] },
+  { n: "贝蕾亚", en: "Briar", pos: ["JUG"], diff: 2, tag: ["入侵", "续航", "莽"] },
+  { n: "阿萝拉", en: "Aurora", pos: ["MID", "TOP"], diff: 3, tag: ["对线", "爆发", "机动"] },
+  { n: "彗", en: "Hwei", pos: ["MID"], diff: 3, tag: ["消耗", "团战", "运营"] },
   { n: "安蓓萨", en: "Ambessa", pos: ["TOP", "MID"], diff: 3, tag: ["对线", "单带", "操作"] },
   { n: "梅尔", en: "Mel", pos: ["MID", "SUP"], diff: 2, tag: ["消耗", "保护", "对线"] },
-  { n: "尤娜拉", en: "Yunara", pos: ["BOT"], diff: 3, tag: ["后期", "输出", "操作"] }
+  { n: "芸阿娜", en: "Yunara", pos: ["BOT"], diff: 3, tag: ["后期", "输出", "操作"] }
 ];
 
 /* 位置定义 */
