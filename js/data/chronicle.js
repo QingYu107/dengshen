@@ -99,12 +99,12 @@ window.DATA_CHRONICLE = {
      story: "全华班进决赛，第五局 BLG 的 BP 被念叨到今天，T1 连冠，Faker 第五冠，LPL 又一年。",
      lpl: "亚军（BLG）"},
 
-    {year: 2025, city: "成都", champion: "T1", runner: "KT Rolster",
-     top4: ["T1", "KT Rolster", "Gen.G", "Top Esports"],
-     top8: ["T1", "KT Rolster", "Gen.G", "Top Esports", "Anyone's Legend", "G2 Esports", "Hanwha Life", "CTBC Flying Oyster"],
-     seed: ["LPL：BLG / TES / AL / IG（4 席）", "LCK：GEN / HLE / KT / T1", "EU：G2 / Fnatic / MKOI"],
-     story: "S15 回到中国，决赛放在成都。T1 3:2 拿下 KT，Faker 第六冠、T1 三连冠；LPL 四队出征，最好成绩是 TES 的四强。主场变成别人的庆功宴，这一次连“差一点”都说不出口。",
-     lpl: "四强（TES）"}
+    {year: 2025, city: "上海", champion: "T1", runner: "Bilibili Gaming", sim: true,
+     top4: ["T1", "Bilibili Gaming", "JD Gaming", "Gen.G"],
+     top8: ["T1", "Bilibili Gaming", "JD Gaming", "Gen.G", "Top Esports", "Weibo Gaming", "Hanwha Life", "DAMWON Gaming"],
+     seed: ["LPL：BLG / TES / JDG / WBG（4 席）", "LCK：GEN / HLE / T1 / DK", "EU：G2 / Fnatic / MAD"],
+     story: "这个世界线里 S15 回到中国、决赛放在上海，T1 3:2 又一次把 BLG 按在决赛，Faker 六冠，LPL 的主场变成了别人的庆功宴。",
+     lpl: "亚军（BLG）"}
   ],
 
   // ===================== MSI =====================
@@ -129,10 +129,10 @@ window.DATA_CHRONICLE = {
      story: "伦敦 3:1，全华班内战，JDG 一整年无敌，除了世界赛那一下。"},
     {year: 2024, champion: "Gen.G", runner: "Bilibili Gaming",
      story: "成都 3:1，Chovy 终于摸到国际赛冠军，然后世界赛四强照旧，GEN 的年历永远少一页。"},
-    {year: 2025, champion: "Gen.G", runner: "T1",
-     story: "温哥华 3:2，GEN 在决赛打满五局拿下 T1，Chovy 的第二座 MSI；T1 把悬念留到最后一局，然后输在最后一波团。"},
-    {year: 2026, champion: "Hanwha Life", runner: "Bilibili Gaming",
-     story: "决赛 HLE 3:2 BLG，队史第一座国际赛冠军；BLG 又一次打满五局，又一次在最后一局输掉。LCK 拿到第五座 MSI。"}
+    {year: 2025, champion: "Gen.G", runner: "Bilibili Gaming", sim: true,
+     story: "这个世界线里 GEN 3:2 卫冕 MSI，BLG 连续第二年当决赛背景板，Chovy 的奖杯柜比 Peanut 的还满。"},
+    {year: 2026, champion: "Gen.G", runner: "JD Gaming", sim: true,
+     story: "这个世界线里 GEN 3:1 拿下 MSI 三连，Chovy 成了 MSI 之神，世界赛的四强诅咒原地不动。"}
   ],
 
   // ===================== LPL 春夏决赛 =====================
@@ -185,18 +185,12 @@ window.DATA_CHRONICLE = {
      story: "BLG 3:1 TES，knight 转会后的第一个冠军，全华班的旗子换了个地方插。"},
     {year: 2024, split: "夏", champion: "BLG", runner: "WBG",
      story: "BLG 3:0 WBG，春夏双冠，LPL 终于有了一支看起来能打的队，然后伦敦 2:3。"},
-    {year: 2025, split: "春", champion: "TES", runner: "AL",
-     story: "TES 3:1 AL 拿下 2025 第一赛段。369、Kanavi、Creme、JackeyLove、Hang 这套阵容第一次捧杯，LPL 的春天换了主角。"},
-    {year: 2025, split: "夏", champion: "AL", runner: "BLG",
-     story: "AL 3:1 BLG，队史第一座 LPL 冠军。Flandre、Tarzan、Shanks、Hope、Kael 五个人把“陪跑”打成了“银龙杯”。"},
-    {year: 2025, split: "第三赛段", champion: "BLG", runner: "TES",
-     story: "BLG 3:2 TES 拿下第三赛段，Bin、Xun、knight、Elk、ON 终于在国内决赛赢了一次五局大战。"},
-    {year: 2026, split: "春", champion: "BLG", runner: "JDG",
-     story: "BLG 3:1 JDG，春季赛继续是他们的；knight 的中路还是 LPL 最稳的那条线。"},
-    {year: 2026, split: "夏", champion: "BLG", runner: "TES",
-     story: "BLG 3:0 TES，春夏双冠。国内已经没有对手，问题又回到了那个老地方：国际赛。"},
-    {year: 2026, split: "第三赛段", champion: "AL", runner: "BLG",
-     story: "AL 3:1 BLG，Tarzan 在 LPL 的第 3015 天终于拿到联赛冠军和 FMVP；BLG 连续两年在最后一步被同一支队拦住。"}
+    {year: 2025, split: "春", champion: "BLG", runner: "TES", sim: true,
+     story: "这个世界线里 BLG 3:1 TES 卫冕春季赛，春天的 BLG 依然是无敌的，后面的故事依然熟悉。"},
+    {year: 2025, split: "夏", champion: "JDG", runner: "BLG", sim: true,
+     story: "这个世界线里 JDG 3:2 抢下夏冠，Ruler 和 Kanavi 把 BLG 的春天优势清零，LPL 的夏天换了主人。"},
+    {year: 2026, split: "春", champion: "BLG", runner: "JDG", sim: true,
+     story: "这个世界线里 BLG 3:2 JDG 再拿春冠，春夏循环开始，国际赛的账还没结。"}
   ],
 
   // ===================== 时间线 =====================
@@ -373,31 +367,22 @@ window.DATA_CHRONICLE = {
     {year: 2024, month: 12, tag: "rule", title: "LPL 降薪潮", text: "LPL 集体降薪，明星选手续约价腰斩，电竞泡沫第一次被写进财经新闻。"},
     {year: 2024, month: 12, tag: "drama", title: "LPL 一整年零冠", text: "2024 年 LPL 国际赛零冠，最好的成绩是两个亚军，论坛的“明年”用到了第七年。"},
 
-    // ---- 2025 ----
-    {year: 2025, month: 1, tag: "rule", title: "全局 BP 落地", text: "无畏征召在主要赛区全面推行，BP 从“抄作业”变成“考试”。教练组第一次比选手先崩溃。"},
-    {year: 2025, month: 3, tag: "LPL", title: "TES 拿下第一赛段", text: "TES 3:1 AL，369、Kanavi、Creme、JackeyLove、Hang 捧起 2025 第一座联赛奖杯。LPL 的春天换了主角。"},
-    {year: 2025, month: 5, tag: "LCK", title: "HLE 拿下 LCK Cup", text: "HLE 3:2 GEN，Zeus、Peanut、Zeka、Viper、Delight 在杯赛决赛打满五局。GEN 的常规赛统治没有延续到决赛。"},
-    {year: 2025, month: 6, tag: "LPL", title: "AL 拿下第二赛段", text: "AL 3:1 BLG，Flandre、Tarzan、Shanks、Hope、Kael 拿到队史第一座 LPL 冠军。“陪跑队”第一次把银龙杯带回基地。"},
-    {year: 2025, month: 7, tag: "msi", title: "GEN 温哥华夺冠", text: "MSI 决赛 GEN 3:2 T1，Chovy 拿到第二座 MSI。T1 把悬念留到第五局，然后输在最后一波团。"},
-    {year: 2025, month: 8, tag: "LPL", title: "BLG 第三赛段夺冠", text: "BLG 3:2 TES，Bin、Xun、knight、Elk、ON 终于在国内决赛赢下一次五局大战。"},
-    {year: 2025, month: 9, tag: "worlds", title: "S15 回到中国", text: "世界赛落地中国，决赛在成都。门票秒空，LPL 四队出征，主场观众把“今年不一样”喊到了十月。"},
-    {year: 2025, month: 10, tag: "worlds", title: "T1 三连冠，Faker 六冠", text: "决赛 T1 3:2 KT，Faker 第六座召唤师奖杯、T1 三连冠。LPL 最好成绩是 TES 的四强，主场变成别人的庆功宴。"},
-    {year: 2025, month: 9, tag: "LCK", title: "GEN 拿下 LCK 第三赛段", text: "GEN 3:1 HLE，Chovy、Ruler、Canyon 的体系在联赛里依旧无解。世界赛又是另一回事。"},
-    {year: 2025, month: 9, tag: "LPL", title: "IG 3:1 JDG 拿到四号种子", text: "IG 在资格赛 3:1 送走 JDG，TheShy、Jiejie、Rookie、Gala、Meiko 这套“老将重聚”阵容挤进 S15。"},
-    {year: 2025, month: 11, tag: "drama", title: "LPL 又一年零冠", text: "LPL 连续第二年没有世界冠军。论坛把“明年”用到了第八年，BLG 的“外战”标签又厚了一层。"},
-    {year: 2025, month: 12, tag: "drama", title: "KT 亚军也封神", text: "KT 从联赛中段一路杀进决赛，Bdd 打完最后一局坐在椅子上没动。LCK 内战决赛，KT 输了，但把“电信王朝”的旧旗重新举了一次。"},
+    // ---- 2025（推演） ----
+    {year: 2025, month: 1, tag: "rule", title: "全局 BP 全球推广", text: "这个世界线里无畏征召从 LPL 传到全世界，BP 从“抄作业”变成了“考试”。", sim: true},
+    {year: 2025, month: 4, tag: "LPL", title: "BLG 春冠", text: "这个世界线里 BLG 3:1 TES 卫冕春季赛，春天还是他们的，世界赛还是别人的。", sim: true},
+    {year: 2025, month: 5, tag: "msi", title: "GEN 卫冕 MSI", text: "这个世界线里 GEN 3:2 拿下 BLG，Chovy 第二座 MSI，BLG 连续第二年当决赛背景板。", sim: true},
+    {year: 2025, month: 8, tag: "LPL", title: "JDG 夏冠", text: "这个世界线里 JDG 3:2 抢下夏冠，Ruler 和 Kanavi 把 BLG 的春天优势清零。", sim: true},
+    {year: 2025, month: 9, tag: "worlds", title: "S15 回到中国", text: "这个世界线里世界赛第三次落地中国，决赛放在上海，门票 30 秒售罄，黄牛比选手先富起来。", sim: true},
+    {year: 2025, month: 10, tag: "worlds", title: "LPL 四队进八强", text: "这个世界线里 BLG、JDG、TES、WBG 全进八强，LPL 论坛开始提前庆祝，然后 T1 醒了。", sim: true},
+    {year: 2025, month: 11, tag: "worlds", title: "T1 三连冠", text: "这个世界线里决赛 3:2 BLG，Faker 第六冠，T1 主场变客场，中国观众的掌声给了对手。", sim: true},
+    {year: 2025, month: 11, tag: "drama", title: "BLG 三年三亚", text: "这个世界线里 BLG 连着三年倒在最后一局，“奖杯一座没有”从嘲讽变成了队训。", sim: true},
+    {year: 2025, month: 12, tag: "drama", title: "Faker 续到 2028", text: "这个世界线里 Faker 与 T1 续约到 2028，LCK 把“一个人一座城”写成了商业案例。", sim: true},
 
-    // ---- 2026 ----
-    {year: 2026, month: 2, tag: "LPL", title: "BLG 拿下第一赛段", text: "BLG 3:1 JDG，knight 的中路还是 LPL 最稳的那条线。春天又成了 BLG 的。"},
-    {year: 2026, month: 3, tag: "LCK", title: "GEN 拿下 LCK 第一赛段", text: "GEN 3:0 BFX，Chovy、Ruler、Canyon 的体系在联赛里依旧无解。常规赛的 GEN 和世界赛的 GEN，还是两支队伍。"},
-    {year: 2026, month: 5, tag: "LPL", title: "BLG 春夏双冠", text: "BLG 3:0 TES 拿下第二赛段。国内已经没有对手，问题又回到了那个老地方：国际赛。"},
-    {year: 2026, month: 7, tag: "msi", title: "HLE 拿下 MSI", text: "决赛 HLE 3:2 BLG，队史第一座国际赛冠军。BLG 又一次打满五局，又一次在最后一局输掉；LCK 拿到第五座 MSI。"},
-    {year: 2026, month: 9, tag: "LPL", title: "AL 拿下第三赛段，Tarzan 3015 天", text: "AL 3:1 BLG，Tarzan 在 LPL 的第 3015 天终于拿到联赛冠军和 FMVP；BLG 连续两年在最后一步被同一支队拦住。"},
-    {year: 2026, month: 6, tag: "LCK", title: "T1 3:2 GEN 拿到 MSI 门票", text: "LCK Road to MSI，T1 3:2 GEN。Faker 和 Doran 的上下路组合在第五局把 GEN 拖死。"},
-    {year: 2026, month: 9, tag: "LCK", title: "GEN 拿下 LCK 第三赛段", text: "GEN 3:1 HLE 拿下 LCK 第三赛段；HLE 拿了 MSI，联赛还是 GEN 的。"},
-    {year: 2026, month: 9, tag: "LPL", title: "IG 3:1 JDG 再拿四号种子", text: "IG 又一次在资格赛 3:1 JDG，连续两年以四号种子进世界赛。"},
-    {year: 2026, month: 10, tag: "worlds", title: "S16 北美开打", text: "2026 世界赛在北美三座城市开打，19 支队伍。瑞士轮里 BLG 2:0 HLE、GEN 3:0 出线，淘汰赛还没打完，冠军没有写出来。"},
-    {year: 2026, month: 10, tag: "drama", title: "S16 的悬念", text: "LPL 又拿到一次“看起来能打”的签，LCK 还是那几张老脸。论坛学乖了，没人提前开香槟——至少前三天没有。"}
+    // ---- 2026（推演） ----
+    {year: 2026, month: 4, tag: "LPL", title: "BLG 再拿春冠", text: "这个世界线里 BLG 3:2 JDG 拿下春季赛，春天永远是他们的，国际赛的账还没结。", sim: true},
+    {year: 2026, month: 5, tag: "msi", title: "GEN 三连 MSI", text: "这个世界线里 GEN 3:1 JDG 拿下 MSI 三连，Chovy 的 MSI 奖杯比世界赛四强次数还多。", sim: true},
+    {year: 2026, month: 8, tag: "rule", title: "LPL 筹备主客场", text: "这个世界线里 LPL 宣布 2027 赛季重启主客场，17 队变 18 队，票价先涨为敬。", sim: true},
+    {year: 2026, month: 10, tag: "worlds", title: "S16 开打", text: "这个世界线里 2026 世界赛在北美开打，LPL 四队出征，历史还在写，你也在里面。", sim: true}
   ],
 
   // ===================== 战队档案 =====================
@@ -687,7 +672,7 @@ window.DATA_CHRONICLE = {
       {year: 2023, event: "一年三冠", text: "国内无敌，世界赛半决赛被 T1 打回原形。"}]},
 
     p_ruler: {peak: "2023", score: 92, moments: [
-      {year: 2017, event: "世界冠军 ADC", text: "三星 3:0 SKT，他的韦鲁斯在鸟巢射穿了一个王朝。"},
+      {year: 2017, event: "世界冠军 ADC", text: "三星 3:0 SKT，他的维鲁斯在鸟巢射穿了一个王朝。"},
       {year: 2023, event: "LPL 大满贯", text: "来 LPL 第一年拿春、夏、MSI，把 JDG 抬到了上限。"}]},
 
     p_missing: {peak: "2023", score: 82, moments: [
@@ -759,5 +744,5 @@ window.DATA_CHRONICLE = {
       {year: 2024, event: "重建期", text: "队伍散了，他成了 EDG 里资历最老的人。"}]}
   },
 
-  note: "2011–2024 为真实历史；2025–2026 按公开赛果整理，个别对阵与评分是游戏化处理。"
+  note: "数据截至 2024 赛季真实记录；2025 及以后为这个世界的推演，条目带 sim:true。"
 };
