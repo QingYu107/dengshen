@@ -853,11 +853,22 @@ window.GAME = (function () {
       }
     });
 
+    const previews = {
+      train: "精力 −22；操作、对线、英雄池都涨一点，教练信任 +4。代价是今天别想早睡，腰椎也记着这笔账。",
+      review: "精力 −10；意识涨得最快，团队和心态也跟着回一点。看完你会知道自己上一把是怎么送的。",
+      rank: "精力 −15；手感和对线小幅涨，55% 概率心态 +5，45% 概率心态 −7。排位这东西，赢了是训练，输了是修行。",
+      stream: "精力 −10；名气、粉丝、现金都涨，25% 概率黑粉也跟着涨。直播间的钱好赚，也好气人。",
+      rest: "精力 +38；体能 +1.2，心态 +8。这一个月的进度会慢一点，但人不是机器，硬撑的下场队医最清楚。",
+      gym: "精力 −8；体能 +2.4，心态 +4。练的是身体，攒的是职业寿命，短期看不到，年纪上来就知道值不值。",
+      coach: "精力 −5；教练信任 +6~14，心态 +5。信任低于 45 才需要找他，别等被按在替补席上才想起来聊。",
+      mental: "精力 −3；心态 +16，心态属性 +1.1。心态低于 55 才需要约，别硬扛到比赛台上手抖。",
+      voice: "精力 −6；进入话语权选择，可能改 BP、换人或者给自己争一份合同。话一旦说出口，队里会有人记着。"
+    };
     return defs.map(d => {
       const g = gate(d);
       return {
         id: d.id, label: d.label, tag: d.tag, desc: d.desc,
-        energyCost: d.energyCost,
+        energyCost: d.energyCost, preview: previews[d.id] || "",
         cost: d.costText || (d.energyCost > 0 ? "精力 −" + d.energyCost : "免费"),
         can: g.can, reason: g.reason, used: used, run: d.run
       };
