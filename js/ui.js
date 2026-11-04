@@ -290,6 +290,7 @@
     if (tab === "slots") return renderSlots();
     if (tab === "codex") return renderCodex();
     if (tab === "hall") return renderHall();
+    if (tab === "about") return renderAbout();
     const has = G.hasSave("auto");
     return `<div class="menu-wrap fade-in">
       <div class="title-mark">
@@ -304,12 +305,30 @@
           ${has ? `<button class="btn" data-act="continue">继续上次 <span class="tagline">读取自动存档</span></button>` : ""}
           <button class="btn" data-act="tab" data-v="slots">存档 / 读档 <span class="tagline">三个手动档 + 一个自动档</span></button>
           <button class="btn" data-act="tab" data-v="codex">档案室 <span class="tagline">赛制、数值、编年史、冷知识、黑料</span></button>
+          <button class="btn" data-act="tab" data-v="about">作者的话 <span class="tagline">青雨 · 做这个游戏的一些碎碎念</span></button>
           <button class="btn gold" data-act="tab" data-v="mgrpick">电竞经理模式 <span class="tagline">不当选手了 · 选难度 · 选队或自建 · 抽卡组队 · BP 打比赛</span></button>
           <button class="btn" data-act="cockfight">斗蛐蛐 <span class="tagline">不进游戏，把两个人拉到台上按数据打一场，看谁先死</span></button>
-        <button class="btn" data-act="tab" data-v="hall">名人堂 <span class="tagline">你打出来过的角色 · 结局与战绩留档</span></button>
+        <button class="btn" data-act="tab" data-v="hall">名人堂 <span class="tagline">你打出来过的角色 · 结局战绩 · 跨局成就墙</span></button>
         </div>
       </div>
-      <div class="menu-foot">真实选手 ID 与真实战绩（截至 2024 赛季，2025 年起为推演）<br>调侃不是事实，梗只对事不对人。该夸就夸，该骂就骂。</div>
+      <div class="menu-foot">真实选手 ID 与真实战绩（2011–2024 按历史，2025–2026 按公开赛果，2026 世界赛进行中）<br>调侃不是事实，梗只对事不对人。该夸就夸，该骂就骂。</div>
+    </div>`;
+  }
+
+  function renderAbout() {
+    return `<div class="fade-in">
+      <div class="between" style="margin-bottom:16px">
+        <div><div class="kicker">A WORD FROM THE AUTHOR</div><h2>作者的话</h2></div>
+        <button class="btn small ghost" data-act="tab" data-v="main">返回</button>
+      </div>
+      <div class="panel">
+        <div class="kicker">青雨 · v4.0</div>
+        <p class="story" style="margin-top:12px">各位玩到这个游戏的朋友你们好啊！这里是青雨！几天折磨勉强做出来这么一个游戏，基本上把我对英雄联盟的认识和理解都做了进去，希望能让大家有个好的体验！</p>
+        <p class="story">文案剧情路线什么的是我比较上心的部分，数值这块大概会存在一定的小问题，希望大家多多包涵，不过正常难度和简单难度想爽还是很简单的，高难度挑战因为是存在解的，可以放心的玩！</p>
+        <p class="story">最后……都是对事不对人……LPL加油！等S赛结束了我再更新新版本。</p>
+        <div class="divider"></div>
+        <p class="small-note">这个游戏是纯前端单机，存档在你自己的浏览器里；没有服务器，也没有排行榜。真实选手 ID 只用于玩梗和生涯叙事，里面的调侃不是事实指控；如果哪条梗让你不舒服，骂我就行，别去骂选手。</p>
+      </div>
     </div>`;
   }
 
@@ -385,9 +404,19 @@
       return '<div class="chron-row"><span class="chron-a" style="color:' + (RC[h.rank] || "#ccc") + '">' + esc(h.rank) + " · " + esc(h.story || "") + '</span><span class="chron-b">' + esc(h.name) + " · " + esc(h.pos || "") + " · " + esc(h.team || "") + '</span><span class="chron-c">评分 ' + esc(h.ovr) + " · 冠军 " + esc(h.titles || 0) + " · 世界赛 " + esc(h.worlds || "无") + '</span><span class="chron-d">' + esc(h.mode === "endless" ? h.seasons + " 季" : "三年") + '</span></div>';
     }).join("") : '<div class="empty">你还没打出过一个角色。三年打完，不管什么结局，都会刻在这里。</div>';
     const mgLine = (mg && mg.best) ? '<div class="callout">上一轮经理模式：' + esc(mg.best.team || "") + " · " + esc(mg.best.grade || "") + " · 奖杯 " + esc(mg.best.cups || 0) + ' 座（本局生涯开局多 5 抽卡券 + 50 万）</div>' : "";
+    const aGot = achvGot(), aList = achvList();
+    const aGotN = aList.filter(function (a) { return aGot[a.id || a.k || a.name]; }).length;
+    const aLine = aList.length
+      ? '<div class="between wrap" style="gap:8px;margin-bottom:10px"><div><div class="panel-kicker">成就墙 ' + aGotN + " / " + aList.length + '</div>'
+        + '<div class="small-note">跨局保留：换个存档、重开一局，已经亮着的还亮着。每月结算和结局各查一遍，新解锁的会列在结算页上。</div></div>'
+        + '<span class="achv-pct">' + Math.round(aGotN / Math.max(1, aList.length) * 100) + '%</span></div>'
+        + '<div class="achv-bar"><i style="width:' + Math.round(aGotN / Math.max(1, aList.length) * 100) + '%"></i></div>'
+        + achvHTML({ plain: true, compact: true, hideCount: true })
+      : '<div class="small-note">成就表还没加载出来，刷新一下再看看。</div>';
     return '<div class="menu-wrap fade-in"><div class="title-mark"><div class="tm-k">HALL OF FAME</div><div class="tm-t">名人堂</div></div>'
       + '<div class="panel"><div class="panel-kicker">已留档 ' + list.length + ' 位 · 登神 / 无冕之王 / 人间理想会同时进经理模式当股东</div>'
       + mgLine + rows + '</div>'
+      + '<div class="panel" style="margin-top:16px">' + aLine + '</div>'
       + '<button class="btn small" data-act="tab" data-v="main">返回</button></div>';
   }
 
@@ -575,7 +604,7 @@
     if (memeSub === "gossip") return subs + gossipHTML();
     if (memeSub === "trash") return trashHTML();
     if (memeSub === "hot") return hotHTML();
-    const MS = (window.DATA_MEME_EVENTS || []).filter(codexHit);
+    const MS = (window.DATA_MEME_EVENTS || []).concat(window.DATA_EVENTS_LPL || []).filter(codexHit);
     const body = MS.map(m => {
       const srcChip = m.srcType === "real" ? `<span class="chip gold">真事改编</span>` : `<span class="chip">二创</span>`;
       const opts = (m.opts || []).map((o, i) => `<div class="note-line" style="margin-top:6px"><b>${i + 1}. ${esc(o.t || "")}</b>${o.eff && Object.keys(o.eff).length ? `<span class="dim"> · ${esc(effCN(o.eff))}</span>` : ""}${o.res ? `<div class="src-note">${esc(o.res)}</div>` : ""}</div>`).join("");
@@ -583,7 +612,7 @@
         <div class="between" style="align-items:flex-start;gap:10px">
           <div class="row wrap" style="gap:6px">
             ${m.who ? `<span class="chip blue">${esc(m.who)}</span>` : ""}
-            <span class="chip">第 ${esc(m.year || "?")} 年</span>${m.cat ? `<span class="chip">${esc(m.cat)}</span>` : ""}
+            <span class="chip">${esc(m.yearLabel || (m.year ? "第 " + m.year + " 年" : "历史"))}</span>${m.cat ? `<span class="chip">${esc(m.cat)}</span>` : ""}
           </div>${srcChip}
         </div>
         <div style="font-size:13px;line-height:1.75;margin-top:6px">${esc(m.text || "")}</div>
@@ -689,6 +718,7 @@
     const total = {
       ev: (window.DATA_EVENTS || []).length + (window.DATA_MEME_EVENTS || []).length + (window.DATA_ENDLESS_EVENTS || []).length + (window.DATA_EVENTS_POS || []).length
         + (window.DATA_EVENTS_EXTRA || []).length + (window.DATA_STORY_EVENTS || []).length + (window.DATA_EVENTS_V3 || []).length
+        + (window.DATA_EVENTS_LPL || []).length
         + (window.DATA_LCK_EVENTS || []).length,
       tal: (window.DATA_TALENTS || []).length + (window.DATA_TALENTS_V4 || []).length, hero: (window.DATA_HEROES || []).length,
       team: (window.DATA_TEAMS ? Object.keys(window.DATA_TEAMS).length : 0) + (window.DATA_TEAMS_EXTRA ? Object.keys(window.DATA_TEAMS_EXTRA).length : 0) + ((window.DATA_LCK && window.DATA_LCK.teams) ? window.DATA_LCK.teams.length : 0),
@@ -786,7 +816,7 @@
         <div class="divider"></div>
         <h3>数据量</h3>
         <p class="story">事件 ${total.ev} 条 · 天赋卡 ${total.tal} 张 · 经理战术 ${totalMgr.tac} 套 · 选手卡 ${totalMgr.card} 张 · 英雄 ${total.hero} 个 · 战队 ${total.team} 支 · 选手 ${total.pl} 名 · 黑料 ${total.black} 条。
-        编年史写到 2024（Worlds 2011–2024、MSI 2015–2024、LPL 2015–2024），2025 年起全部为推演。</p>
+        编年史写到 2026（Worlds 2011–2025、MSI 2015–2026、LPL 2015–2026），2026 世界赛按当前进度记录，尚未结束的部分仍由游戏内推演。</p>
       </div>
     </div>`;
   }
@@ -963,6 +993,7 @@
       const delta = ec == null ? 0 : (ec > 0 ? ec : (ec === 0 && gainM ? -Number(gainM[1]) : 0));
       const costTxt = ec != null ? (ec > 0 ? "精力 −" + ec : (a.cost || "精力 ±0")) : (a.cost || "");
       const prev = delta ? energyPreview(delta) : "";
+      const forecast = a.preview ? `<span class="tagline" style="color:var(--dim)">${esc(a.preview)}</span>` : "";
       const chip = isUsed
         ? `<span class="chip dark">已用，进入赛程</span>`
         : `<span class="chip gold">${esc(a.tag || "")}</span>`;
@@ -973,6 +1004,7 @@
           ${esc(a.label)} ${chip}
           <span class="tagline">${esc(a.desc || "")}</span>
           ${prev ? `<span class="tagline mono">${prev}</span>` : ""}
+          ${forecast}
           ${why}
         </button>
         <span class="cost" style="padding-top:12px">${esc(costTxt)}</span>
@@ -1034,21 +1066,19 @@
         ${ev.sub ? `<p class="quote">${br(ev.sub)}</p>` : ""}
         <div class="opts" style="display:grid;gap:9px;margin-top:14px">
           ${ev.opts.map((o, i) => {
-            let risk = "";
-            if (o.risk) risk = `<span class="chip ${o.risk.dc >= 13 ? "red" : "blue"}">判定 ${G.CN[o.risk.stat] || o.risk.stat} · 难度 ${o.risk.dc}</span>`;
-            let eff = "";
-            if (o.eff) {
-              const parts = Object.keys(o.eff).filter(k => typeof o.eff[k] === "number").map(k => {
-                const v = o.eff[k];
-                const nm = G.CN[k] || ({ energy: "精力", money: "钱", morale: "心态", fans: "粉丝", coach: "教练信任", status: "队内地位", burst: "气势", hupu: "虎扑" }[k] || k);
-                return `${nm}${v > 0 ? "+" : ""}${v}`;
-              });
-              if (parts.length) eff = `<span class="chip">${esc(parts.join(" · "))}</span>`;
-            }
+            const odds = riskOdds(o.risk);
+            const risk = o.risk
+              ? `<span class="chip ${odds && odds.pct >= 65 ? "green" : odds && odds.pct < 45 ? "red" : "blue"}">判定 ${esc((G.CN && G.CN[o.risk.stat]) || o.risk.stat || "属性")} · 难度 ${esc(o.risk.dc == null ? 12 : o.risk.dc)}${odds ? " · 约 " + odds.pct + "%" : ""}</span>`
+              : "";
+            const eff = effChipHTML(o.eff);
+            const note = o.risk
+              ? `<span class="tagline" style="color:var(--dim)">这一下不是稳的，按你现在的${odds ? esc(odds.stat) : "属性"}和心态，大概 ${odds ? odds.pct : "?"}% 能过；过了有额外好处，砸了要认。</span>`
+              : (o.eff ? `<span class="tagline" style="color:var(--dim)">选完就按上面这些数结算，不玩文字游戏。</span>` : "");
             return `<div class="opt">
               <span class="idx">${i + 1}</span>
               <button class="btn" data-act="choose" data-i="${i}">${esc(o.t)}
                 <span class="tagline">${eff} ${risk}</span>
+                ${note}
               </button>
             </div>`;
           }).join("")}
@@ -1064,7 +1094,7 @@
       <div class="story" style="margin-top:10px">${br(s.text)}</div>
       ${duoHTML(s)}
       <div class="between" style="margin-top:18px">
-        <div class="small-note">${s.tone === "win" ? "别飘。" : s.tone === "lose" ? "还没结束。" : ""}</div>
+        <div class="small-note">${s.tone === "win" ? "赢了先别急着高兴，回去把这一把拆开看，下一场对面会照着这个打你。" : s.tone === "lose" ? "输了就输了，别在休息室坐着，回去把这一把拆开看，同一个错别再犯第二次。" : ""}</div>
         <button class="btn primary small" data-act="choose" data-i="0">继续</button>
       </div>
     </div>`);
@@ -1448,6 +1478,40 @@
     }
     return out.join(" · ");
   }
+  /* ---------- 4.0：关键因素 / 即时后果 ---------- */
+  function factorPanel(title, intro, list) {
+    if (!list || !list.length) return "";
+    return `<div class="factor-panel">
+      <div class="factor-head"><span class="kicker">${esc(title || "关键因素")}</span><span class="small-note">${esc(intro || "")}</span></div>
+      <div class="factor-list">${list.map(f => `<div class="factor-item">
+        <span class="factor-k">${esc(f.k || "")}</span>
+        <b class="factor-v ${esc(f.tone || "")}">${esc(f.v || "")}</b>
+        <span class="factor-note">${esc(f.note || "")}</span>
+      </div>`).join("")}</div>
+    </div>`;
+  }
+  function riskOdds(risk) {
+    if (!risk) return null;
+    const S = (G && G.getState) ? G.getState() : null;
+    if (!S) return null;
+    const st = Number((S.st || {})[risk.stat]) || 50;
+    const mo = Number(S.morale == null ? 50 : S.morale);
+    const bonus = Math.floor((st - 50) / 5) + Math.floor((mo - 50) / 12);
+    const need = Number(risk.dc == null ? 12 : risk.dc) - bonus;
+    const p = Math.max(.05, Math.min(.95, (21 - need) / 20));
+    return { pct: Math.round(p * 100), stat: G.CN && G.CN[risk.stat] || risk.stat || "判定", dc: risk.dc };
+  }
+  function effChipHTML(eff) {
+    if (!eff || typeof eff !== "object") return "";
+    const parts = [];
+    for (const k in eff) {
+      const v = eff[k];
+      if (typeof v !== "number" || !v) continue;
+      parts.push(`<span class="chip ${v > 0 ? "green" : "red"}">${esc(EFFCN(k))}${v > 0 ? "+" : ""}${v}</span>`);
+    }
+    return parts.join("");
+  }
+
   const RC = r => ((G.RARITY || {})[r] || { c: "#9aa7b4", n: "" });
   const BUILDN = k => (((TERM().build || {})[k] || {}).name) || "";
   const KEYVAR = k => (((TERM().keyVar || {})[k]) || k);
@@ -1811,33 +1875,40 @@
     } catch (e) { }
     return (o && typeof o === "object") ? o : {};
   }
-  function achvHTML() {
+  const ACHV_CAT = { career: "生涯", honor: "荣誉", money: "经济", relation: "关系", absurd: "整活" };
+  const achvCatCN = c => ACHV_CAT[c] || c;
+  function achvHTML(opts) {
+    opts = opts || {};
     const list = achvList();
     const got = achvGot();
-    const total = (window.DATA_ACHV && window.DATA_ACHV.total) || 40;
+    const total = list.length || (window.DATA_ACHV && window.DATA_ACHV.total) || 40;
     if (!list.length) return `<div class="small-note" style="padding:12px 0">成就数据还没接进来。等这一版的数据表落地，这里会按分类列出所有条目。</div>`;
     const cats = [];
     list.forEach(a => { const c = a.cat || a.category || "其他"; if (cats.indexOf(c) < 0) cats.push(c); });
     const shown = list.filter(a => {
-      if (codexQ) { try { return JSON.stringify(a).toLowerCase().indexOf(codexQ.toLowerCase()) >= 0; } catch (e) { return false; } }
+      if (!opts.plain && codexQ) { try { return JSON.stringify(a).toLowerCase().indexOf(codexQ.toLowerCase()) >= 0; } catch (e) { return false; } }
       return achvCat === "all" || (a.cat || a.category || "其他") === achvCat;
+    }).slice().sort((a, b) => {
+      const ia = got[a.id || a.k || a.name] ? 0 : 1, ib = got[b.id || b.k || b.name] ? 0 : 1;
+      if (ia !== ib) return ia - ib;
+      return (a.tier || 9) - (b.tier || 9);
     });
-    const gotN = Object.keys(got).filter(k => got[k]).length;
+    const gotN = list.filter(a => got[a.id || a.k || a.name]).length;
     return `<div class="achv-wrap">
       <div class="between wrap" style="gap:8px">
         <div class="row wrap" style="gap:6px">
           <button class="chip ${achvCat === "all" ? "gold" : ""}" data-act="achv-cat" data-v="all" style="cursor:pointer">全部</button>
-          ${cats.map(c => `<button class="chip ${achvCat === c ? "gold" : ""}" data-act="achv-cat" data-v="${esc(c)}" style="cursor:pointer">${esc(c)}</button>`).join("")}
+          ${cats.map(c => `<button class="chip ${achvCat === c ? "gold" : ""}" data-act="achv-cat" data-v="${esc(c)}" style="cursor:pointer">${esc(achvCatCN(c))}</button>`).join("")}
         </div>
-        <span class="mono" style="color:var(--gold)">${gotN}/${total}</span>
+        ${opts.hideCount ? "" : `<span class="mono" style="color:var(--gold)">${gotN}/${total}</span>`}
       </div>
       <div class="achv-list">
         ${shown.map(a => {
           const id = a.id || a.k || a.name;
           const on = !!got[id];
           return `<div class="achv-row ${on ? "on" : "off"}">
-            <div class="achv-h"><b>${esc(a.name || a.t || id)}</b>${on ? `<span class="chip gold">已达成</span>` : `<span class="chip dark">未达成</span>`}</div>
-            <div class="small-note">${esc(a.desc || a.d || a.text || "")}</div>
+            <div class="achv-h"><b>${esc(a.name || a.t || id)}</b><span class="row" style="gap:4px">${a.tier ? `<span class="chip dark">难度 ${"★".repeat(Math.max(1, Math.min(3, a.tier)))}</span>` : ""}${on ? `<span class="chip gold">已达成</span>` : `<span class="chip dark">未达成</span>`}</span></div>
+            ${(opts.compact && !on) ? "" : `<div class="small-note">${esc(a.desc || a.d || a.text || "")}</div>`}
             ${condTxt(a.cond || a.conds) ? `<div class="small-note dim" style="margin-top:2px">条件：${esc(condTxt(a.cond || a.conds))}</div>` : ""}
             ${a.reward ? `<div class="small-note" style="color:var(--gold-2);margin-top:2px">奖励：${esc(typeof a.reward === "string" ? a.reward : effCN(a.reward))}</div>` : ""}
           </div>`;
@@ -2111,6 +2182,8 @@
         quick.sim ? { v: "sim", t: "模拟本场", d: "先在训练室过一遍这套阵容，赌一把成功率" } : null
       ].filter(Boolean) : [];
     /* 第 2 局起（quick.reuse 为真）在 ban 之前就给一键沿用，不必走完整三步 BP */
+    const quickMiss = (!quickRows.length && s.step === 0)
+      ? `<div class="small-note" style="margin-top:10px;color:var(--dim)">这一局没有快捷 BP：要么是第一局，要么是必须自己打的关键局。第一局和决胜局我不替你跳，前面几局能沿用的都给你放在上面了。</div>` : "";
     const quickBlock = quickRows.length ? `<div class="quick-block" style="margin-top:12px">
       <div class="between wrap" style="gap:8px">
         <span class="small-note">上一局怎么打的，这一局还认得。要不要直接用掉？</span>
@@ -2119,7 +2192,7 @@
     </div>` : "";
     if (s.step === 0) {
       const dataKnown = s.dataKnown != null ? !!s.dataKnown : (s.reveal > 0);
-      return shell(`<div class="fade-in">${head}${guide}${rosters}${quickBlock}
+      return shell(`<div class="fade-in">${head}${guide}${rosters}${quickBlock}${quickMiss}
         <div class="panel flat" style="margin-top:12px">
           <div class="between wrap">
 <div><span class="chip ${s.side === "blue" ? "blue" : "red"}">${s.side === "blue" ? "蓝方 · 一选" : "红方 · 后手"}</span>
@@ -2207,6 +2280,22 @@ ${(s.oppBans || []).length ? `<div class="row wrap" style="gap:6px;margin-top:8p
     const info = s.oppHeroInfo || null;
     const myH = s.myHero || s.hero || "";
     const qprob = info && info.prob != null ? probNum(info.prob) : null;
+    const SNow = G.getState() || {};
+    const myPow = Math.round(G.myTeamPower ? G.myTeamPower() : 70);
+    const oppPow = Math.round(s.oppPower || (s.opp && G.teamPower ? G.teamPower(s.opp.id) : 0) || 0);
+    const paper = oppPow ? myPow - oppPow : null;
+    const ctrD = info && info.ctr && info.ctr.d != null ? Number(info.ctr.d) : 0;
+    const edgeNum = v => { const n = Number(v) || 0; return Math.abs(n) <= 1 ? n * 100 : n; };
+    const edges = (s.opts || []).map(o => edgeNum(o.edge));
+    const bestEdge = edges.length ? Math.max.apply(null, edges) : 0;
+    const worstEdge = edges.length ? Math.min.apply(null, edges) : 0;
+    const eB = energyBandOf(SNow.energy);
+    const bpFactors = factorPanel("这把的胜负手", "别急着点。纸面、对位、战术、状态，这四样里哪一项在帮你、哪一项在拖你，先看清楚再选；看不懂就按绿色的那一条走。", [
+      { k: "纸面", v: paper == null ? "待定" : ((paper >= 0 ? "+" : "") + paper), tone: paper == null ? "warn" : paper >= 0 ? "good" : "bad", note: "我方队伍强度 " + myPow + "，对面 " + (oppPow || "待定") + "；纸面只决定起点，不决定结局。" },
+      { k: "对位", v: ctrD === 0 ? "五五开" : (ctrD > 0 ? "你 +" + ctrD : "对面 +" + Math.abs(ctrD)), tone: ctrD > 0 ? "good" : ctrD < 0 ? "bad" : "warn", note: info && info.ctr && info.ctr.why ? info.ctr.why : "对面还没亮英雄，或者这组对位没什么明显的克制。" },
+      { k: "战术", v: Math.round(bestEdge) > 0 ? "+" + Math.round(bestEdge) : (Math.round(worstEdge) < 0 ? Math.round(worstEdge) : "0"), tone: bestEdge > 0 ? "good" : worstEdge < 0 ? "bad" : "warn", note: "这是三套战术里最好/最差的那一档；选之前先看对面想打什么，别只看自己顺手。" },
+      { k: "状态", v: eB.name || "正常", tone: eB.key === "peak" || eB.key === "normal" ? "good" : eB.key === "tired" ? "warn" : "bad", note: "精力 " + Math.round(SNow.energy || 0) + "，心态 " + Math.round(SNow.morale || 0) + "；低精力会让你在第五局手抖，这不是玄学。" }
+    ]);
     return shell(`<div class="fade-in">${head}${guide}${rosters}${quickBlock}
       <div class="scene-tag" style="margin-top:14px">第三步 · 这局怎么打</div>
       <div class="panel flat" style="margin-top:8px">
@@ -2217,13 +2306,14 @@ ${(s.oppBans || []).length ? `<div class="row wrap" style="gap:6px;margin-top:8p
           <span class="chip blue">对面打法 ${esc((s.opp || {}).tendency || "运营")}</span>
         </div>
       </div>
+      ${bpFactors}
       ${info ? `<div class="bp-info">
         <div class="between"><span class="kicker">对位信息 · ${esc(info.n || s.oppHero || "")}</span>${qprob != null ? `<span class="bpi-prob">胜率估计 ${qprob}%</span>` : ""}</div>
         <div class="row wrap" style="gap:6px;margin-top:8px">
           ${info.pos ? `<span class="chip">定位 ${esc(POSCN[info.pos] || info.pos)}</span>` : ""}
           ${info.diff != null ? `<span class="chip">难度 ${esc(info.diff)}</span>` : ""}
           ${info.patch != null ? `<span class="chip">版本 ${info.patch > 0 ? "+" + info.patch : info.patch}</span>` : ""}
-          ${info.ctr && info.ctr.d != null ? `<span class="chip ${info.ctr.d > 0 ? "red" : info.ctr.d < 0 ? "green" : ""}">克制 ${info.ctr.d > 0 ? "+" : ""}${info.ctr.d}%</span>` : ""}
+          ${info.ctr && info.ctr.d != null ? `<span class="chip ${info.ctr.d > 0 ? "green" : info.ctr.d < 0 ? "red" : ""}">${info.ctr.d > 0 ? "你克制 +" : info.ctr.d < 0 ? "被克制 " : "克制 "}${info.ctr.d}%</span>` : ""}
           ${info.tag != null ? (Array.isArray(info.tag) ? info.tag : [info.tag]).filter(Boolean).map(t => `<span class="chip">${esc(t)}</span>`).join("") : ""}
         </div>
         ${(() => {
@@ -2489,6 +2579,14 @@ ${(s.oppBans || []).length ? `<div class="row wrap" style="gap:6px;margin-top:8p
   function renderBoGame(s) {
     const rows = s.rows || [];
     const ctr = s.ctr || { d: 0, why: "" };
+    const diffs = rows.map(r => ({ name: r.name, d: Number(r.a || 0) - Number(r.b || 0) })).sort((a, b) => b.d - a.d);
+    const best = diffs[0] || null, worst = diffs[diffs.length - 1] || null;
+    const boFactors = rows.length ? factorPanel("这把为什么是这个结果", "别只看比分。下面这几项是这把真正拉开差距的地方，赢在哪、输在哪，都写清楚；下一把照着改，别凭感觉。", [
+      best ? { k: "最大优势", v: (best.d >= 0 ? "+" : "") + best.d, tone: best.d >= 0 ? "good" : "bad", note: "「" + best.name + "」是全队相对对面最明显的一条线，赛前布置和选手状态都算在里面。" } : null,
+      worst ? { k: "最大短板", v: (worst.d >= 0 ? "+" : "") + worst.d, tone: worst.d < 0 ? "bad" : "good", note: "「" + worst.name + "」被对面压住了；如果只差这一项，下一把的 ban/pick 和战术就该往这里补。" } : null,
+      { k: "对位", v: ctr.d === 0 ? "五五开" : (ctr.d > 0 ? "你 +" + Math.round(ctr.d) : "对面 +" + Math.abs(Math.round(ctr.d))), tone: ctr.d > 0 ? "good" : ctr.d < 0 ? "bad" : "warn", note: ctr.why || "这组中野/下路对位没有明显的克制关系，胜负更多看团战和资源。" },
+      { k: "胜负", v: s.win ? "赢了" : "输了", tone: s.win ? "good" : "bad", note: "赛前模型给的成功率是 " + probTxt(s.p) + "；模型只看概率，真打起来还有爆冷、失误和一口气。" }
+    ].filter(Boolean)) : "";
     return shell(`<div class="fade-in">
       <div class="between">
         <div><div class="kicker">${esc(s.title || "")} · 第 ${s.g} 局</div>
@@ -2496,6 +2594,7 @@ ${(s.oppBans || []).length ? `<div class="row wrap" style="gap:6px;margin-top:8p
         <div style="text-align:right"><div class="mono" style="font-size:20px">${s.wins}-${s.losses}</div><div class="small-note">阵容 ${esc(s.hero || "")} vs ${esc(s.oppHero || "")}</div></div>
       </div>
       ${s.upset ? `<div class="panel flat" style="margin-top:10px;border-color:rgba(240,195,60,.6)"><span class="chip gold">爆冷</span> <span class="dim">数据全线落后，但你赢了。这就是这游戏的魅力。</span></div>` : ""}
+      ${boFactors}
       <div class="panel" style="margin-top:12px">
         <div class="scene-tag">双方实力对比</div>
         ${rows.map(r => `<div style="margin-top:8px">
