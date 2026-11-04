@@ -5,7 +5,7 @@ window.DATA_TEAMS = {
     color: "#00A1E0", budget: 9, tier: "S", vibe: 78,
     boss: "陈睿", bossTrait: "氪金",
     coach: "BigWei", coachStyle: "体系",
-    roster: {TOP: "p_bin", JUG: "p_xun", MID: "p_knight", BOT: "p_elk", SUP: "p_on"},
+    roster: {"TOP":"p_bin","JUG":"p_wei","MID":"p_knight","BOT":"p_elk","SUP":"p_on"},
     logo: "blg",
     blurb: "花钱不眨眼，奖杯一座没有。"
   },
@@ -14,7 +14,7 @@ window.DATA_TEAMS = {
     color: "#E4002B", budget: 9, tier: "S", vibe: 72,
     boss: "滔搏资本", bossTrait: "KPI 考核",
     coach: "教练组", coachStyle: "铁腕",
-    roster: {TOP: "p_369", JUG: "p_tian", MID: "p_creme", BOT: "p_jackeylove", SUP: "p_meiko"},
+    roster: {"TOP":"p_369","JUG":"p_kanavi","MID":"p_creme","BOT":"p_jackeylove","SUP":"p_hang"},
     logo: "tes",
     blurb: "五个人都有冠军相，凑一起就没了。"
   },
@@ -23,7 +23,7 @@ window.DATA_TEAMS = {
     color: "#A6192E", budget: 10, tier: "S", vibe: 70,
     boss: "刘强东", bossTrait: "有钱但不懂游戏",
     coach: "教练组", coachStyle: "体系",
-    roster: {TOP: "p_sheer", JUG: "p_kanavi", MID: "p_yagao", BOT: "p_ruler", SUP: "p_missing"},
+    roster: {"TOP":"p_ale","JUG":"p_xun","MID":"p_scout","BOT":"p_peyz","SUP":"p_missing"},
     logo: "jdg",
     blurb: "有钱，有 Ruler，没有世界冠军。"
   },
@@ -32,7 +32,7 @@ window.DATA_TEAMS = {
     color: "#FFB81C", budget: 8, tier: "S", vibe: 74,
     boss: "王高飞", bossTrait: "控评",
     coach: "Daeny", coachStyle: "体系",
-    roster: {TOP: "p_breathe", JUG: "p_tarzan", MID: "p_xiaohu", BOT: "p_light", SUP: "p_crisp"},
+    roster: {"TOP":"p_breathe","JUG":"p_tian","MID":"p_xiaohu","BOT":"p_light","SUP":"p_crisp"},
     logo: "wbg",
     blurb: "一年重建三次，每次都能进四强。"
   },
@@ -65,10 +65,10 @@ window.DATA_TEAMS = {
   },
   t_ig: {
     name: "IG", full: "Invictus Gaming", region: "LPL", city: "上海",
-    color: "#2B2B2B", budget: 5, tier: "C", vibe: 45,
+    color: "#2B2B2B", budget: 6, tier: "B", vibe: 60,
     boss: "王思聪", bossTrait: "玩票",
     coach: "教练组", coachStyle: "放养",
-    roster: {TOP: "p_yskm", JUG: null, MID: null, BOT: "p_ahn", SUP: null},
+    roster: {"TOP":"p_theshy","JUG":"p_jiejie","MID":"p_rookie","BOT":"p_gala","SUP":"p_meiko"},
     logo: "ig",
     blurb: "老板是首富之子，队伍是倒数第二。"
   },
@@ -128,12 +128,12 @@ window.DATA_TEAMS = {
   },
   t_al: {
     name: "AL", full: "Anyone's Legend", region: "LPL", city: "上海",
-    color: "#00A651", budget: 3, tier: "C", vibe: 40,
-    boss: "神秘资方", bossTrait: "画饼",
+    color: "#00A651", budget: 7, tier: "A", vibe: 80,
+    boss: "神秘资方", bossTrait: "终于肯花钱",
     coach: "教练组", coachStyle: "体系",
-    roster: {TOP: null, JUG: null, MID: null, BOT: null, SUP: null},
+    roster: {"TOP":"p_flandre","JUG":"p_tarzan","MID":"p_shanks","BOT":"p_hope","SUP":"p_kael"},
     logo: "al",
-    blurb: "名字叫“任何人的传奇”，谁的都不是。"
+    blurb: "2026 年之前，“任何人的传奇”是句笑话；2026 年之后，银龙杯上刻着他们的名字。"
   },
   t_nip: {
     name: "NIP", full: "Ninjas in Pyjamas", region: "LPL", city: "深圳",
