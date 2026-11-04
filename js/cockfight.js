@@ -128,7 +128,7 @@ window.COCKFIGHT = (function () {
       var need = def.need || 3;
       var have = counts[bid].length;
       if (have >= need) {
-        active.push({ id: bid, name: def.name, desc: def.desc || "", eff: def.eff || {}, have: have, need: need, members: counts[bid] });
+        active.push({ id: bid, name: def.name, desc: def.desc || "", eff: def.eff || {}, risk: !!def.risk, have: have, need: need, members: counts[bid] });
       } else if (have === need - 1) {
         near.push({ id: bid, name: def.name, have: have, need: need, missing: need - have });
       }
@@ -140,7 +140,11 @@ window.COCKFIGHT = (function () {
   function effText(eff) {
     var map = { lanes: "对线", teamfight: "团战", resource: "资源", tempo: "节奏", mental: "心态", greed: "凶", farm: "发育" };
     var out = [];
-    for (var k in (eff || {})) if (map[k] && Number(eff[k])) out.push("+" + f1(Number(eff[k])) + " " + map[k]);
+    for (var k in (eff || {})) {
+      var v = Number(eff[k]);
+      if (!map[k] || !v) continue;
+      out.push((v > 0 ? "+" : "−") + f1(Math.abs(v)) + " " + map[k]);
+    }
     return out.join("，");
   }
 
@@ -527,7 +531,7 @@ window.COCKFIGHT = (function () {
     var h = '<div class="cf-bonds-col"><div class="kicker">' + esc(side.label) + " 羁绊</div>";
     if (!a.length) h += '<div class="dim cf-sub">没有成型的羁绊。</div>';
     a.forEach(function (b) {
-      h += '<div class="cf-bond"><span class="chip gold">达成：' + esc(b.name) + "</span>"
+      h += '<div class="cf-bond"><span class="chip gold">达成：' + esc(b.name) + "</span>" + (b.risk ? '<span class="chip red">双刃</span>' : "")
         + '<span class="dim cf-sub">' + esc(effText(b.eff)) + "</span></div>";
     });
     n.slice(0, 3).forEach(function (b) {

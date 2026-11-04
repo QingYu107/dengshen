@@ -84,7 +84,17 @@ window.DATA_HEROES = [
   { n: "巴德", en: "Bard", pos: ["SUP"], diff: 3, tag: ["游走", "视野", "整活"] },
   { n: "莫甘娜", en: "Morgana", pos: ["SUP"], diff: 1, tag: ["反手", "控制", "保护"] },
   { n: "塔姆", en: "TahmKench", pos: ["SUP"], diff: 2, tag: ["保护", "坦度", "救援"] },
-  { n: "赛娜", en: "Senna", pos: ["SUP", "BOT"], diff: 2, tag: ["后期", "消耗", "叠层"] }
+  { n: "赛娜", en: "Senna", pos: ["SUP", "BOT"], diff: 2, tag: ["后期", "消耗", "叠层"] },
+
+  /* ============ 2023–2026 新英雄补充 ============ */
+  { n: "米利欧", en: "Milio", pos: ["SUP"], diff: 1, tag: ["保护", "续航", "团战"] },
+  { n: "纳亚菲利", en: "Naafiri", pos: ["MID", "JUG"], diff: 2, tag: ["刺客", "爆发", "游走"] },
+  { n: "布蕾尔", en: "Briar", pos: ["JUG"], diff: 2, tag: ["入侵", "续航", "莽"] },
+  { n: "奥罗拉", en: "Aurora", pos: ["MID", "TOP"], diff: 3, tag: ["对线", "爆发", "机动"] },
+  { n: "赫韦", en: "Hwei", pos: ["MID"], diff: 3, tag: ["消耗", "团战", "运营"] },
+  { n: "安蓓萨", en: "Ambessa", pos: ["TOP", "MID"], diff: 3, tag: ["对线", "单带", "操作"] },
+  { n: "梅尔", en: "Mel", pos: ["MID", "SUP"], diff: 2, tag: ["消耗", "保护", "对线"] },
+  { n: "尤娜拉", en: "Yunara", pos: ["BOT"], diff: 3, tag: ["后期", "输出", "操作"] }
 ];
 
 /* 位置定义 */

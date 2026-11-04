@@ -19,16 +19,16 @@ window.DATA_LCK = {
       color: "#E2012D", budget: 10, tier: "S", vibe: 90,
       boss: "Joe Marsh", bossTrait: "商业奇才",
       coach: "KkOma", coachStyle: "铁腕",
-      roster: { TOP: "p_lck_zeus", JUG: "p_lck_oner", MID: "p_lck_faker", BOT: "p_lck_gumayusi", SUP: "p_lck_keria" },
+      roster: { TOP: "p_doran", JUG: "p_lck_oner", MID: "p_lck_faker", BOT: "p_lck_gumayusi", SUP: "p_lck_keria" },
       logo: "t1",
-      blurb: "世界赛 5 冠，联赛冠军才是稀罕货。"
+      blurb: "世界赛 6 冠，联赛冠军才是稀罕货。"
     },
     {
       id: "t_lck_gen", name: "GEN", short: "GEN", full: "Gen.G", region: "LCK", city: "首尔",
       color: "#B4975A", budget: 10, tier: "S", vibe: 82,
       boss: "Arnold Hur", bossTrait: "数据党",
       coach: "Kim", coachStyle: "体系",
-      roster: { TOP: "p_lck_kiin", JUG: "p_lck_canyon", MID: "p_lck_chovy", BOT: "p_lck_peyz", SUP: "p_lck_lehends" },
+      roster: { TOP: "p_lck_kiin", JUG: "p_lck_canyon", MID: "p_lck_chovy", BOT: "p_ruler", SUP: "p_duro" },
       logo: "gen",
       blurb: "常规赛无敌，世界赛四强。"
     },
@@ -37,16 +37,16 @@ window.DATA_LCK = {
       color: "#FF6A00", budget: 10, tier: "S", vibe: 76,
       boss: "韩华集团", bossTrait: "钞能力",
       coach: "教练组", coachStyle: "体系",
-      roster: { TOP: "p_lck_doran", JUG: "p_lck_peanut", MID: "p_lck_zeka", BOT: "p_lck_viper", SUP: "p_lck_delight" },
+      roster: { TOP: "p_zeus", JUG: "p_lck_peanut", MID: "p_lck_zeka", BOT: "p_lck_viper", SUP: "p_lck_delight" },
       logo: "hle",
-      blurb: "买了一堆冠军，凑不出一个决赛。"
+      blurb: "买了一堆冠军，2026 终于凑出一个 MSI 决赛。"
     },
     {
       id: "t_lck_dk", name: "DK", short: "DK", full: "Dplus KIA", region: "LCK", city: "首尔",
       color: "#00A5B5", budget: 7, tier: "A", vibe: 64,
       boss: "起亚", bossTrait: "车企预算",
       coach: "教练组", coachStyle: "体系",
-      roster: { TOP: "p_lck_kingen", JUG: "p_lck_lucid", MID: "p_lck_showmaker", BOT: "p_lck_aiming", SUP: "p_lck_moham" },
+      roster: { TOP: "p_siwoo", JUG: "p_lck_lucid", MID: "p_lck_showmaker", BOT: "p_lck_aiming", SUP: "p_lck_moham" },
       logo: "dk",
       blurb: "2020 的幽灵还在这座基地里。"
     },
@@ -55,7 +55,7 @@ window.DATA_LCK = {
       color: "#E60012", budget: 7, tier: "A", vibe: 60,
       boss: "KT 集团", bossTrait: "电信巨头",
       coach: "教练组", coachStyle: "铁腕",
-      roster: { TOP: "p_lck_perfect", JUG: "p_lck_cuzz", MID: "p_lck_bdd", BOT: "p_lck_deft", SUP: "p_lck_beryl" },
+      roster: { TOP: "p_lck_perfect", JUG: "p_lck_cuzz", MID: "p_lck_bdd", BOT: "p_lck_deft", SUP: "p_way" },
       logo: "kt",
       blurb: "LCK 的永远差一步。"
     },

@@ -259,6 +259,11 @@
     // 倾向羁绊只给特征最鲜明的一类
     if (tilt && tilt.greed >= 68) add("bond_greed");
     else if (tilt && tilt.farm >= 72) add("bond_farm");
+    /* 双刃剑：只给特征足够极端的卡，避免人人都挂负面 */
+    if ((st.FAME || 0) >= 88) add("bond_egos");
+    if ((st.POOL || 0) <= 58 && (st.MECH || 0) >= 78) add("bond_onetrick");
+    if ((st.MENTAL || 0) < 45) add("bond_boom");
+    if ((card.tags || []).indexOf("老将") >= 0 || (tilt && tilt.farm >= 78 && (st.MECH || 0) < 72)) add("bond_old");
     if (card.pos === "BOT" || card.pos === "SUP") add("bond_bot");
     if (card.pos === "MID" || card.pos === "JUG") add("bond_midjung");
     if (card.pos === "TOP" || card.pos === "JUG") add("bond_topjung");
@@ -351,6 +356,20 @@
     BONDS.push({ id: tbDef[0], name: tbDef[1], need: 3, desc: tbDef[2], eff: tbDef[3] });
     TAL4_BOND_BY_ID[tbDef[0]] = tb2;
   }
+  /* ---------- 双刃剑 / 负面羁绊 ---------- */
+  BONDS.push({ id: "bond_egos", name: "银河战舰", need: 3, risk: true,
+    desc: "三个 FAME≥88 的明星：个人能力拉满，但资源分配和更衣室开始打架。",
+    eff: { lanes: 1.2, teamfight: -0.8, mental: -0.6, resource: -0.8 } });
+  BONDS.push({ id: "bond_onetrick", name: "绝活哥开会", need: 3, risk: true,
+    desc: "三个英雄池很浅、绝活很深的选手：拿到本命是神，BP 被针对就一起坐牢。",
+    eff: { lanes: 1.6, resource: -1.0, tempo: -0.8 } });
+  BONDS.push({ id: "bond_boom", name: "更衣室炸弹", need: 3, risk: true,
+    desc: "三个 MENTAL<45 的选手：顺风敢秀，逆风先炸，教练的嗓子就是这么坏的。",
+    eff: { lanes: 1.0, mental: -1.5, teamfight: -0.8 } });
+  BONDS.push({ id: "bond_old", name: "养老院", need: 3, risk: true,
+    desc: "三个老将：经验和对线还在，节奏和体能开始跟不上。",
+    eff: { mental: 1.2, farm: 1.0, tempo: -1.0, lanes: -0.4 } });
+
   // 羁绊表按名字去重（防止和已有正式数据重名）
   var seenBondName = {};
   BONDS = BONDS.filter(function (b) {

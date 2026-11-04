@@ -96,6 +96,7 @@ window.GAME = (function () {
         (window.DATA_EVENTS_POS || []).filter(e => e && !e.inMatch), _blackEvents,
         /* 新数据文件可能还没落地，全部 || [] 兜底 */
         window.DATA_EVENTS_V3 || [],
+        window.DATA_EVENTS_LPL || [],
         /* LCK 事件无条件并入（门槛交给事件自身 req），否则起手 lck_offer_1 永远进不来 */
         window.DATA_LCK_EVENTS || []);
       if (lckOn) pool = pool.filter(e => e && dropOld.indexOf(e.id) < 0);

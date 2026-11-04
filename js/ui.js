@@ -575,7 +575,7 @@
     if (memeSub === "gossip") return subs + gossipHTML();
     if (memeSub === "trash") return trashHTML();
     if (memeSub === "hot") return hotHTML();
-    const MS = (window.DATA_MEME_EVENTS || []).filter(codexHit);
+    const MS = (window.DATA_MEME_EVENTS || []).concat(window.DATA_EVENTS_LPL || []).filter(codexHit);
     const body = MS.map(m => {
       const srcChip = m.srcType === "real" ? `<span class="chip gold">真事改编</span>` : `<span class="chip">二创</span>`;
       const opts = (m.opts || []).map((o, i) => `<div class="note-line" style="margin-top:6px"><b>${i + 1}. ${esc(o.t || "")}</b>${o.eff && Object.keys(o.eff).length ? `<span class="dim"> · ${esc(effCN(o.eff))}</span>` : ""}${o.res ? `<div class="src-note">${esc(o.res)}</div>` : ""}</div>`).join("");
@@ -583,7 +583,7 @@
         <div class="between" style="align-items:flex-start;gap:10px">
           <div class="row wrap" style="gap:6px">
             ${m.who ? `<span class="chip blue">${esc(m.who)}</span>` : ""}
-            <span class="chip">第 ${esc(m.year || "?")} 年</span>${m.cat ? `<span class="chip">${esc(m.cat)}</span>` : ""}
+            <span class="chip">${esc(m.yearLabel || (m.year ? "第 " + m.year + " 年" : "历史"))}</span>${m.cat ? `<span class="chip">${esc(m.cat)}</span>` : ""}
           </div>${srcChip}
         </div>
         <div style="font-size:13px;line-height:1.75;margin-top:6px">${esc(m.text || "")}</div>
@@ -689,6 +689,7 @@
     const total = {
       ev: (window.DATA_EVENTS || []).length + (window.DATA_MEME_EVENTS || []).length + (window.DATA_ENDLESS_EVENTS || []).length + (window.DATA_EVENTS_POS || []).length
         + (window.DATA_EVENTS_EXTRA || []).length + (window.DATA_STORY_EVENTS || []).length + (window.DATA_EVENTS_V3 || []).length
+        + (window.DATA_EVENTS_LPL || []).length
         + (window.DATA_LCK_EVENTS || []).length,
       tal: (window.DATA_TALENTS || []).length + (window.DATA_TALENTS_V4 || []).length, hero: (window.DATA_HEROES || []).length,
       team: (window.DATA_TEAMS ? Object.keys(window.DATA_TEAMS).length : 0) + (window.DATA_TEAMS_EXTRA ? Object.keys(window.DATA_TEAMS_EXTRA).length : 0) + ((window.DATA_LCK && window.DATA_LCK.teams) ? window.DATA_LCK.teams.length : 0),
@@ -786,7 +787,7 @@
         <div class="divider"></div>
         <h3>数据量</h3>
         <p class="story">事件 ${total.ev} 条 · 天赋卡 ${total.tal} 张 · 经理战术 ${totalMgr.tac} 套 · 选手卡 ${totalMgr.card} 张 · 英雄 ${total.hero} 个 · 战队 ${total.team} 支 · 选手 ${total.pl} 名 · 黑料 ${total.black} 条。
-        编年史写到 2024（Worlds 2011–2024、MSI 2015–2024、LPL 2015–2024），2025 年起全部为推演。</p>
+        编年史写到 2026（Worlds 2011–2025、MSI 2015–2026、LPL 2015–2026），2026 世界赛按当前进度记录，尚未结束的部分仍由游戏内推演。</p>
       </div>
     </div>`;
   }
